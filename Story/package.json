@@ -1,0 +1,20 @@
+{
+  "name": "com.omochaya.story",
+  "version": "1.0.0",
+  "displayName": "Omochaya Story",
+  "description": "A high-performance, zero-allocation async/await task system designed to completely replace Unity's default coroutine (IEnumerator).",
+  "unity": "2021.3",
+  "author": {
+    "name": "あなたのユーザー名",
+    "url": "https://github.com/あなたのユーザー名"
+  },
+  "type": "library",
+  "keywords": [
+    "async",
+    "await",
+    "task",
+    "coroutine",
+    "performance"
+  ],
+  "license": "MIT"
+}

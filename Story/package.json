@@ -5,10 +5,9 @@
   "description": "A high-performance, zero-allocation async/await task system designed to completely replace Unity's default coroutine (IEnumerator).",
   "unity": "2021.3",
   "author": {
-    "name": "あなたのユーザー名",
-    "url": "https://github.com/あなたのユーザー名"
+    "name": "yananose",
+    "url": "https://github.com/yananose"
   },
-  "type": "library",
   "keywords": [
     "async",
     "await",

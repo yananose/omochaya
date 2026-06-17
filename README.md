@@ -6,7 +6,7 @@ Unity向けの自作ライブラリ群を管理するリポジトリです。
 
 | ライブラリ名 | 概要 | リンク |
 | :--- | :--- | :--- |
-| **Story** | ゼロアロケーション・高パフォーマンスな非同期タスクシステム | [READMEはこちら](./Assets/Omochaya/Story/README.md) |
+| **Story** | ゼロアロケーション・高パフォーマンスな非同期タスクシステム | [READMEはこちら](/Assets/Omochaya/Story/README.md) |
 | *(FutureLibrary)* | 開発予定の新しいライブラリ | 準備中 |
 
 ## 🚀 インストール方法

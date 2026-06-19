@@ -79,7 +79,7 @@ namespace Omochaya
             public bool IsBusy() => IsBusy(this.end);
         }
 
-        /// <summary></summary>
+        /// <summary>Suspends the execution for the specified amount of unscaled seconds.</summary>
         /// <remarks>
         /// 標準の <c>Task.Delay</c> とは異なり、メインスレッドのフレーム更新（<c>UnityEngine.Time</c>）に依存して時間を計測します。
         /// また、タスクがキャンセルされた場合でも <c>TaskCanceledException</c> のような例外はスローされず、安全に中断されます。
@@ -95,20 +95,20 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task WaitTimeUnscaled(float seconds) => WaitTimeUnscaledCore(new WaitTimeUnscaledHandle(seconds));
 
-        /// <summary></summary>
+        /// <summary>Provides the internal asynchronous loop for unscaled time-based waiting using a custom wait handle.</summary>
         public static async Task WaitTimeUnscaledCore(WaitTimeUnscaledHandle handle) { while (handle.IsBusy()) { await Yield; } }
 
-        /// <summary></summary>
+        /// <summary>Provides the internal asynchronous loop for unscaled time-based waiting until the specified unscaled end time is reached.</summary>
         public static async Task WaitTimeUnscaledCore(double end) { while (WaitTimeUnscaledHandle.IsBusy(end)) { await Yield; } }
 
-        /// <summary></summary>
+        /// <summary>Represents a handle used to track an unscaled time-based wait operation without allocations.</summary>
         public readonly struct WaitTimeUnscaledHandle
         {
-            /// <summary></summary>
+            /// <summary>Calculates the target end time based on the current unscaled time and the specified duration in seconds.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static double End(float seconds) => Time.unscaledTimeAsDouble + seconds;
 
-            /// <summary></summary>
+            /// <summary>Determines whether the current unscaled time has not yet reached the specified end time.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool IsBusy(double end) => Time.unscaledTimeAsDouble < end;
 
@@ -121,7 +121,7 @@ namespace Omochaya
 
             // methods
 
-            /// <summary></summary>
+            /// /// <summary>Determines whether this handle is still waiting for the target unscaled duration to elapse.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool IsBusy() => IsBusy(this.end);
         }
@@ -347,7 +347,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Timeout(this Task self, float seconds) => Until(self, WaitTime(seconds));
 
-        /// <summary></summary>
+        /// <summary>Suspends the execution until the task completes or the specified unscaled timeout duration elapses.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task TimeoutUnscaled(this Task self, float seconds) => Until(self, WaitTimeUnscaled(seconds));
 

@@ -274,63 +274,40 @@ namespace Omochaya
         }
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-        // utils
-
-        /// <summary>A globally accessible token to await a single-frame yield.</summary>
-        public static YieldCore Yield => default;
-
-        // 即返却（await しない async メソッドの遅延実行用）
-        /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
-        public static VoidCore Void => default;
-
-        /// <summary>Expands the underlying task info pools to the specified initial capacity.</summary>
-        public static void SetInitialTaskCount(int count) => Pool<TaskInfo, TaskInfo2>.Shared.Expand(count);
-
-        /// <summary>Replaces the current task with a new one, anchoring it to a master component and booting it.</summary>
-        public static bool Boot(ref this Task self, Component master, Task task)
-        {
-            self.Free();
-            self = task;
-            return self.Boot(master);
-        }
-
-        /// <summary>Concurrently executes and awaits both tasks, providing a zero-allocation alternative to standard parallel combinators.</summary>
-        public static async Task With(this Task self, Task other)
-        {
-            while (true)
-            {
-                if (!self.MoveNext())
-                {
-                    while (other.MoveNext()) { await Yield; }
-                    return;
-                }
-                if (!other.MoveNext())
-                {
-                    do { await Yield; } while (self.MoveNext());
-                    return;
-                }
-                await Yield;
-            }
-        }
-
-        // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-        // 偽装nullチェック回避用
+        // 偽装nullチェック回避と一時停止対応用
 
         /// <summary>Defines a master object that governs the lifecycle and destruction state of associated tasks.</summary>
-        public interface ITaskMaster { bool IsDestroyed { get; set; } }
+        public interface ITaskMaster { bool IsDestroyed { get; set; } bool IsPaused { get; } }
 
         /// <summary>A base MonoBehaviour that implements ITaskMaster to manage tasks bound to its lifecycle.</summary>
         public class TaskBehaviour : MonoBehaviour, ITaskMaster // 実装漏れ回避用
         {
             protected virtual void OnDestroyed() {}
+            protected virtual void OnEnabled() {}
+            protected virtual void OnDisabled() {}
 
             public bool IsDestroyed { get; set; }
+            public bool IsPaused { get; set; }
 
-            // 派生クラスで OnDestroy を定義する場合は baseOnDestroy を呼び出してください。OnDestroy の代わりに OnDestroyed を定義すれば base 呼び出しは不要です。
+            // 派生クラスで OnDestroy を定義する場合は base.OnDestroy を呼び出してください。あるいは OnDestroy の代わりに OnDestroyed を定義すれば base 呼び出しは不要です。
             protected void OnDestroy()
             {
                 this.IsDestroyed = true;
                 OnDestroyed();
+            }
+
+            // 派生クラスで OnEnable を定義する場合は base.OnEnable を呼び出してください。あるいは OnEnable の代わりに OnEnabled を定義すれば base 呼び出しは不要です。
+            protected void OnEnable()
+            {
+                this.IsPaused = false;
+                OnEnabled();
+            }
+
+            // 派生クラスで OnDisable を定義する場合は base.OnDisable を呼び出してください。あるいは OnDisable の代わりに OnDisabled を定義すれば base 呼び出しは不要です。
+            protected void OnDisable()
+            {
+                this.IsPaused = true;
+                OnDisabled();
             }
         }
 
@@ -357,6 +334,16 @@ namespace Omochaya
         {
             self.GetExtra<E>() = extra;
         }
+
+        // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
+        // others
+
+        /// <summary>A globally accessible token to await a single-frame yield.</summary>
+        public static YieldCore Yield => default;
+
+        // 即返却（await しない async メソッドの遅延実行用）
+        /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
+        public static VoidCore Void => default;
     }
 }
 
@@ -1025,6 +1012,17 @@ namespace Omochaya.HiddenStory
             {
                 if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsDestroyed; }
                 return this.master == null;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly bool IsPaused
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsPaused; }
+                return false;
             }
         }
 

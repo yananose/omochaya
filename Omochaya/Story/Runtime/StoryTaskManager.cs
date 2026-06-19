@@ -479,84 +479,87 @@ Dev.LoopBreak.Check(prevRootInfo.GetMethodName());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool UnsafeInvoke(int topIndex) => Invoke(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex), topIndex);
+        bool UnsafeInvoke(int index) => Invoke(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index), index);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool Invoke(ref TaskInfo topInfo, int topIndex)
+        bool Invoke(ref TaskInfo info, int index)
         {
-            Dev.Assert(topInfo.HasOffset);
+            Dev.Assert(info.HasOffset);
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
 Dev.LoopBreak.Init();
             while (true)
             {
-Dev.LoopBreak.Check(topInfo.GetMethodName());
+Dev.LoopBreak.Check(info.GetMethodName());
 
-                if (!topInfo.IsPinned && topInfo.IsOrphaned) { topIndex = CancelOne(ref topInfo, topIndex); } // これ以降 info 参照禁止
-                else if (InvokeCore(ref topInfo, topIndex)) { return true; } // Yield 時
+                if (!info.IsPinned && info.IsOrphaned) { index = CancelOne(ref info, index); } // これ以降 info 参照禁止
+                else if (InvokeCore(ref info, index)) { return true; } // Yield 時
                 else
                 {
-                    topIndex = UnsafeFreeCore(topIndex); }
+                    index = UnsafeFreeCore(index); }
                     // ここで
                     // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
                     // 「(自身以外も含めて)手動タスクの offset が変わっている」
                     // 可能性がある
 
                 // 全て実行し終わった
-                if (topIndex < 0) { return false; }
+                if (index < 0) { return false; }
 
                 // 次へ
-                topInfo = ref pool.UnsafeGet(topIndex);
+                info = ref pool.UnsafeGet(index);
             }
         }
 
-        bool InvokeCore(ref TaskInfo topInfo, int topIndex)
+        bool InvokeCore(ref TaskInfo info, int index)
         {
-            if (topInfo.IsRunning) // ここが true になることはないはずだが...
+            if (info.IsRunning) // ここが true になることはないはずだが...
             {
-                Dev.LogError(string.Format(Messages.Warnings.RecursiveInvokeIgnored, topInfo.GetMethodName()));
+                Dev.LogError(string.Format(Messages.Warnings.RecursiveInvokeIgnored, info.GetMethodName()));
                 if (this.runningException == CanceledException.Shared)
                 {
                     Dev.LogWarning(Messages.Warnings.CancelPending);
                     this.runningException = null;
-                    topInfo.WillCancel = true;
+                    info.WillCancel = true;
                 }
                 return true; // 継続
             }
 
             var prev = this.runningIndex;
-            this.runningIndex = topIndex;
+            this.runningIndex = index;
 
-            topInfo.IsRunning = true;
-            topInfo.Run();
-            // ここで
-            // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-            // 「(自身以外も含めて)手動タスクの offset が変わっている」
-            // 可能性がある
-
-            topInfo = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex);
-            var isNotCompleted = topInfo.IsRunning;
-            topInfo.IsRunning = false;
-
-            if (topInfo.WillCancel)
+            info.IsRunning = true;
+            if (this.runningException != null || !info.IsPaused)
             {
-                topInfo.WillCancel = false;
+                info.Run();
+                    // ここで
+                    // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
+                    // 可能性がある
+                info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index);
+            }
+
+            var isNotCompleted = info.IsRunning;
+            info.IsRunning = false;
+
+            if (info.WillCancel)
+            {
+                info.WillCancel = false;
                 TryLogException();
                 if (isNotCompleted)
                 {
-                    Dev.Log(string.Format(Messages.Warnings.CancelExecutedAfterRun, topInfo.GetMethodName()));
+                    Dev.Log(string.Format(Messages.Warnings.CancelExecutedAfterRun, info.GetMethodName()));
                     this.runningException = CanceledException.Shared;
 
-                    topInfo.IsRunning = true;
-                    topInfo.Run();
+                    info.IsRunning = true;
+                    info.Run();
                     // ここで
                     // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
                     // 「(自身以外も含めて)手動タスクの offset が変わっている」
                     // 可能性がある
 
-                    topInfo = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex);
-                    isNotCompleted = topInfo.IsRunning;
-                    topInfo.IsRunning = false;
+                    info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index);
+                    isNotCompleted = info.IsRunning;
+                    info.IsRunning = false;
                 }
-                else { Dev.Log(string.Format(Messages.Warnings.CancelAbortedFinishedTask, topInfo.GetMethodName())); }
+                else { Dev.Log(string.Format(Messages.Warnings.CancelAbortedFinishedTask, info.GetMethodName())); }
             }
 
             this.runningIndex = prev;

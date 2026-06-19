@@ -21,7 +21,7 @@ namespace Omochaya.HiddenStory
     using UnityEngine;
     using UnityEngine.UIElements;
 
-    public class TaskMonitorForDebug : EditorWindow
+    class TaskMonitorForDebug : EditorWindow
     {
         /// <summary>Opens or focuses the custom Omochaya Task Monitor diagnostic editor window.</summary>
         [MenuItem("Window/Omochaya/Task Monitor")]

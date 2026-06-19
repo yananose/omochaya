@@ -1,8 +1,8 @@
 using UnityEngine;
 using Omochaya;
 
-public class StorySample : Story.TaskBehaviour // こちらだと Boot に指定した場合にタスクが高速化されます。OnDestroy が必要な場合は、代わりに OnDestroyed を override してください。
-// public class StorySample : MonoBehaviour
+public class StorySample : MonoBehaviour
+// public class StorySample : Story.TaskBehaviour // こちらだと Boot に指定した場合にタスクが高速化されます。OnDestroy が必要な場合は代わりに OnDestroyed を override してください。
 {
     const float Range = 500f;
     const float Speed = 250f;

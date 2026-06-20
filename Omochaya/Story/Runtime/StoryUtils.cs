@@ -21,7 +21,11 @@ namespace Omochaya
     {
         /// <summary>Expands the underlying task info pools to the specified initial capacity.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void SetInitialTaskCount(int count) => Pool<TaskInfo, TaskInfo2>.Shared.Expand(count);
+        public static void SetInitialTaskCount(int count)
+        {
+            Pool<TaskInfo, TaskInfo2>.Shared.Expand(count);
+            TaskManager.Shared.Expand(count); // 概ねプールと連動する。大抵は下回るが特殊な条件では上回る。
+        }
 
         /// <summary>Replaces the current task with a new one, anchoring it to a master component and booting it.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

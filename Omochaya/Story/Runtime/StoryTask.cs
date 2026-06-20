@@ -51,6 +51,14 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Update() => TaskManager.Shared.Update();
 
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LateUpdate() => TaskManager.Shared.LateUpdate();
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void FixedUpdate() => TaskManager.Shared.FixedUpdate();
+
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // タスク（ハンドラ）
 
@@ -341,6 +349,12 @@ namespace Omochaya
         /// <summary>A globally accessible token to await a single-frame yield.</summary>
         public static YieldCore Yield => default;
 
+        /// <summary></summary>
+        public static YieldLateCore YieldLate => default;
+
+        /// <summary></summary>
+        public static YieldFixedCore YieldFixed => default;
+
         // 即返却（await しない async メソッドの遅延実行用）
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
         public static VoidCore Void => default;
@@ -385,6 +399,7 @@ namespace Omochaya.HiddenStory
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
                 TaskManager.Shared.GetRunningInfo().IsWaiting = true;
+                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_MAIN;
                 return false;
             }
         }
@@ -397,6 +412,56 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         public YieldCore GetAwaiter() => this;
+    }
+
+    /// <summary>Don't touch! Only for system.</summary>
+    public readonly struct YieldLateCore : INotifyCompletion
+    {
+        /// <summary>Don't touch! Only for system.</summary>
+        public bool IsCompleted
+        {
+            get
+            {
+                Dev.Assert(TaskManager.Shared.IsRunningValid);
+                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
+                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_LATE;
+                return false;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public void GetResult() => TaskManager.Shared.GetResult();
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public void OnCompleted(Action continuation) { }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public YieldLateCore GetAwaiter() => this;
+    }
+
+    /// <summary>Don't touch! Only for system.</summary>
+    public readonly struct YieldFixedCore : INotifyCompletion
+    {
+        /// <summary>Don't touch! Only for system.</summary>
+        public bool IsCompleted
+        {
+            get
+            {
+                Dev.Assert(TaskManager.Shared.IsRunningValid);
+                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
+                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_FIXED;
+                return false;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public void GetResult() => TaskManager.Shared.GetResult();
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public void OnCompleted(Action continuation) { }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public YieldFixedCore GetAwaiter() => this;
     }
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -1119,9 +1184,9 @@ namespace Omochaya.HiddenStory
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
         /// <summary>Don't touch! Only for system.</summary>
-        public int SortKeyForDebug;
+        public long SortKeyForDebug;
         /// <summary>Don't touch! Only for system.</summary>
-        public bool IsAutoForDebug;
+        public string StateForDebug;
 #endif
 
         // properties

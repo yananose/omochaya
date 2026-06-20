@@ -68,6 +68,8 @@ namespace Omochaya.HiddenStory
             public const string TaskMonitor_AutoRefresh = "Auto Refresh";
             public const string TaskMonitor_StatAuto = "Auto: {0}";
             public const string TaskMonitor_StatManual = "Manual: {0}";
+            public const string TaskMonitor_StatLate = "Late: {0}";
+            public const string TaskMonitor_StatFixed = "Fixed: {0}";
             public const string TaskMonitor_StatWait = "Wait: {0}";
             public const string TaskMonitor_StatTotal = "Total: {0}";
 
@@ -148,6 +150,8 @@ namespace Omochaya.HiddenStory
             public const string TaskMonitor_AutoRefresh = "Auto Refresh";
             public const string TaskMonitor_StatAuto = "Auto: {0}";
             public const string TaskMonitor_StatManual = "Manual: {0}";
+            public const string TaskMonitor_StatLate = "Late: {0}";
+            public const string TaskMonitor_StatFixed = "Fixed: {0}";
             public const string TaskMonitor_StatWait = "Wait: {0}";
             public const string TaskMonitor_StatTotal = "Total: {0}";
 

@@ -58,14 +58,20 @@ namespace Omochaya.HiddenStory
             /// <summary>Fetches the current offset count of automated tasks from the shared task manager engine.</summary>
             public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoOffset;
 
-            /// <summary>Calculates the active offset count of manually driven tasks within the active execution window.</summary>
-            public static void GetManualCount(ref int count) => count = TaskManager.Shared.EndOffset - TaskManager.Shared.AutoOffset;
+            /// <summary>Fetches the active offset count of manually driven tasks within the active execution window.</summary>
+            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.MainTopCount - TaskManager.Shared.AutoOffset;
+
+            /// <summary></summary>
+            public static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
+
+            /// <summary></summary>
+            public static void FetchFixedCount(ref int count) => count = TaskManager.Shared.FixedTopCount;
 
             /// <summary>Extracts the binding lifecycle master component from the target task info block.</summary>
             public static void ExtractMaster(ref Component master, Story.Task task) => master = task.Info().Master;
 
             /// <summary>Retrieves the unique sorting layout key assigned to the specified debug task handle.</summary>
-            public static void GetOrder(ref int offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
+            public static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
 
             /// <summary>Traverses the entire linear execution tree of the task manager to compile a flat snapshot list of active tasks.</summary>
             public static void GetTaskList(List<Story.Task> outTasks)
@@ -73,19 +79,55 @@ namespace Omochaya.HiddenStory
                 var self = TaskManager.Shared;
                 outTasks.Clear();
                 var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                for (var i=0; i<self.EndOffset; ++i)
+                for (var i=0; i<self.MainTopCount; ++i)
                 {
-                    var index = self.IndexForDebug(i);
+                    var index = self.MainIndexForDebug(i);
                     if (index < 0) { continue; }
-                    var sortKey = i * 64;
                     ref var info = ref pool.UnsafeGet(index);
+                    var sortKey = ((long)info.Offset + 1) << 32;
 Dev.LoopBreak.Init();
                     do
                     {
 Dev.LoopBreak.Check(i.ToString());
                         ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.IsAutoForDebug = self.IsAuto(i);
                         info2.SortKeyForDebug = sortKey--;
+                        info2.StateForDebug = self.IsAutoForDebug(i) ? "Auto" : "Manual";
+                        outTasks.Add(Story.Task.UnsafeCreate(index));
+                        index = info.Next;
+                        info = ref pool.UnsafeGet(index);
+                    } while (info.HasPrev);
+                }
+                for (var i=0; i<self.LateTopCount; ++i)
+                {
+                    var index = self.LateIndexForDebug(i);
+                    if (index < 0) { continue; }
+                    ref var info = ref pool.UnsafeGet(index);
+                    var sortKey = ((long)info.Offset + 1) << 32;
+Dev.LoopBreak.Init();
+                    do
+                    {
+Dev.LoopBreak.Check(i.ToString());
+                        ref var info2 = ref pool.UnsafeGet2(index);
+                        info2.SortKeyForDebug = sortKey--;
+                        info2.StateForDebug = "Late";
+                        outTasks.Add(Story.Task.UnsafeCreate(index));
+                        index = info.Next;
+                        info = ref pool.UnsafeGet(index);
+                    } while (info.HasPrev);
+                }
+                for (var i=0; i<self.FixedTopCount; ++i)
+                {
+                    var index = self.FixedIndexForDebug(i);
+                    if (index < 0) { continue; }
+                    ref var info = ref pool.UnsafeGet(index);
+                    var sortKey = ((long)info.Offset + 1) << 32;
+Dev.LoopBreak.Init();
+                    do
+                    {
+Dev.LoopBreak.Check(i.ToString());
+                        ref var info2 = ref pool.UnsafeGet2(index);
+                        info2.SortKeyForDebug = sortKey--;
+                        info2.StateForDebug = "Fixed";
                         outTasks.Add(Story.Task.UnsafeCreate(index));
                         index = info.Next;
                         info = ref pool.UnsafeGet(index);
@@ -153,7 +195,7 @@ Dev.LoopBreak.Check(i.ToString());
             ref var info = ref self.Info();
             ref var info2 = ref self.Info2();
 
-            var stateStr = info2.IsAutoForDebug ? "Auto" : "Manual";
+            var stateStr = info2.StateForDebug;
             var methodName = info.IsValid ? info.GetMethodName() : string.Format(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age);
             if (info.HasException) { methodName += " -EXCEPTION"; }
             var masterName = GetMasterName(ref info);
@@ -184,7 +226,7 @@ Dev.LoopBreak.Check(i.ToString());
         public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo activeInfo, string message)
         {
             Assert(activeInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
-            Assert(!IsAuto(ref activeInfo), string.Format(message, activeInfo.GetMethodName()));
+            Assert(IsManualTask(ref activeInfo), string.Format(message, activeInfo.GetMethodName()));
         }
 
         /// <summary>Captures the current Unity PlayerLoop architecture layout and dumps its hierarchy to the log output.</summary>
@@ -207,6 +249,8 @@ Dev.LoopBreak.Check(i.ToString());
                 var type = typeof(T);
                 IsValid = type == typeof(Awaiter) ||
                         type == typeof(YieldCore) ||
+                        type == typeof(YieldLateCore) ||
+                        type == typeof(YieldFixedCore) ||
                         type == typeof(VoidCore) ||
                         (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Awaiter<>));
             }
@@ -228,13 +272,13 @@ Dev.LoopBreak.Check(i.ToString());
             if (info.IsOrphaned) { return Messages.DebugInfo.StateDead; }
             return info.Master.name;
         }
-        static bool IsAuto(ref TaskInfo info)
+        static bool IsManualTask(ref TaskInfo info)
         {
 LoopBreak.Init();
                 while (info.HasPrev) {
 LoopBreak.Check(info.GetMethodName());
                     info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(info.Prev); }
-                return TaskManager.Shared.IsAuto(info.Offset);
+                return TaskManager.Shared.IsManual(info.Offset);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
@@ -286,9 +330,11 @@ LoopBreak.Check(info.GetMethodName());
         public static class TaskMonitorAPI
         {
             [Conditional("DUMMY")] public static void FetchAutoCount(ref int count) {}
-            [Conditional("DUMMY")] public static void GetManualCount(ref int count) {}
+            [Conditional("DUMMY")] public static void FetchManualCount(ref int count) {}
+            [Conditional("DUMMY")] public static void FetchLateCount(ref int count) {}
+            [Conditional("DUMMY")] public static void FetchFixedCount(ref int count) {}
             [Conditional("DUMMY")] public static void ExtractMaster(ref Component master, Story.Task task) {}
-            [Conditional("DUMMY")] public static void GetOrder(ref int offset, Story.Task task) {}
+            [Conditional("DUMMY")] public static void GetOrder(ref long offset, Story.Task task) {}
             [Conditional("DUMMY")] public static void GetTaskList(List<Story.Task> outTasks) {}
         }
 

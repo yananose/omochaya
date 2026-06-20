@@ -42,6 +42,8 @@ namespace Omochaya.HiddenStory
         ListView listView;
         Label lblAutoCount;
         Label lblManualCount;
+        Label lblLateCount;
+        Label lblFixedCount;
         Label lblWaitingCount;
         Label lblTotalCount;
         HelpBox playModeHelpBox;
@@ -145,11 +147,15 @@ namespace Omochaya.HiddenStory
             
             this.lblAutoCount = new Label();
             this.lblManualCount = new Label { style = { marginLeft = 10 } };
+            this.lblLateCount = new Label { style = { marginLeft = 10 } };
+            this.lblFixedCount = new Label { style = { marginLeft = 10 } };
             this.lblWaitingCount = new Label { style = { marginLeft = 10 } };
             this.lblTotalCount = new Label { style = { marginLeft = 10 } };
             
             this.dashboard.Add(this.lblAutoCount);
             this.dashboard.Add(this.lblManualCount);
+            this.dashboard.Add(this.lblLateCount);
+            this.dashboard.Add(this.lblFixedCount);
             this.dashboard.Add(this.lblWaitingCount);
             this.dashboard.Add(this.lblTotalCount);
             rootVisualElement.Add(this.dashboard);
@@ -237,15 +243,21 @@ namespace Omochaya.HiddenStory
 
             var autoCount = 0;
             var manualCount = 0;
+            var lateCount = 0;
+            var fixedCount = 0;
             DevForEditor.TaskMonitorAPI.FetchAutoCount(ref autoCount);
-            DevForEditor.TaskMonitorAPI.GetManualCount(ref manualCount);
+            DevForEditor.TaskMonitorAPI.FetchManualCount(ref manualCount);
+            DevForEditor.TaskMonitorAPI.FetchLateCount(ref lateCount);
+            DevForEditor.TaskMonitorAPI.FetchFixedCount(ref fixedCount);
             this.lblAutoCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatAuto, autoCount);
             this.lblManualCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatManual, manualCount);
+            this.lblLateCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatLate, lateCount);
+            this.lblFixedCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatFixed, fixedCount);
 
             DevForEditor.TaskMonitorAPI.GetTaskList(this.allTasks);
             this.lblTotalCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatTotal, this.allTasks.Count);
 
-            var waitCount = this.allTasks.Count - (autoCount + manualCount);
+            var waitCount = this.allTasks.Count - (autoCount + manualCount + lateCount + fixedCount);
             this.lblWaitingCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatWait, waitCount);
 
             this.filteredTasks.Clear();
@@ -263,8 +275,8 @@ namespace Omochaya.HiddenStory
             this.filteredTasks.Sort((a, b) =>
             {
                 var result = 0;
-                var offsetA = 0;
-                var offsetB = 0;
+                var offsetA = 0L;
+                var offsetB = 0L;
                 Component masterA = null;
                 Component masterB = null;
                 switch (this.sortMode)

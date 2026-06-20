@@ -52,6 +52,20 @@ public class StorySample : MonoBehaviour
         // シングルトンの常駐するゲームオブジェクトがある場合は、その Update() でのみ呼び出すのが確実です。
         Story.Update();
     }
+    void LateUpdate()
+    {
+        // 全タクスを更新するので、毎フレーム１回だけ呼び出してください。
+        // 例えばここで呼ぶ場合は他のコンポーネントでは呼ばないでください。
+        // シングルトンの常駐するゲームオブジェクトがある場合は、その LateUpdate() でのみ呼び出すのが確実です。
+        Story.LateUpdate();
+    }
+    void FixedUpdate()
+    {
+        // 全タクスを更新するので、毎フレーム１回だけ呼び出してください。
+        // 例えばここで呼ぶ場合は他のコンポーネントでは呼ばないでください。
+        // シングルトンの常駐するゲームオブジェクトがある場合は、その FixedUpdate() でのみ呼び出すのが確実です。
+        Story.FixedUpdate();
+    }
 
     async Story.Task RootTask()
     {
@@ -183,6 +197,9 @@ public class StorySample : MonoBehaviour
                 position.x = x;
                 rt.anchoredPosition = position;
                 await Story.Yield;
+                // if ((Time.frameCount & 16) == 0) { await Story.Yield; }
+                // else if ((Time.frameCount & 32) == 0) { await Story.YieldLate; }
+                // else { await Story.YieldFixed; }
             }
         }
 

@@ -144,8 +144,8 @@ namespace Omochaya.HiddenStory
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var id = pool.Alloc();
             var offset = this.mainTopArray.Add(id.Index) | UPDATE_TYPE_MAIN;
-            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset, id.Index);
-            pool.UnsafeGet2(id.Index).Entry();
+            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
+            pool.UnsafeGet2(id.Index).Entry(id.Index);
             FrameCheck();
             // Dev.Log($"entry - {Task.UnsafeCreate(id.Index)}");
             return new Story.Task(id);
@@ -345,10 +345,11 @@ Dev.LoopBreak.Check(i.ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
             ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
 
             TryKeep(ref rootInfo);
 
-            var topIndex = rootInfo.Next;
+            var topIndex = rootInfo2.Next;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
 
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.AlreadyBooted);
@@ -363,7 +364,7 @@ Dev.LoopBreak.Check(i.ToString());
                 // 「(自身以外も含めて)手動タスクの offset が変わっている」
                 // 可能性がある
             {
-                if (LastAwaitType != UPDATE_TYPE_MAIN) { UnsafeSwitchUpdate(pool.UnsafeGet(rootIndex).Next); }
+                if (LastAwaitType != UPDATE_TYPE_MAIN) { UnsafeSwitchUpdate(pool.UnsafeGet2(rootIndex).Next); }
                 return true;
             }
 
@@ -457,8 +458,9 @@ Dev.LoopBreak.Check(i.ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
             ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
 
-            var topIndex = rootInfo.Next;
+            var topIndex = rootInfo2.Next;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
 
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotMoveNextAutoTask);
@@ -487,10 +489,11 @@ Dev.LoopBreak.Check(i.ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
             ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
 
             TryKeep(ref rootInfo);
 
-            var topIndex = rootInfo.Next;
+            var topIndex = rootInfo2.Next;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
 
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotAwaitAutoTask);
@@ -503,7 +506,7 @@ Dev.LoopBreak.Check(i.ToString());
                 // 可能性がある
             {
                 // 待たせる状態へ
-                UnsafePushTaskChain(rootIndex, this.runningIndex);
+                UnsafeLink(rootIndex, this.runningIndex);
 
                 // Invoke 内で設定された AwaitType をそのまま呼び出し元へ渡す。呼び出し元が自動タスクならそこで SwitchUpdate される。
                 // Boot で AwaitType が書き換わっていてもその後で await Yield されている（されてなければタスクが終了しているのでここにはこない）。
@@ -518,41 +521,85 @@ Dev.LoopBreak.Check(i.ToString());
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void UnsafePushTaskChain(int prevRootIndex, int nextIndex)
+        void UnsafeLink(int prevRootIndex, int nextTopIndex)
         {
+            // 必要な情報取得
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            ref var prevRootInfo = ref pool.UnsafeGet(prevRootIndex);
-            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
+            ref var prevRootInfo2 = ref pool.UnsafeGet2(prevRootIndex);
+            ref var nextTopInfo2 = ref pool.UnsafeGet2(nextTopIndex);
+            var prevTopIndex = prevRootInfo2.Next;
+            var nextRootIndex = nextTopInfo2.Prev;
 
-            // await される側
-            var prevActiveIndex = prevRootInfo.Next;
-            ref var prevActiveInfo = ref pool.UnsafeGet(prevActiveIndex);
-            var oldOffset = prevActiveInfo.Offset;
-            Dev.Assert(0 <= oldOffset, string.Format(Messages.Exceptions.DoubleAwait, prevRootInfo.GetMethodName(), nextInfo.GetMethodName()));
+            // 隣同士をつなぐ
+            prevRootInfo2.Next = nextTopIndex;
+            nextTopInfo2.Prev = prevRootIndex;
 
-            // await する側
-            var newOffset = nextInfo.Offset;
-            Dev.Assert(0 <= newOffset, string.Format(Messages.Exceptions.AwaitingWhileAwaited, prevRootInfo.GetMethodName(), nextInfo.GetMethodName()));
-            nextInfo.IsWaiting = true; // 待機状態に
+            // リングをつなぐ
+            pool.UnsafeGet2(prevTopIndex).Prev = nextRootIndex;
+            pool.UnsafeGet2(nextRootIndex).Next = prevTopIndex;
 
-            // 繋ぎ変え
-            SetTaskIndex(oldOffset, -1);
-            SetTaskIndex(newOffset, prevActiveIndex);
-            prevActiveInfo.Offset = newOffset;
-            nextInfo.SetPrev(prevRootIndex);
-            prevRootInfo.Next = nextIndex;
+            // topArray の繋ぎ変え：情報取得
+            ref var prevTopInfo = ref pool.UnsafeGet(prevTopIndex);
+            ref var nextTopInfo = ref pool.UnsafeGet(nextTopIndex);
+            Dev.Assert(prevTopInfo.HasOffset, string.Format(Messages.Exceptions.DoubleAwait, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            Dev.Assert(nextTopInfo.HasOffset, string.Format(Messages.Exceptions.AwaitingWhileAwaited, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            var prevOffset = prevTopInfo.Offset;
+            var nextOffset = nextTopInfo.Offset;
+
+            // topArray の繋ぎ変え：実行
+            SetTaskIndex(prevOffset, -1);
+            SetTaskIndex(nextOffset, prevTopIndex);
+            prevTopInfo.Offset = nextOffset;
+            nextTopInfo.Offset = -1;
+
+            // 待機状態に
+            nextTopInfo.IsWaiting = true;
 
             // 生存チェック情報を先頭へ反映
-            prevActiveInfo.IsPinned = nextInfo.IsPinned;
-            if (IsManual(newOffset)) { pool.UnsafeGet2(prevActiveIndex).ManualNode = pool.UnsafeGet2(nextIndex).ManualNode; }
+            prevTopInfo.IsPinned = nextTopInfo.IsPinned;
+            if (IsManual(nextOffset)) { pool.UnsafeGet2(prevTopIndex).ManualNode = pool.UnsafeGet2(nextTopIndex).ManualNode; }
+        }
 
-            // 最後の Next に先頭を入れる（PrevとOffsetを共存させてるのでこんなことに...）
-Dev.LoopBreak.Init();
-            while(nextInfo.Next != nextIndex) {
-Dev.LoopBreak.Check(prevRootInfo.GetMethodName());
-                nextInfo = ref pool.UnsafeGet(nextInfo.Next); }
-            nextInfo.Next = prevActiveIndex;
+        int UnsafeUnlink(int index) // 削除前提
+        {
+            // 必要な情報取得
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            ref var info = ref pool.UnsafeGet(index);
+            ref var info2 = ref pool.UnsafeGet2(index);
+            var offset = info.Offset;
+            int prevIndex = info2.Prev;
+
+            // 単体なら topArray から外すだけ
+            if (prevIndex == index)
+            {
+                SetTaskIndex(offset, -1);
+                return -1;
+            }
+
+            // リングから外す
+            int nextIndex = info2.Next;
+            ref var prevInfo2 = ref pool.UnsafeGet2(prevIndex);
+            ref var nextInfo2 = ref pool.UnsafeGet2(nextIndex);
+            prevInfo2.Next = nextIndex;
+            nextInfo2.Prev = prevIndex;
+
+            // Invoke連鎖で次に実行すべき対象（それ以外から呼ばれたときは不要）
+            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
+            var ret = nextInfo.HasOffset ? -1 : nextIndex;
+
+            // 先頭の責務
+            if (0 <= offset)
+            {
+                // topArtray に反映
+                SetTaskIndex(offset, nextIndex);
+                nextInfo.Offset = offset;
+
+                // 生存チェック情報を渡す
+                nextInfo.IsPinned = info.IsPinned;
+                if (IsManual(offset)) { nextInfo2.ManualNode = info2.ManualNode; }
+            }
+
+            return ret;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -707,69 +754,16 @@ Dev.LoopBreak.Check(info.GetMethodName());
             return isNotCompleted;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int UnsafeFreeCore(int topIndex) => FreeCore(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex), topIndex);
-        int FreeCore(ref TaskInfo topInfo, int topIndex)
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        int UnsafeFreeCore(int index)
         {
             // Dev.Log($"free - {Task.UnsafeCreate(topIndex)}");
-            var nextIndex = Unlink(ref topInfo, topIndex);
-            topInfo.Free();
-            Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(topIndex).Free();
-            Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeFree(topIndex);
-            return nextIndex;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int Unlink(ref TaskInfo info, int index) // 削除前提でリンクを切る
-        {
-            var offset = info.Offset;
-            var nextIndex = info.Next;
-
-            // 自身のみの場合
-            if (index == nextIndex)
-            {
-                SetTaskIndex(offset, -1);
-                return -1;
-            }
-
+            var nextIndex = UnsafeUnlink(index);
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
-
-            // 先頭ではない場合（先頭のタスクに対してしか呼ばれないはずだが一応）
-            if (offset < 0)
-            {
-                var prevIndex = info.Prev;
-                ref var prevInfo = ref pool.UnsafeGet(prevIndex);
-                prevInfo.Next = nextIndex;
-                if (nextInfo.HasOffset) { return -1; }
-                nextInfo.Prev = prevIndex;
-                return nextIndex;
-            }
-
-            // 先頭の場合
-            // 次を先頭へ
-            PopTopTask(offset, ref info, index, ref nextInfo, nextIndex);
+            pool.UnsafeGet(index).Free();
+            pool.UnsafeGet2(index).Free();
+            pool.UnsafeFree(index);
             return nextIndex;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void PopTopTask(int offset, ref TaskInfo oldInfo, int oldIndex, ref TaskInfo newInfo, int newIndex) // old と new は連続していること！
-        {
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-
-            // 繋ぎ変え
-            SetTaskIndex(offset, newIndex);
-            newInfo.SetOffset(offset);
-
-            // 生存チェック情報を先頭へ反映
-            newInfo.IsPinned = oldInfo.IsPinned;
-            if (IsManual(offset)) { pool.UnsafeGet2(newIndex).ManualNode = pool.UnsafeGet2(oldIndex).ManualNode; }
-
-            // 最後の Next に先頭を入れる（PrevとOffsetを共存させてるのでこんなことに...）
-Dev.LoopBreak.Init();
-            while(newInfo.Next != oldIndex) {
-Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
-                newInfo = ref pool.UnsafeGet(newInfo.Next); }
-            newInfo.Next = newIndex;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -786,19 +780,19 @@ Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
                 topInfo.WillCancel = true;
                 Dev.Log(string.Format(Messages.Warnings.CancelPendingWhileRunning, topInfo.GetMethodName()));
                 // キャンセル準備（単体で切り離して自動タスク化）だけはしておく
-                return PrepareCancel(ref topInfo, topIndex);
+                return UnsafePrepareCancel(topIndex);
             }
 
             // 他を待ってない（初期状態）ならそのまま解放（多分このケースはないが一応）
             if (!topInfo.IsWaiting)
             {
                 var offset = topInfo.Offset;
-                FreeCore(ref topInfo, topIndex);
+                UnsafeFreeCore(topIndex);
                 return GetTaskIndex(offset);
             }
 
             // キャンセル準備
-            var nextIndex = PrepareCancel(ref topInfo, topIndex);
+            var nextIndex = UnsafePrepareCancel(topIndex);
             if (this.runningException != null) { Dev.LogException(this.runningException); }
             this.runningException = CanceledException.Shared;
 
@@ -817,30 +811,33 @@ Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
             return nextIndex;
         }
 
-        int PrepareCancel(ref TaskInfo topInfo, int topIndex)
+        int UnsafePrepareCancel(int index)
         {
-            var offset = topInfo.Offset;
-            var nextIndex = topInfo.Next;
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            if (topIndex == nextIndex) // 単独
+            ref var info = ref pool.UnsafeGet(index);
+            ref var info2 = ref pool.UnsafeGet2(index);
+            var offset = info.Offset;
+            int nextIndex = info2.Next;
+
+            if (index == nextIndex) // 単独
             {
                 nextIndex = -1;
-                MakeAuto(ref topInfo);
+                MakeAuto(ref info);
             }
             else
             {
                 // topInfo を単体で切り離して（topInfoが宙ぶらりんになる）
-                PopTopTask(offset, ref topInfo, topIndex, ref pool.UnsafeGet(nextIndex), nextIndex);
-                topInfo.Next = topIndex; // PopTopTask は削除前提なので全メンバが更新されない。topInfoはこの後も使うので更新しておく。
+                UnsafeUnlink(index);
+                info2.Next = index; // PopTopTask は削除前提なので全メンバが更新されない。topInfoはこの後も使うので更新しておく。
 
                 // 自動タスクへ
                 var swapRawOffset = GetSwapRawOffset(); // topInfo の移動先
                 var swapIndex = this.mainTopArray[swapRawOffset];
                 if (0 <= swapIndex) { pool.UnsafeGet(swapIndex).Offset = this.mainTopArray.Add(swapIndex) | UPDATE_TYPE_MAIN; } // 移動先にタスクがあればそれを末尾に移動
-                this.mainTopArray[swapRawOffset] = topIndex;
-                topInfo.Offset = swapRawOffset | UPDATE_TYPE_MAIN;
+                this.mainTopArray[swapRawOffset] = index;
+                info.Offset = swapRawOffset | UPDATE_TYPE_MAIN;
             }
-            topInfo.IsPinned = true;
+            info.IsPinned = true;
             return nextIndex;
         }
 
@@ -854,10 +851,10 @@ Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
 
             // 先頭から
 Dev.LoopBreak.Init();
-            while (info.HasPrev)
+            while (!info.HasOffset)
             {
 Dev.LoopBreak.Check(task.ToString());
-                index = info.Prev;
+                index = pool.UnsafeGet2(index).Prev;
                 info = ref pool.UnsafeGet(index);
             }
 

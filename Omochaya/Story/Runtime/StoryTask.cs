@@ -398,8 +398,7 @@ namespace Omochaya.HiddenStory
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_MAIN;
+                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_AUTO;
                 return false;
             }
         }
@@ -423,7 +422,6 @@ namespace Omochaya.HiddenStory
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
                 TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_LATE;
                 return false;
             }
@@ -448,7 +446,6 @@ namespace Omochaya.HiddenStory
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
                 TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_FIXED;
                 return false;
             }
@@ -540,7 +537,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public R GetResult() => TaskManager.Shared.GetResult<R>(this.task);
+        public R GetResult() => TaskManager.Shared.GetResult<R>();
 
         /// <summary>Don't touch! Only for system.</summary>
         public void OnCompleted(Action continuation) { }
@@ -933,7 +930,7 @@ namespace Omochaya.HiddenStory
         {
             None = 0,
             IsValid = 1 << 0,
-            IsWaiting = 1 << 1,
+            IsUsing = 1 << 1,
             HasException = 1 << 2,
             IsFastMaster = 1 << 3,
             IsPinned = 1 << 4,
@@ -959,12 +956,12 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public bool IsWaiting
+        public bool IsUsing
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.IsWaiting) != 0;
+            readonly get => (this.flags & Flags.IsUsing) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsWaiting; } else { this.flags &= ~Flags.IsWaiting; } }
+            set { if (value) { this.flags |= Flags.IsUsing; } else { this.flags &= ~Flags.IsUsing; } }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1027,6 +1024,7 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
+                if (IsPinned) { return false; }
                 if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsDestroyed; }
                 return this.master == null;
             }
@@ -1060,7 +1058,6 @@ namespace Omochaya.HiddenStory
         {
             Dev.Assert(IsValid);
             Dev.Assert(!(master is null), Messages.Exceptions.MasterCannotBeNull);
-            Dev.Assert(!IsWaiting); // 一度でも MoveNext を実行したら master の変更は禁止する（判定が不完全）
             this.master = master;
             IsFastMaster = master is Story.ITaskMaster;
         }
@@ -1075,7 +1072,11 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Run() => this.stateMachine.MoveNext();
+        public void Run()
+        {
+            IsUsing = true;
+            this.stateMachine.MoveNext();
+        }
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

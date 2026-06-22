@@ -56,10 +56,10 @@ namespace Omochaya.HiddenStory
         public static class TaskMonitorAPI
         {
             /// <summary>Fetches the current offset count of automated tasks from the shared task manager engine.</summary>
-            public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoOffset;
+            public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoTopCount;
 
             /// <summary>Fetches the active offset count of manually driven tasks within the active execution window.</summary>
-            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.MainTopCount - TaskManager.Shared.AutoOffset;
+            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.ManualTopCount;
 
             /// <summary></summary>
             public static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
@@ -78,61 +78,44 @@ namespace Omochaya.HiddenStory
             {
                 var self = TaskManager.Shared;
                 outTasks.Clear();
-                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                for (var i=0; i<self.MainTopCount; ++i)
+                for (var i=0; i<self.ManualTopCount; ++i)
                 {
-                    var index = self.MainIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = self.IsAutoForDebug(i) ? "Auto" : "Manual";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info2.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (!info.HasOffset);
+                    var index = self.ManualIndexForDebug(i);
+                    TaskListAdd(outTasks, index, "Manual");
+                }
+                for (var i=0; i<self.AutoTopCount; ++i)
+                {
+                    var index = self.AutoIndexForDebug(i);
+                    TaskListAdd(outTasks, index, "Auto");
                 }
                 for (var i=0; i<self.LateTopCount; ++i)
                 {
                     var index = self.LateIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = "Late";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info2.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (!info.HasOffset);
+                    TaskListAdd(outTasks, index, "Late");
                 }
                 for (var i=0; i<self.FixedTopCount; ++i)
                 {
                     var index = self.FixedIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = "Fixed";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info2.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (!info.HasOffset);
+                    TaskListAdd(outTasks, index, "Fixed");
                 }
+            }
+            static void TaskListAdd(List<Story.Task> outTasks, int index, string state)
+            {
+                if (index < 0) { return; }
+                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+                ref var info = ref pool.UnsafeGet(index);
+                var sortKey = ((long)info.Offset + 1) << 32;
+Dev.LoopBreak.Init();
+                do
+                {
+Dev.LoopBreak.Check(index.ToString());
+                    ref var info2 = ref pool.UnsafeGet2(index);
+                    info2.SortKeyForDebug = sortKey--;
+                    info2.StateForDebug = state;
+                    outTasks.Add(Story.Task.UnsafeCreate(index));
+                    index = info2.Next;
+                    info = ref pool.UnsafeGet(index);
+                } while (!info.HasOffset);
             }
         }
     }
@@ -200,11 +183,12 @@ Dev.LoopBreak.Check(i.ToString());
             if (info.HasException) { methodName += " -EXCEPTION"; }
             var masterName = GetMasterName(ref info);
 
+            var offset = info.HasOffset ? (info.Offset & ~TaskManager.UPDATE_TYPE_MASK).ToString() : "w";
             var prevIndex = info.HasOffset ? -1 : info2.Prev;
             var nextIndex = info2.Next;
             if (Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
 
-            return $"{stateStr} ({ToDebugString(info.Offset)}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
+            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
         }
         public static class Type<T> { public static string Name = GetTypeName(typeof(T)); }
         public static class Pool<T> { public static string Name = "[Pool] " + Type<T>.Name; }

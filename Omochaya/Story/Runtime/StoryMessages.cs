@@ -33,7 +33,6 @@ namespace Omochaya.HiddenStory
             public const string AwaitingWhileAwaited = "await しているのに await した：[{0}] - [{1}]";
             public const string LockCapacityExceeded = "EnterLock で宣言した数を超えた割り当てが発生";
             public const string TaskCanceled = "タスクがキャンセルされました。";
-            public const string LockCountNegative = "ロックカウントがマイナスになりました！";
         }
 
         // ------------------------------------------------------------------------
@@ -41,11 +40,6 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         public static class Warnings
         {
-            public const string ResultOverwritten = "格納していた結果を受け取る前に次の結果が格納された：{0}";
-            public const string ResultNotFound = "結果を取得できなかった：{0}";
-            public const string RecursiveInvokeIgnored = "再帰実行しようとしたので無視します：{0}";
-            public const string CancelPending = "キャンセルされようとしていたのでこの実行が終わり次第、キャンセルを実行します";
-            public const string CancelExecutedAfterRun = "実行が終わったので、キャンセルを実行します：{0}";
             public const string CancelAbortedFinishedTask = "タスクが終点まで実行されたので、予定していたキャンセルの実行は中止します：{0}";
             public const string CancelPendingWhileRunning = "キャンセルを指示されましたがタスクが動作中なので、終わり次第キャンセルを実行します：{0}";
             public const string CancelFailedTaskRunning = "キャンセルしたのに終了しませんでした。続きは自動タスクで処理します。以降はmasterを無視するので責任を持って終了させてください：{0}";
@@ -115,7 +109,6 @@ namespace Omochaya.HiddenStory
             public const string AwaitingWhileAwaited = "Attempted to await while currently awaiting: [{0}] - [{1}]";
             public const string LockCapacityExceeded = "Allocation exceeded the reserve count declared in EnterLock.";
             public const string TaskCanceled = "Task was canceled.";
-            public const string LockCountNegative = "Lock count went negative!";
         }
 
         // ------------------------------------------------------------------------
@@ -123,11 +116,6 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         public static class Warnings
         {
-            public const string ResultOverwritten = "The next result was stored before the previous result was retrieved: {0}";
-            public const string ResultNotFound = "Failed to retrieve the result: {0}";
-            public const string RecursiveInvokeIgnored = "Ignored attempt to invoke recursively: {0}";
-            public const string CancelPending = "A cancellation was pending, so it will be executed as soon as this run completes.";
-            public const string CancelExecutedAfterRun = "Execution has completed, executing cancellation: {0}";
             public const string CancelAbortedFinishedTask = "Task has executed to the end, aborting the scheduled cancellation: {0}";
             public const string CancelPendingWhileRunning = "Cancellation requested while the task is running; it will be canceled upon completion: {0}";
             public const string CancelFailedTaskRunning = "Task did not finish despite being canceled. The remainder will be processed as an auto-task. The master will be ignored from now on, so please ensure it is terminated properly: {0}";

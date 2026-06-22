@@ -964,7 +964,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                 // 他所でやれ
                 if (offset == info.Offset)
                 {
-                    info.Offset = this.autoTopArray.Add(topIndex);
+                    info.Offset = this.autoTopArray.Add(topIndex) | UPDATE_TYPE_AUTO;
                     this.autoTopArray[offset & ~UPDATE_TYPE_MASK] = -1;
                 }
             }
@@ -1010,7 +1010,7 @@ Dev.LoopBreak.Check(task.ToString());
                     // 他所でやれ
                     if (offset == topInfo.Offset)
                     {
-                        topInfo.Offset = this.autoTopArray.Add(topIndex);
+                        topInfo.Offset = this.autoTopArray.Add(topIndex) | UPDATE_TYPE_AUTO;
                         this.autoTopArray[offset & ~UPDATE_TYPE_MASK] = -1;
                     }
                 }

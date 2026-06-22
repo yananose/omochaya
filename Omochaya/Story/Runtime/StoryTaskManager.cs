@@ -48,17 +48,50 @@ namespace Omochaya.HiddenStory
             public readonly int Count => this.count;
 
             // methods
-            public int Add(int offset)
+            public int Add(int index)
             {
                 var count = this.count;
                 if (this.array == null) { Story.Pool.Create(ref this.array); }
                 else if (0 < count && this.array[count - 1] == -1) { count--; } // 最後が空いてたら入れる（頻度次第だが後で詰め直すよりここで判定したほうがマシなはず）
                 else if (count == this.array.Length) { Story.Pool.Expand(ref this.array); }
-                this.array[count] = offset;
+                this.array[count] = index;
                 this.count = count + 1;
                 return count;
             }
-            public bool IsInRange(int index) => (uint)index < this.count;
+            public void SetCount(int count) => this.count = count;
+            public void Expand(int count) => Story.Pool.Expand(ref this.array, count);
+        }
+        struct ManualTopArray
+        {
+            // inner classes
+            public struct Slot
+            {
+                public Story.Task Caller;
+                public int Index;
+                // 4 バイトの空き
+            }
+
+            // fields
+            Slot[] array;
+            int count;
+
+            // overrides
+            public ref Slot this[int index] => ref this.array[index];
+
+            // properties
+            public readonly int Count => this.count;
+
+            // methods
+            public int Add(int index)
+            {
+                var count = this.count;
+                if (this.array == null) { Story.Pool.Create(ref this.array); }
+                else if (0 < count && this.array[count - 1].Index == -1) { count--; } // 最後が空いてたら入れる（頻度次第だが後で詰め直すよりここで判定したほうがマシなはず）
+                else if (count == this.array.Length) { Story.Pool.Expand(ref this.array); }
+                this.array[count] = new Slot { Index = index };
+                this.count = count + 1;
+                return count;
+            }
             public void SetCount(int count) => this.count = count;
             public void Expand(int count) => Story.Pool.Expand(ref this.array, count);
         }
@@ -72,7 +105,7 @@ namespace Omochaya.HiddenStory
         public const int UPDATE_TYPE_FIXED = 3 << UPDATE_TYPE_SHIFT; // FixedUpdate更新
 
         // fields
-        TopArray manualTopArray;
+        ManualTopArray manualTopArray;
         TopArray autoTopArray;
         TopArray lateTopArray;
         TopArray fixedTopArray;
@@ -246,33 +279,32 @@ namespace Omochaya.HiddenStory
             topArray.SetCount(rawOffset);
         }
 
-        void TopArrayCheckNecessity(ref TopArray topArray, int updateType)
+        void TopArrayCheckNecessity(ref ManualTopArray topArray, int updateType)
         {
             var rawOffset = 0;
             var end = topArray.Count;
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             for (var i=0; i<end; ++i)
             {
-                var index = topArray[i];
-                if (UnsafeCheckNecessity(index)) { continue; }
-                pool.UnsafeGet(index).Offset = rawOffset | updateType;
-                topArray[rawOffset++] = index;
+                ref var slot = ref topArray[i]; // 微妙なサイズ
+                if (UnsafeCheckNecessity(slot.Index, slot.Caller)) { continue; }
+                pool.UnsafeGet(slot.Index).Offset = rawOffset | updateType;
+                topArray[rawOffset++] = slot;
             }
             topArray.SetCount(rawOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool UnsafeCheckNecessity(int topIndex)
+        bool UnsafeCheckNecessity(int topIndex, Story.Task caller)
         {
             if (topIndex < 0) { return true; }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            var node = pool.UnsafeGet2(topIndex).ManualNode;
-            if (node.IsEmpty)
+            if (caller.IsEmpty)
             {
                 if (!pool.UnsafeGet(topIndex).IsOrphaned) { return false; } // 完全に未使用ならここで IsOrphaned をチェックして孤立していれば削除する。未使用なのでチェインにはなってない。
             }
-            else if (node.IsValid) { return false; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
+            else if (caller.IsValid) { return false; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
 
             // チェインをたどりながらバラしてキャンセル処理する。
             // チェイン状態になってるのは MoveNext の呼び出し元が解放されたときなので残す必要はない。
@@ -315,10 +347,18 @@ Dev.LoopBreak.Check(topIndex.ToString());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int TopArrayGet(int offset) => GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK];
+        int TopArrayGet(int offset)
+        {
+            if ((offset & UPDATE_TYPE_MASK) == UPDATE_TYPE_MANUAL) { return this.manualTopArray[offset].Index; }
+            else { return GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK]; }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void TopArraySet(int offset, int index) => GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK] = index;
+        void TopArraySet(int offset, int index)
+        {
+            if ((offset & UPDATE_TYPE_MASK) == UPDATE_TYPE_MANUAL) { this.manualTopArray[offset].Index = index; }
+            else { GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK] = index; }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ref TopArray GetTopArray(int offset)
@@ -330,12 +370,12 @@ Dev.LoopBreak.Check(topIndex.ToString());
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         ref TopArray GetTopArrayCore(int updateType)
         {
+            Dev.Assert(updateType != UPDATE_TYPE_MANUAL);
             switch (updateType)
             {
-                case UPDATE_TYPE_AUTO : return ref this.autoTopArray;
                 case UPDATE_TYPE_LATE : return ref this.lateTopArray;
                 case UPDATE_TYPE_FIXED : return ref this.fixedTopArray;
-                default : return ref this.manualTopArray;
+                default : return ref this.autoTopArray;
             }
         }
 
@@ -456,7 +496,7 @@ Dev.LoopBreak.Check(topIndex.ToString());
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotMoveNextAutoTask);
 
             // 呼び出し元を設定（結局復元してる...）
-            pool.UnsafeGet2(topIndex).ManualNode = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
+            this.manualTopArray[topInfo.Offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
 
             // 実行
             if (UnsafeInvokeChain(topIndex))
@@ -569,7 +609,6 @@ Dev.LoopBreak.Check(topIndex.ToString());
 
             // 生存チェック情報を先頭へ反映
             prevTopInfo.IsPinned = nextTopInfo.IsPinned;
-            if (IsManual(nextOffset)) { pool.UnsafeGet2(prevTopIndex).ManualNode = pool.UnsafeGet2(nextTopIndex).ManualNode; }
         }
 
         void UnsafeUnlink(int index) // 削除前提。配列拡張などは発生しない
@@ -605,7 +644,6 @@ Dev.LoopBreak.Check(topIndex.ToString());
 
             // 次へ生存チェック情報を渡す
             nextInfo.IsPinned = info.IsPinned;
-            if (IsManual(offset)) { nextInfo2.ManualNode = info2.ManualNode; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -999,7 +1037,7 @@ Dev.LoopBreak.Check(task.ToString());
         }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        public int ManualIndexForDebug(int rawOffset) => this.manualTopArray[rawOffset];
+        public int ManualIndexForDebug(int rawOffset) => this.manualTopArray[rawOffset].Index;
         public int AutoIndexForDebug(int rawOffset) => this.autoTopArray[rawOffset];
         public int LateIndexForDebug(int rawOffset) => this.lateTopArray[rawOffset];
         public int FixedIndexForDebug(int rawOffset) => this.fixedTopArray[rawOffset];

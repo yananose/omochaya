@@ -1114,10 +1114,6 @@ namespace Omochaya.HiddenStory
         Story.PoolMemory extra;
         public int Prev; // 子タスクの方向
         public int Next; // 親タスクの方向
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public Story.Task ManualNode; // 自身が手動タスクの場合、自身を呼び出したタスク
-
         Flags flags;
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST

@@ -53,11 +53,15 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LateUpdate() => TaskManager.Shared.LateUpdate();
+        public static void LateUpdate() => TaskManager.Shared.BandUpdate(1);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void FixedUpdate() => TaskManager.Shared.FixedUpdate();
+        public static void FixedUpdate() => TaskManager.Shared.BandUpdate(2);
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void BandUpdate(int bandNo) => TaskManager.Shared.BandUpdate(bandNo);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,6 +93,13 @@ namespace Omochaya
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get => !IsEmpty && Pool<TaskInfo, TaskInfo2>.Shared.IsValid(this.Id);
+            }
+
+            /// <summary></summary>
+            public bool WillCancel
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => this.Info().WillCancel;
             }
 
             // constructors
@@ -226,6 +237,13 @@ namespace Omochaya
                 get => this.rawTask.IsValid;
             }
 
+            /// <summary></summary>
+            public bool WillCancel
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => this.rawTask.WillCancel;
+            }
+
             // constructors
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Task(Task naked)
@@ -351,13 +369,16 @@ namespace Omochaya
         // others
 
         /// <summary>A globally accessible token to await a single-frame yield.</summary>
-        public static YieldCore Yield => default;
+        public static YieldCore Yield => new(0);
 
         /// <summary></summary>
-        public static YieldLateCore YieldLate => default;
+        public static YieldCore YieldLate => new(1);
 
         /// <summary></summary>
-        public static YieldFixedCore YieldFixed => default;
+        public static YieldCore YieldFixed => new(2);
+
+        /// <summary></summary>
+        public static YieldCore YieldNo(int bandNo) => new(bandNo);
 
         // 即返却（await しない async メソッドの遅延実行用）
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
@@ -396,73 +417,34 @@ namespace Omochaya.HiddenStory
     /// <summary>Don't touch! Only for system.</summary>
     public readonly struct YieldCore : INotifyCompletion
     {
+        readonly int bandNo;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public YieldCore(int bandNo) { this.bandNo = bandNo; }
+
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_AUTO;
+                TaskManager.Shared.LastAwaitBandNo = this.bandNo;
                 return false;
             }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public YieldCore GetAwaiter() => this;
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct YieldLateCore : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_LATE;
-                return false;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public YieldLateCore GetAwaiter() => this;
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct YieldFixedCore : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_FIXED;
-                return false;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public YieldFixedCore GetAwaiter() => this;
     }
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -471,6 +453,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -479,12 +462,15 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VoidCore GetAwaiter() => this;
     }
 
@@ -498,6 +484,7 @@ namespace Omochaya.HiddenStory
         public readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
@@ -505,6 +492,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -513,9 +501,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void OnCompleted(Action continuation) { }
     }
 
@@ -526,6 +516,7 @@ namespace Omochaya.HiddenStory
         public readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
@@ -533,6 +524,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -541,9 +533,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public R GetResult() => TaskManager.Shared.GetResult<R>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
     }
 
@@ -568,7 +562,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly object Current => null;
+        public readonly object Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => null;
+        }
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1028,6 +1026,7 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
+                if (WillCancel) { return true; }
                 if (IsPinned) { return false; }
                 if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsDestroyed; }
                 return this.master == null;
@@ -1064,6 +1063,7 @@ namespace Omochaya.HiddenStory
             Dev.Assert(!(master is null), Messages.Exceptions.MasterCannotBeNull);
             this.master = master;
             IsFastMaster = master is Story.ITaskMaster;
+            IsPinned = false; // ピン留め外してマスター依存に戻す
         }
 
         /// <summary>Don't touch! Only for system.</summary>

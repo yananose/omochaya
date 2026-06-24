@@ -1,6 +1,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 // <copyright file="StoryMessages.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
+//   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
 //   Centralizes all system messages, warnings, and UI text to facilitate future localization.
@@ -20,6 +21,7 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         public static class Exceptions
         {
+            public const string NotSupportedBandUpdate = "Manual と Auto は Story.Update で処理されます。 BandUpdate は対応していません：{0}";
             public const string NotSupportedAwait = "Story.Task 内で外部のタスク({0})を await することはサポートされていません。";
             public const string InfiniteLoop = "無限ループ:{0}(RunningTask.Name:{1})";
             public const string AlreadyAwaited = "{0}:他のタスクに await されている";
@@ -96,6 +98,7 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         public static class Exceptions
         {
+            public const string NotSupportedBandUpdate = "：{0}";
             public const string NotSupportedAwait = "Awaiting external tasks ({0}) inside Story.Task is not supported.";
             public const string InfiniteLoop = "Infinite loop detected: {0} (RunningTask.Name: {1})";
             public const string AlreadyAwaited = "{0}: Already being awaited by another task.";

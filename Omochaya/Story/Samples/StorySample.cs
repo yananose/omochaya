@@ -196,10 +196,10 @@ public class StorySample : MonoBehaviour
                 var position = rt.anchoredPosition;
                 position.x = x;
                 rt.anchoredPosition = position;
-                await Story.Yield;
-                // if ((Time.frameCount & 16) == 0) { await Story.Yield; }
-                // else if ((Time.frameCount & 32) == 0) { await Story.YieldLate; }
-                // else { await Story.YieldFixed; }
+                // await Story.Yield;
+                if ((Time.frameCount & 16) == 0) { await Story.Yield; }
+                else if ((Time.frameCount & 32) == 0) { await Story.YieldLate; }
+                else { await Story.YieldFixed; }
             }
         }
 

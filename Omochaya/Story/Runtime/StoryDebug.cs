@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryDebug.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -183,7 +183,7 @@ Dev.LoopBreak.Check(index.ToString());
             if (info.HasException) { methodName += " -EXCEPTION"; }
             var masterName = GetMasterName(ref info);
 
-            var offset = info.HasOffset ? (info.Offset & ~TaskManager.UPDATE_TYPE_MASK).ToString() : "w";
+            var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
             var prevIndex = info.HasOffset ? -1 : info2.Prev;
             var nextIndex = info2.Next;
             if (Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
@@ -214,7 +214,7 @@ Dev.LoopBreak.Check(index.ToString());
         public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
         {
             Assert(topInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
-            Assert(TaskManager.Shared.IsManual(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
+            Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
 
         /// <summary>Captures the current Unity PlayerLoop architecture layout and dumps its hierarchy to the log output.</summary>
@@ -237,8 +237,6 @@ Dev.LoopBreak.Check(index.ToString());
                 var type = typeof(T);
                 IsValid = type == typeof(Awaiter) ||
                         type == typeof(YieldCore) ||
-                        type == typeof(YieldLateCore) ||
-                        type == typeof(YieldFixedCore) ||
                         type == typeof(VoidCore) ||
                         (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Awaiter<>));
             }

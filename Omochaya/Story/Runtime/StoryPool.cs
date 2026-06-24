@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryPool.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -12,7 +12,6 @@ namespace Omochaya
 {
     using System;
     using System.Runtime.CompilerServices;
-    // using System.Runtime.InteropServices;
     using UnityEngine;
     using HiddenStory;
 

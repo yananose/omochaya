@@ -19,12 +19,12 @@ namespace Omochaya.HiddenStory
     partial class TaskManager
     {
         // interfaces
-        interface ITop { bool IsInvalid { get; } int Index { get; set; } }
+        interface ITop { bool CheckInvalid(); int Index { get; set; } }
 
         // inner classes
         struct Top : ITop
         {
-            public bool IsInvalid => Index < 0;
+            public bool CheckInvalid() => Index < 0;
             public int Index { get; set; }
         }
 
@@ -34,26 +34,22 @@ namespace Omochaya.HiddenStory
             public Story.Task Caller;
 
             // for itop
-            public bool IsInvalid
+            public bool CheckInvalid()
             {
-                get
+                var topIndex = Index;
+                if (topIndex < 0) { return true; }
+
+                if (Caller.IsEmpty)
                 {
-                    var topIndex = Index;
-                    if (topIndex < 0) { return true; }
-
-                    if (Caller.IsEmpty)
-                    {
-                        var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                        if (!pool.UnsafeGet(topIndex).IsOrphaned) { return false; } // 完全に未使用ならここで IsOrphaned をチェックして孤立していれば削除する。未使用なのでチェインにはなってない。
-                    }
-                    else if (Caller.IsValid) { return false; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
-
-                    // 消えるべきものが消えるだけ。必要経費
-                    TaskManager.Shared.UnsafeCancelManualChain(topIndex);
-
-                    return true;
+                    var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+                    if (!pool.UnsafeGet(topIndex).IsOrphaned) { return false; } // 完全に未使用ならここで IsOrphaned をチェックして孤立していれば削除する。未使用なのでチェインにはなってない。
                 }
-                
+                else if (Caller.IsValid) { return false; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
+
+                // 消えるべきものが消えるだけ。必要経費
+                TaskManager.Shared.UnsafeCancelManualChain(topIndex);
+
+                return true;
             }
             public int Index { get; set; }
         }
@@ -104,7 +100,7 @@ namespace Omochaya.HiddenStory
                 var end = Count;
                 while (rawOffset < end)
                 {
-                    if (this.tops[rawOffset].IsInvalid) { break; }
+                    if (this.tops[rawOffset].CheckInvalid()) { break; }
                     else { rawOffset++; }
                 }
 
@@ -114,7 +110,7 @@ namespace Omochaya.HiddenStory
                 {
                     var top = this.tops[i];
                     var index = top.Index;
-                    if (top.IsInvalid) { break; }
+                    if (top.CheckInvalid()) { continue; }
                     pool.UnsafeGet(index).Offset = rawOffset | Type;
                     this.tops[rawOffset++] = top;
                 }

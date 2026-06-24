@@ -75,6 +75,26 @@ namespace Omochaya.HiddenStory
         }
 
         // methods
+        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
+        public Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
+        {
+            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            var id = pool.Alloc();
+            var offset = this.manualBand.Add(id.Index);
+            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
+            pool.UnsafeGet2(id.Index).Entry(id.Index);
+            FrameCheck();
+            return new Story.Task(id);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
+        public Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
+        {
+            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
+            var task = Entry(stateMachine);
+            return new Story.Task<R>(task);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Expand(int count)
         {
@@ -96,27 +116,6 @@ namespace Omochaya.HiddenStory
         {
             if (runningIndex < 0) { return ref TaskInfo2.Invalid; }
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(runningIndex); }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-        public Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
-        {
-            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            var id = pool.Alloc();
-            var offset = this.manualBand.Add(id.Index);
-            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
-            pool.UnsafeGet2(id.Index).Entry(id.Index);
-            FrameCheck();
-            // Dev.Log($"entry - {Task.UnsafeCreate(id.Index)}");
-            return new Story.Task(id);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
-        public Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
-        {
-            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
-            var task = Entry(stateMachine);
-            return new Story.Task<R>(task);
         }
 
         void FrameCheck()
@@ -325,7 +324,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         // 可能性がある。また、解放されてなければ topIndex が指すタスクは
         // 「await Story.Task して top ではなくなっている」
         // 可能性がある
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool UnsafeInvokeChain(int topIndex)
         {
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
@@ -601,7 +600,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext(Story.Task task)
         {
             if (!task.IsValid) { return false; }
@@ -634,7 +633,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                 // 可能性がある
 
                 // 手動タスクは switch しない（他タスクから呼び出されているときはどの道そこで await Yield されているし）。
-                // BandSwitch(offset, LastAwaitType);
+                // SwitchBand(offset, LastAwaitBandNo);
 
                 return true;
             }
@@ -671,15 +670,44 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotAwaitAutoTask);
 
             // 削除要求されたタスクが起動しようとした
-            if (GetRunningInfo().WillCancel) { return true; } // 継続を返して即終了させる
+            if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
+
 
             // マスターがいなければ設定
             TryKeep(ref rootInfo);
 
-            // 前へ積む
-            UnsafeStack(rootIndex, this.runningIndex);
+            // 実行
+            if (UnsafeInvokeChain(topIndex))
+                // ここで
+                // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                // 可能性がある
+            {
+                // また、topIndex が指すタスクは
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
 
-            return true; // 継続させて積んだタスクを InvokeChain で処理
+                // ここでは switch しない（呼び出し元で switch させる）
+                // SwitchBand(offset, LastAwaitBandNo);
+
+                // 前へ積む
+                UnsafeStack(rootIndex, this.runningIndex);
+
+                return true;
+            }
+            else
+            {
+                // また、解放されてなければ topIndex が指すタスクは
+                // 「孤立して自動タスク化する」
+                // 加えて
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
+
+                // 握りつぶしちゃダメ！呼び出し元へ伝える
+                // CaptureResult();
+                // CaptureException();
+
+                return false;
+            }
         }
 
         public void SetResult()

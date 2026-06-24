@@ -186,7 +186,8 @@ Dev.LoopBreak.Check(index.ToString());
             var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
             var prevIndex = info.HasOffset ? -1 : info2.Prev;
             var nextIndex = info2.Next;
-            if (Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
+            if (0 <= nextIndex &&
+                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
 
             return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
         }

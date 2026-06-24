@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryDebug.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -56,10 +56,10 @@ namespace Omochaya.HiddenStory
         public static class TaskMonitorAPI
         {
             /// <summary>Fetches the current offset count of automated tasks from the shared task manager engine.</summary>
-            public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoOffset;
+            public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoTopCount;
 
             /// <summary>Fetches the active offset count of manually driven tasks within the active execution window.</summary>
-            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.MainTopCount - TaskManager.Shared.AutoOffset;
+            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.ManualTopCount;
 
             /// <summary></summary>
             public static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
@@ -78,61 +78,44 @@ namespace Omochaya.HiddenStory
             {
                 var self = TaskManager.Shared;
                 outTasks.Clear();
-                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                for (var i=0; i<self.MainTopCount; ++i)
+                for (var i=0; i<self.ManualTopCount; ++i)
                 {
-                    var index = self.MainIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = self.IsAutoForDebug(i) ? "Auto" : "Manual";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (info.HasPrev);
+                    var index = self.ManualIndexForDebug(i);
+                    TaskListAdd(outTasks, index, "Manual");
+                }
+                for (var i=0; i<self.AutoTopCount; ++i)
+                {
+                    var index = self.AutoIndexForDebug(i);
+                    TaskListAdd(outTasks, index, "Auto");
                 }
                 for (var i=0; i<self.LateTopCount; ++i)
                 {
                     var index = self.LateIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = "Late";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (info.HasPrev);
+                    TaskListAdd(outTasks, index, "Late");
                 }
                 for (var i=0; i<self.FixedTopCount; ++i)
                 {
                     var index = self.FixedIndexForDebug(i);
-                    if (index < 0) { continue; }
-                    ref var info = ref pool.UnsafeGet(index);
-                    var sortKey = ((long)info.Offset + 1) << 32;
-Dev.LoopBreak.Init();
-                    do
-                    {
-Dev.LoopBreak.Check(i.ToString());
-                        ref var info2 = ref pool.UnsafeGet2(index);
-                        info2.SortKeyForDebug = sortKey--;
-                        info2.StateForDebug = "Fixed";
-                        outTasks.Add(Story.Task.UnsafeCreate(index));
-                        index = info.Next;
-                        info = ref pool.UnsafeGet(index);
-                    } while (info.HasPrev);
+                    TaskListAdd(outTasks, index, "Fixed");
                 }
+            }
+            static void TaskListAdd(List<Story.Task> outTasks, int index, string state)
+            {
+                if (index < 0) { return; }
+                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+                ref var info = ref pool.UnsafeGet(index);
+                var sortKey = ((long)info.Offset + 1) << 32;
+Dev.LoopBreak.Init();
+                do
+                {
+Dev.LoopBreak.Check(index.ToString());
+                    ref var info2 = ref pool.UnsafeGet2(index);
+                    info2.SortKeyForDebug = sortKey--;
+                    info2.StateForDebug = state;
+                    outTasks.Add(Story.Task.UnsafeCreate(index));
+                    index = info2.Next;
+                    info = ref pool.UnsafeGet(index);
+                } while (!info.HasOffset);
             }
         }
     }
@@ -200,7 +183,13 @@ Dev.LoopBreak.Check(i.ToString());
             if (info.HasException) { methodName += " -EXCEPTION"; }
             var masterName = GetMasterName(ref info);
 
-            return $"{stateStr} ({ToDebugString(info.Offset)}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(info.Prev)}:{ToDebugString(info.HasNext ? info.Next : -1)}] | {methodName} @ {masterName}";
+            var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
+            var prevIndex = info.HasOffset ? -1 : info2.Prev;
+            var nextIndex = info2.Next;
+            if (0 <= nextIndex &&
+                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
+
+            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
         }
         public static class Type<T> { public static string Name = GetTypeName(typeof(T)); }
         public static class Pool<T> { public static string Name = "[Pool] " + Type<T>.Name; }
@@ -223,10 +212,10 @@ Dev.LoopBreak.Check(i.ToString());
         }
 
         /// <summary>Validates that a manually driven task is not currently being awaited by another active state machine.</summary>
-        public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo activeInfo, string message)
+        public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
         {
-            Assert(activeInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
-            Assert(IsManualTask(ref activeInfo), string.Format(message, activeInfo.GetMethodName()));
+            Assert(topInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
+            Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
 
         /// <summary>Captures the current Unity PlayerLoop architecture layout and dumps its hierarchy to the log output.</summary>
@@ -249,8 +238,6 @@ Dev.LoopBreak.Check(i.ToString());
                 var type = typeof(T);
                 IsValid = type == typeof(Awaiter) ||
                         type == typeof(YieldCore) ||
-                        type == typeof(YieldLateCore) ||
-                        type == typeof(YieldFixedCore) ||
                         type == typeof(VoidCore) ||
                         (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Awaiter<>));
             }
@@ -271,14 +258,6 @@ Dev.LoopBreak.Check(i.ToString());
             if (info.Master is null) { return Messages.DebugInfo.MasterNull; }
             if (info.IsOrphaned) { return Messages.DebugInfo.StateDead; }
             return info.Master.name;
-        }
-        static bool IsManualTask(ref TaskInfo info)
-        {
-LoopBreak.Init();
-                while (info.HasPrev) {
-LoopBreak.Check(info.GetMethodName());
-                    info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(info.Prev); }
-                return TaskManager.Shared.IsManual(info.Offset);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
@@ -325,7 +304,7 @@ LoopBreak.Check(info.GetMethodName());
 #endif
         public static string FormatMemorySize(int bytes) => string.Empty;
 
-        [Conditional("DUMMY")] public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo activeInfo, string message) {}
+        [Conditional("DUMMY")] public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message) {}
 
         public static class TaskMonitorAPI
         {

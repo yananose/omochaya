@@ -53,11 +53,19 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LateUpdate() => TaskManager.Shared.LateUpdate();
+        public static void LateUpdate() => TaskManager.Shared.BandUpdate(1);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void FixedUpdate() => TaskManager.Shared.FixedUpdate();
+        public static void FixedUpdate() => TaskManager.Shared.BandUpdate(2);
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void BandUpdate(int bandNo) => TaskManager.Shared.BandUpdate(bandNo);
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsResultError() => TaskManager.Shared.IsResultError;
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // タスク（ハンドラ）
@@ -85,6 +93,13 @@ namespace Omochaya
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get => !IsEmpty && Pool<TaskInfo, TaskInfo2>.Shared.IsValid(this.Id);
+            }
+
+            /// <summary></summary>
+            public bool WillCancel
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => this.Info().WillCancel;
             }
 
             // constructors
@@ -222,6 +237,13 @@ namespace Omochaya
                 get => this.rawTask.IsValid;
             }
 
+            /// <summary></summary>
+            public bool WillCancel
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => this.rawTask.WillCancel;
+            }
+
             // constructors
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Task(Task naked)
@@ -347,13 +369,16 @@ namespace Omochaya
         // others
 
         /// <summary>A globally accessible token to await a single-frame yield.</summary>
-        public static YieldCore Yield => default;
+        public static YieldCore Yield => new(0);
 
         /// <summary></summary>
-        public static YieldLateCore YieldLate => default;
+        public static YieldCore YieldLate => new(1);
 
         /// <summary></summary>
-        public static YieldFixedCore YieldFixed => default;
+        public static YieldCore YieldFixed => new(2);
+
+        /// <summary></summary>
+        public static YieldCore YieldNo(int bandNo) => new(bandNo);
 
         // 即返却（await しない async メソッドの遅延実行用）
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
@@ -392,76 +417,34 @@ namespace Omochaya.HiddenStory
     /// <summary>Don't touch! Only for system.</summary>
     public readonly struct YieldCore : INotifyCompletion
     {
+        readonly int bandNo;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public YieldCore(int bandNo) { this.bandNo = bandNo; }
+
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_MAIN;
+                TaskManager.Shared.LastAwaitBandNo = this.bandNo;
                 return false;
             }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public YieldCore GetAwaiter() => this;
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct YieldLateCore : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_LATE;
-                return false;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public YieldLateCore GetAwaiter() => this;
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct YieldFixedCore : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.GetRunningInfo().IsWaiting = true;
-                TaskManager.Shared.LastAwaitType = TaskManager.UPDATE_TYPE_FIXED;
-                return false;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public YieldFixedCore GetAwaiter() => this;
     }
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -470,6 +453,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -478,12 +462,15 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VoidCore GetAwaiter() => this;
     }
 
@@ -497,6 +484,7 @@ namespace Omochaya.HiddenStory
         public readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
@@ -504,6 +492,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -512,9 +501,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void OnCompleted(Action continuation) { }
     }
 
@@ -525,6 +516,7 @@ namespace Omochaya.HiddenStory
         public readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
@@ -532,6 +524,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
@@ -540,9 +533,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public R GetResult() => TaskManager.Shared.GetResult<R>(this.task);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public R GetResult() => TaskManager.Shared.GetResult<R>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
     }
 
@@ -567,7 +562,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly object Current => null;
+        public readonly object Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => null;
+        }
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -672,7 +671,6 @@ namespace Omochaya.HiddenStory
     // UnsafePool相当。コードブロートを軽減するための独自定義。
 
     /// <summary>Don't touch! Only for system.</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct StateMachine
     {
         // fields
@@ -915,7 +913,7 @@ namespace Omochaya.HiddenStory
     // タスク（中身）
 
     /// <summary>Don't touch! Only for system.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     struct TaskInfo
     {
         // static
@@ -926,7 +924,7 @@ namespace Omochaya.HiddenStory
         static TaskInfo()
         {
             Dev.Assert(Unsafe.SizeOf<TaskInfo>() == 32);
-            Invalid.offsetOrPrev = -1;
+            Invalid.Offset = -1;
         }
 
         // inner classes
@@ -934,22 +932,19 @@ namespace Omochaya.HiddenStory
         {
             None = 0,
             IsValid = 1 << 0,
-            IsWaiting = 1 << 1,
-            HasPrev = 1 << 2,
-            HasException = 1 << 3,
-            IsFastMaster = 1 << 4,
-            IsPinned = 1 << 5,
-            IsRunning = 1 << 6,
-            WillCancel = 1 << 7,
+            IsUsing = 1 << 1,
+            HasException = 1 << 2,
+            IsFastMaster = 1 << 3,
+            IsPinned = 1 << 4,
+            IsRunning = 1 << 5,
+            WillCancel = 1 << 6,
         }
 
         // fields
-        [FieldOffset(0)] Component master;
-        [FieldOffset(8)] StateMachine stateMachine;
-        [FieldOffset(20)] Flags flags;
-        // 〜 ここ 2 byte の空き 〜
-        [FieldOffset(24)] int offsetOrPrev; // 子タスクの方向
-        [FieldOffset(28)] public int Next; // 親タスクの方向
+        StateMachine stateMachine; // 12 バイトしか使ってないが 16 バイトを占有
+        Component master;
+        public int Offset;
+        Flags flags; // 1 バイトで足りるが後々のため 2 バイト
 
         // properties
 
@@ -963,31 +958,13 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public bool IsWaiting
+        public bool IsUsing
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.IsWaiting) != 0;
+            readonly get => (this.flags & Flags.IsUsing) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsWaiting; } else { this.flags &= ~Flags.IsWaiting; } }
+            set { if (value) { this.flags |= Flags.IsUsing; } else { this.flags &= ~Flags.IsUsing; } }
         }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool HasPrev
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.HasPrev) != 0;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private set { if (value) { this.flags |= Flags.HasPrev; } else { this.flags &= ~Flags.HasPrev; } }
-        }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        /// <summary>Don't touch! Only for system.</summary>
-        public readonly bool HasNext
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(Next).HasPrev;
-        }
-#endif
 
         /// <summary>Don't touch! Only for system.</summary>
         public bool HasException
@@ -1037,36 +1014,10 @@ namespace Omochaya.HiddenStory
         public Component Master => this.master;
 
         /// <summary>Don't touch! Only for system.</summary>
-        public int Prev // 子タスクの方向
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => HasPrev ? this.offsetOrPrev : -1;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                Dev.Assert(HasPrev);
-                this.offsetOrPrev = value;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
         public readonly bool HasOffset
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => !HasPrev;
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public int Offset
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => HasOffset ? this.offsetOrPrev : -1;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                Dev.Assert(HasOffset);
-                this.offsetOrPrev = value;
-            }
+            get => 0 <= this.Offset;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1075,6 +1026,8 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
+                if (WillCancel) { return true; }
+                if (IsPinned) { return false; }
                 if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsDestroyed; }
                 return this.master == null;
             }
@@ -1095,28 +1048,11 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetOffset(int offset)
-        {
-            this.HasPrev = false;
-            this.offsetOrPrev = offset;
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetPrev(int prev)
-        {
-            this.HasPrev = true;
-            this.offsetOrPrev = prev;
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Entry(in StateMachine stateMachine, int offset, int index)
+        public void Entry(in StateMachine stateMachine, int offset)
         {
             this.stateMachine = stateMachine;
             IsValid = true;
             Offset = offset;
-            Next = index;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1125,9 +1061,9 @@ namespace Omochaya.HiddenStory
         {
             Dev.Assert(IsValid);
             Dev.Assert(!(master is null), Messages.Exceptions.MasterCannotBeNull);
-            Dev.Assert(!IsWaiting); // 一度でも MoveNext を実行したら master の変更は禁止する（判定が不完全）
             this.master = master;
             IsFastMaster = master is Story.ITaskMaster;
+            IsPinned = false; // ピン留め外してマスター依存に戻す
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1140,7 +1076,11 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Run() => this.stateMachine.MoveNext();
+        public void Run()
+        {
+            IsUsing = true;
+            this.stateMachine.MoveNext();
+        }
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1164,7 +1104,7 @@ namespace Omochaya.HiddenStory
 
         static TaskInfo2()
         {
-            Invalid.IsValid = false;
+            Invalid.Next = Invalid.Prev = -1;
         }
 
         // inner classes
@@ -1176,10 +1116,8 @@ namespace Omochaya.HiddenStory
 
         // fields
         Story.PoolMemory extra;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public Story.Task ManualNode; // 自身が手動タスクの場合、自身を呼び出したタスク
-
+        public int Prev; // 子タスクの方向
+        public int Next; // 親タスクの方向
         Flags flags;
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
@@ -1204,9 +1142,10 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Entry()
+        public void Entry(int index)
         {
             this.IsValid = true;
+            this.Next = this.Prev = index;
         }
 
         /// <summary>Don't touch! Only for system.</summary>

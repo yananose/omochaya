@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryPool.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -12,7 +12,6 @@ namespace Omochaya
 {
     using System;
     using System.Runtime.CompilerServices;
-    // using System.Runtime.InteropServices;
     using UnityEngine;
     using HiddenStory;
 
@@ -215,9 +214,17 @@ namespace Omochaya
                 return ref UnsafePool<T>.Shared.Get(this.index);
             }
 
+            /// <summary></summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool IsFailed<T>() => UnsafePool<T>.Shared != this.pool;
+
             /// <summary>Disposes of the unmanaged memory handle, safely recycling its index slot.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Dispose() => Free();
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+            public override string ToString() => this.pool != null ? this.pool.Name : "(empty)";
+#endif
         }
 
         /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
@@ -870,6 +877,7 @@ namespace Omochaya
             public ref T Get(int index) => ref this.array[index];
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+            public string Name => Dev.Type<T>.Name;
             public int ActiveCount => this.core.ActiveCount;
             public int WorstCount { get; set; }
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
@@ -881,6 +889,9 @@ namespace Omochaya
         interface IUnsafePool // 型消去用
         {
             void Free(int index);
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+            string Name { get; }
+#endif
         }
 
         // やめとこう...

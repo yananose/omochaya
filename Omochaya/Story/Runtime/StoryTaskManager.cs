@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryTaskManager.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -20,12 +20,12 @@ namespace Omochaya.HiddenStory
 
     // タスクマネージャ（アップデータ）
     /// <summary>Don't touch! Only for system.</summary>
-    class TaskManager
+    partial class TaskManager
     {
         // static
 
         /// <summary>Don't touch! Only for system.</summary>
-        public static TaskManager Shared { get; } = new TaskManager();
+        public static TaskManager Shared { get; } = new TaskManager(3);
 
         /// <summary>Thrown internally when a task is forcibly freed or canceled.</summary>
         class CanceledException : Exception
@@ -34,53 +34,22 @@ namespace Omochaya.HiddenStory
             CanceledException() : base(Messages.Exceptions.TaskCanceled) { }
         }
 
-        // inner classes
-        struct TopArray
-        {
-            // fields
-            int[] array;
-            int count;
-
-            // overrides
-            public ref int this[int index] => ref this.array[index];
-
-            // properties
-            public readonly int Count => this.count;
-
-            // methods
-            public int Add(int offset)
-            {
-                var count = this.count;
-                if (this.array == null) { Story.Pool.Create(ref this.array); }
-                else if (0 < count && this.array[count - 1] == -1) { count--; } // 最後が空いてたら入れる（頻度次第だが後で詰め直すよりここで判定したほうがマシなはず）
-                else if (count == this.array.Length) { Story.Pool.Expand(ref this.array); }
-                this.array[count] = offset;
-                this.count = count + 1;
-                return count;
-            }
-            public bool IsInRange(int index) => (uint)index < this.count;
-            public void SetCount(int count) => this.count = count;
-            public void Expand(int count) => Story.Pool.Expand(ref this.array, count);
-        }
-
         // const
-        public const int UPDATE_TYPE_MAIN = 0;
-        public const int UPDATE_TYPE_LATE = 1 << (32 - 3); // なので rawOffset の有効範囲は 1 << 29 まで。
-        public const int UPDATE_TYPE_FIXED = 1 << (32 - 2);
-        const int UPDATE_TYPE_MASK = UPDATE_TYPE_LATE | UPDATE_TYPE_FIXED;
+        const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
+        public const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
+        public const int BAND_TYPE_MANUAL = 0 << BAND_TYPE_SHIFT; // 手動更新 & 初期位置
+        public const int BAND_TYPE_AUTO = 1 << BAND_TYPE_SHIFT; // Update更新 & 削除位置
 
         // fields
-        TopArray mainTopArray;
-        TopArray lateTopArray;
-        TopArray fixedTopArray;
+        Band<ManualTop> manualBand;
+        Band<Top>[] bandArray;
         int frameCount;
         int updateOffset;
-        int autoOffset;
         int runningIndex = -1;
         Exception runningException = null;
         Story.PoolMemory runningResult;
-        Story.Pool.Id runningResultId;
-        public int LastAwaitType; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
+        public int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
+        public bool IsResultError;
 
         // properties
         public bool IsRunningValid
@@ -88,42 +57,53 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => 0 <= runningIndex;
         }
-        Story.Task UnsafeRunningTask
+        ref Band<Top> AutoBand
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (IsRunningValid) { return Story.Task.UnsafeCreate(runningIndex); }
-                else { return default; }
-            }
+            get => ref this.bandArray[0];
         }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        public int AutoOffset => this.autoOffset;
-        public int MainTopCount => this.mainTopArray.Count;
-        public int LateTopCount => this.lateTopArray.Count;
-        public int FixedTopCount => this.fixedTopArray.Count;
-#endif
-
         // constructors
-        TaskManager()
+        TaskManager(int bandCount)
         {
+            Dev.Assert(0 < bandCount);
             this.frameCount = Time.frameCount;
+            this.manualBand = new (BAND_TYPE_MANUAL);
+            this.bandArray = new Band<Top>[bandCount];
+            for (int i=0; i<bandCount; ++i) { this.bandArray[i] = new (GetBandType(i)); }
             this.updateOffset = -1;
-            this.autoOffset = 0;
         }
 
         // methods
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int count)
+        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
+        public Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
-            this.mainTopArray.Expand(count);
-            this.lateTopArray.Expand(count);
-            this.fixedTopArray.Expand(count);
+            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            var id = pool.Alloc();
+            var offset = this.manualBand.Add(id.Index);
+            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
+            pool.UnsafeGet2(id.Index).Entry(id.Index);
+            FrameCheck();
+            return new Story.Task(id);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
+        public Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
+        {
+            if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
+            var task = Entry(stateMachine);
+            return new Story.Task<R>(task);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsManual(int offset) => this.autoOffset <= offset && offset < this.mainTopArray.Count;
+        public void Expand(int count)
+        {
+            this.manualBand.Expand(count);
+            for (var i=0; i<this.bandArray.Length; ++i) { this.bandArray[i].Expand(count); }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsManualBand(int offset) => (offset & BAND_TYPE_MASK) == BAND_TYPE_MANUAL;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref TaskInfo GetRunningInfo()
@@ -138,180 +118,169 @@ namespace Omochaya.HiddenStory
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(runningIndex); }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-        public Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
-        {
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            var id = pool.Alloc();
-            var offset = this.mainTopArray.Add(id.Index) | UPDATE_TYPE_MAIN;
-            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset, id.Index);
-            pool.UnsafeGet2(id.Index).Entry();
-            FrameCheck();
-            // Dev.Log($"entry - {Task.UnsafeCreate(id.Index)}");
-            return new Story.Task(id);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
-        public Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
-        {
-            var task = Entry(stateMachine);
-            return new Story.Task<R>(task);
-        }
-
         void FrameCheck()
         {
             // if (0 <= this.updateOffset) { return; } // Time.frameCount が重いらしいので設定済みかもチェック → キャッシュされるようになったらしい
             var frameCount = Time.frameCount;
             if (this.frameCount == frameCount) { return; }
             this.frameCount = frameCount;
-            this.updateOffset = this.autoOffset;
+            this.updateOffset = AutoBand.Count;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Update()
         {
-            // 自動実行
+            // auto：実行
             FrameCheck();
-            ref var topArray = ref this.mainTopArray;
-            InvokeArray(ref topArray, this.updateOffset, UPDATE_TYPE_MAIN);
+            BandInvoke(0, this.updateOffset);
             this.updateOffset = -1;
 
-            // 自動タスクを詰める
-            var end = this.autoOffset;
-            var offset = CompactArray(ref topArray, end, UPDATE_TYPE_MAIN);
-            if (offset < this.autoOffset) { this.autoOffset = offset; }
-            var freeStart = this.autoOffset;
+            // auto：詰める
+            AutoBand.Compact();
 
-            // 自動タスクの範囲内に隙間がなかった場合、手動タスクの先頭から最初の隙間までの間を生存確認
-            for (var i=end; i<offset; ++i) { UnsafeCheckManualTaskNecessity(topArray[i]); } // top が不要になってたらチェインごと自動タスクにする
+            // manual：生存チェックしながら詰める
+            this.manualBand.Compact();
 
-            // 残りの手動タスクを詰めならが生存確認
+            // 次が遠いのでここで放す
+            CaptureResult();
+            CaptureException();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int GetBandNo(int offset) => (offset >> BAND_TYPE_SHIFT) - 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int GetBandType(int bandNo) => (bandNo + 1) << BAND_TYPE_SHIFT;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool IsMatchBand(int offset, int bandNo) => offset >> BAND_TYPE_SHIFT == bandNo + 1;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void BandUpdate(int bandNo)
+        {
+            Dev.Assert(0 < bandNo, string.Format(Messages.Exceptions.NotSupportedBandUpdate, bandNo));
+
+            BandInvoke(bandNo, this.bandArray[bandNo].Count);
+            this.bandArray[bandNo].Compact();
+
+            // 次が遠いのでここで放す
+            CaptureResult();
+            CaptureException();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void LateUpdate() => BandUpdate(1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FixedUpdate() => BandUpdate(2);
+
+        void BandInvoke(int bandNo, int rawOffset)
+        {
+            ref var band = ref this.bandArray[bandNo];
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            var start = Mathf.Max(end, offset);
-            end = topArray.Count;
-            for (var i=start; i<end; ++i)
-            {
-                var index = topArray[i];
-                if (index < 0) { continue; }
-                ref var info = ref pool.UnsafeGet(index);
-                info.Offset = offset;
-                topArray[offset++] = index;
-                CheckManualTaskNecessity(ref info, index); // top が不要になってたらチェインごと自動タスクにする
-            }
-            topArray.SetCount(offset);
-
-            // キャンセル用に移動したタスク（不要になった手動タスク）を解放
-            // （finallyでタスクの追加や起動がされてもいいように最後に自動タスクの範囲で行う）
-            var freeEnd = this.autoOffset;
-            for (var i=freeStart; i<freeEnd; ++i)
-            {
-                var index = topArray[i];
-                // チェインをたどりながらバラしてキャンセル処理する。
-                // チェイン状態になってるのは MoveNext の呼び出し元が解放されたときなので残す必要はない。
-                // finally で await してもそれまでの id は無効になる。
-Dev.LoopBreak.Init();
-                while (0 <= index) {
-Dev.LoopBreak.Check(i.ToString());
-                    index = UnsafeCancelOne(index); }
-            }
-            TryLogException();
-        }
-
-        public void LateUpdate() => SimpleUpdate(ref this.lateTopArray, UPDATE_TYPE_LATE);
-        public void FixedUpdate() => SimpleUpdate(ref this.fixedTopArray, UPDATE_TYPE_FIXED);
-        void SimpleUpdate(ref TopArray topArray, int updateType)
-        {
-            InvokeArray(ref topArray, topArray.Count, updateType);
-            var count = CompactArray(ref topArray, topArray.Count, updateType);
-            topArray.SetCount(count);
-        }
-
-        void InvokeArray(ref TopArray topArray, int rawOffset, int updateType)
-        {
             while (0 < rawOffset)
             {
-                var index = topArray[--rawOffset]; // タスクの実行順を後着優先にしたいので逆順
-                if (index < 0) { continue; } // ほぼ false
-                if (UnsafeInvoke(index))
+                var topIndex = band[--rawOffset].Index; // タスクの実行順を後着優先にしたいので逆順
+                if (topIndex < 0) { continue; } // ほぼ false
+                if (UnsafeInvokeChain(topIndex))
                     // ここで
                     // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
                     // 可能性がある
                 {
-                    if (LastAwaitType != updateType) { UnsafeSwitchUpdate(topArray[rawOffset]); }
-                    continue;
+                    // また、topIndex が指すタスクは
+                    // 「await Story.Task して top ではなくなっている」
+                    // 可能性がある
+
+                    // switch する（ SwitchBand と同じだが最速で回すためにベタ書き）
+                    if (LastAwaitBandNo != bandNo)
+                    {
+                        topIndex = band[rawOffset].Index; // 同じとは限らない
+                        band[rawOffset].Index = -1;
+                        AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, LastAwaitBandNo);
+                    }
                 }
-                TryLogException();
+                else
+                {
+                    // また、解放されてなければ topIndex が指すタスクは
+                    // 「孤立して自動タスク化する」
+                    // 加えて
+                    // 「await Story.Task して top ではなくなっている」
+                    // 可能性がある
+                }
             }
         }
-        void UnsafeSwitchUpdate(int topIndex)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnsafeCancelManualChain(int topIndex)
         {
-            Dev.Assert(0 <= topIndex);
+            // チェインをたどりながら全てキャンセル要求
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            ref var info = ref pool.UnsafeGet(topIndex);
-            var toUpdateType = LastAwaitType;
-
-            if (toUpdateType == UPDATE_TYPE_MAIN)
+            ref var topInfo = ref pool.UnsafeGet(topIndex);
+Dev.LoopBreak.Init();
+            while (true)
             {
-                // 自動タスクの位置へ
-                MakeAuto(ref info);
+Dev.LoopBreak.Check(topInfo.GetMethodName());
+                topInfo.WillCancel = true; // 削除要求
+                topIndex = pool.UnsafeGet2(topIndex).Next;
+                topInfo = ref pool.UnsafeGet(topIndex);
+                if (topInfo.HasOffset) { break; }
             }
-            else
+
+            // チェインで解放
+            var offset = topInfo.Offset;
+            if (UnsafeInvokeChain(topIndex))
+                // ここで
+                // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                // 可能性がある
             {
-                // 各 Update の最後へ
-                var toRawOffset = GetTopArrayCore(toUpdateType).Add(-1);
-                MoveIndex(ref info, toRawOffset | toUpdateType);
+                // また、topIndex が指すタスクは
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
+
+                // 残ったら switch する（元が手動タスクなので必ず他所へ行く）
+                SwitchBand(offset, LastAwaitBandNo);
             }
         }
 
-        int CompactArray(ref TopArray topArray, int endOffset, int updateType)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void SwitchBand(int fromOffset, int toBandNo)
         {
-            // 最初の隙間
-            var offset = 0;
-            var count = topArray.Count;
-            while (offset < count)
-            {
-                var index = topArray[offset];
-                if (index < 0) { break; }
-                else { offset++; }
-            }
-
-            // 自動タスクを詰める
+            if (IsMatchBand(fromOffset, toBandNo)) { return; }
+            var topIndex = GetIndexOnBand(fromOffset);
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            for (var i=offset+1; i<endOffset; ++i)
-            {
-                var index = topArray[i];
-                if (index < 0) { continue; }
-                pool.UnsafeGet(index).Offset = offset | updateType;
-                topArray[offset++] = index;
-            }
-            return offset;
+            AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, toBandNo);
+            SetIndexOnBand(fromOffset, -1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int GetTaskIndex(int offset) => GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK];
+        void AddTopOnBand(ref TaskInfo topInfo, int topIndex, int toBandNo) => topInfo.Offset = this.bandArray[toBandNo].Add(topIndex);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void SetTaskIndex(int offset, int index) => GetTopArray(offset)[offset & ~UPDATE_TYPE_MASK] = index;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ref TopArray GetTopArray(int offset)
+        int GetIndexOnBand(int offset)
         {
             Dev.Assert(0 <= offset);
-            return ref GetTopArrayCore(offset & UPDATE_TYPE_MASK);
+            if (IsManualBand(offset)) { return this.manualBand[offset].Index; }
+            else { return this.bandArray[GetBandNo(offset)].Get(offset).Index; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ref TopArray GetTopArrayCore(int updateType)
+        void SetIndexOnBand(int offset, int index)
         {
-            switch (updateType)
+            Dev.Assert(0 <= offset);
+            if (IsManualBand(offset)) { this.manualBand[offset].Index = index; }
+            else { this.bandArray[GetBandNo(offset)].Get(offset).Index = index; }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void CaptureResult()
+        {
+            // 受け皿のない結果があれば解放する
+            if (this.runningResult.IsValid)
             {
-                case UPDATE_TYPE_LATE : return ref this.lateTopArray;
-                case UPDATE_TYPE_FIXED : return ref this.fixedTopArray;
-                default : return ref this.mainTopArray;
+                Dev.Log($"結果が受け取られませんでした：{this.runningResult}");
+                this.runningResult.Free();
+                this.runningResult = default;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void TryLogException()
+        void CaptureException()
         {
             // 受け皿のない例外があればログを出す
             if (this.runningException != null)
@@ -322,55 +291,17 @@ Dev.LoopBreak.Check(i.ToString());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void UnsafeCheckManualTaskNecessity(int topIndex) => CheckManualTaskNecessity(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex), topIndex);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CheckManualTaskNecessity(ref TaskInfo topInfo, int topIndex)
+        void TryThrowException()
         {
-            if (topInfo.IsPinned) { return; }
-            var node = Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(topIndex).ManualNode;
-            if (node.IsEmpty)
+            var e = this.runningException;
+            if (e != null)
             {
-                if (!topInfo.IsOrphaned) { return; } // 完全に未使用ならここで IsOrphaned をチェックして孤立していれば削除する。未使用なのでチェインにはなってない。
+                this.runningException = null;
+                Dev.Assert(e != CanceledException.Shared);
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw();
             }
-            else if (node.IsValid) { return; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
-
-            // キャンセル用に自動タスク化
-            MakeAuto(ref topInfo);
         }
 
-        public bool Boot(Story.Task task)
-        {
-            Dev.Assert(task.IsValid, Messages.Exceptions.InvalidTaskOnBoot);
-
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            var rootIndex = task.Id.Index;
-            ref var rootInfo = ref pool.UnsafeGet(rootIndex);
-
-            TryKeep(ref rootInfo);
-
-            var topIndex = rootInfo.Next;
-            ref var topInfo = ref pool.UnsafeGet(topIndex);
-
-            Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.AlreadyBooted);
-
-            // 自動実行状態へ
-            MakeAuto(ref topInfo);
-
-            // 実行
-            if (Invoke(ref topInfo, topIndex))
-                // ここで
-                // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                // 「(自身以外も含めて)手動タスクの offset が変わっている」
-                // 可能性がある
-            {
-                if (LastAwaitType != UPDATE_TYPE_MAIN) { UnsafeSwitchUpdate(pool.UnsafeGet(rootIndex).Next); }
-                return true;
-            }
-
-            TryLogException();
-
-            return false;
-        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void TryKeep(ref TaskInfo info)
         {
@@ -388,68 +319,288 @@ Dev.LoopBreak.Check(i.ToString());
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int GetSwapRawOffset()
+        // この中では
+        // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+        // 可能性がある。また、解放されてなければ topIndex が指すタスクは
+        // 「await Story.Task して top ではなくなっている」
+        // 可能性がある
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool UnsafeInvokeChain(int topIndex)
         {
-            // 自動タスクしかなかったら追加
-            if (this.autoOffset == this.mainTopArray.Count) { this.autoOffset = this.mainTopArray.Add(-1); }
-            // 最後が空いてたらそこを使う（頻度次第だが後で詰め直すよりここで判定したほうがマシなはず）
-            if (0 < this.autoOffset && this.mainTopArray[this.autoOffset - 1] == -1) // うまく行けば↑と合わせて２つ節約
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            ref var topInfo = ref pool.UnsafeGet(topIndex);
+
+            if (topInfo.IsRunning) { return true; } // 実行中ならスキップ（Freeから呼ばれた時にあり得る）
+
+            var offset = topInfo.Offset;
+            Dev.Assert(0 <= offset);
+
+            // 初期化
+            CaptureResult();
+            CaptureException();
+
+Dev.LoopBreak.Init();
+            while (true)
             {
-                return this.autoOffset - 1;
+Dev.LoopBreak.Check(topInfo.GetMethodName());
+
+                Dev.Assert(!topInfo.IsRunning);
+
+                if (topInfo.IsOrphaned)
+                {
+                    // 使用中のみ
+                    if (topInfo.IsUsing)
+                    {
+                        // キャンセル要求を下ろしてピン留め
+                        topInfo.WillCancel = false;
+                        topInfo.IsPinned = true;
+
+                        // 結果とキャンセルは受け取らない
+                        CaptureResult();
+                        CaptureException();
+
+                        // finally を実行
+                        this.runningException = CanceledException.Shared;
+                        InvokeCore(ref topInfo, topIndex);
+                            // ここで
+                            // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                            // 「await Story.Task して top ではなくなっている」
+                            // 可能性がある
+                        ref var info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex);
+
+                        // info.IsRunning / this.runningException != null
+                        // true  / true  => ありえない（GetResult が呼ばれなかったということなので、未実行のタスクに例外を処理させようとしたことになる）
+                        // true  / false => 継続（利用者に例外 or キャンセルを握りつぶされた可能性はある）
+                        // false / true  => 例外 or キャンセルが発生したが全て実行し終えた
+                        // false / false => 全て実行し終えた（利用者に例外 or キャンセルを握りつぶされた可能性はある）
+
+                        if (info.IsRunning)
+                        {
+                            info.IsRunning = false;
+                            Dev.Assert(this.runningException == null);
+                            Dev.Assert(!this.runningResult.IsValid);
+                            return true; // 継続（つまり finally で await したらそれが終わるまで親の解放も処理されない）
+                        }
+                    }
+
+                    // 終了した（開始してなかった）ので解放
+                    UnsafeFreeCore(topIndex);
+                }
+                // 一時停止中（直前に終わった子が例外を吐いていたら止めない）
+                else if (this.runningException == null && topInfo.IsPaused)
+                {
+                    LastAwaitBandNo = GetBandNo(topInfo.Offset); // 呼び出し元で間違って swith しないように
+                    return true; // 継続
+                }
+                else
+                {
+                    // 実行
+                    InvokeCore(ref topInfo, topIndex);
+                        // ここで
+                        // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                        // 「await Story.Task して top ではなくなっている」
+                        // 可能性がある
+                    ref var info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex);
+
+                    // info.IsRunning / this.runningException != null
+                    // true  / true  => ありえない（GetResult が呼ばれなかったということなので、未実行のタスクに例外を処理させようとしたことになる）
+                    // true  / false => 継続（利用者に例外 or キャンセルを握りつぶされた可能性はある）
+                    // false / true  => 例外 or キャンセルが発生したが全て実行し終えた
+                    // false / false => 全て実行し終えた（利用者に例外 or キャンセルを握りつぶされた可能性はある）
+
+                    if (info.IsRunning)
+                    {
+                        info.IsRunning = false;
+                        Dev.Assert(this.runningException == null);
+                        Dev.Assert(!this.runningResult.IsValid);
+
+                        // 実行中にキャンセルされていない
+                        if (!info.WillCancel) { return true; } // 継続
+
+                        // 先頭までキャンセル指示（※キャンセルされたタスクは await できないので不要）
+//                         var index = topIndex;
+// Dev.LoopBreak.Init();
+//                         while (!info.HasOffset)
+//                         {
+// Dev.LoopBreak.Check(info.GetMethodName());
+//                             if (info.HasOffset) { break; }
+//                             index = pool.UnsafeGet2(index).Prev;
+//                             info = ref pool.UnsafeGet(index);
+//                             info.WillCancel = true;
+//                         }
+                    }
+                    else
+                    {
+                        // 終了したので解放
+                        UnsafeFreeCore(topIndex);
+                    }
+                }
+
+                // 次
+                topIndex = GetIndexOnBand(offset);
+                if (topIndex < 0) { return false; }
+                topInfo = ref pool.UnsafeGet(topIndex);
             }
-            return this.autoOffset++;
         }
 
+        // この中で
+        // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+        // 「await Story.Task して top ではなくなっている」
+        // 可能性がある
+        // し、
+        // 途中が Free で抜けてるかもしれない。それはスタック上かもしれないし、チェイン上かもしれない。
+        // どっちにしても抜けたタスクの親には ResultError を返す必要がある
+        // よ。
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void MakeAuto(ref TaskInfo topInfo)
+        void InvokeCore(ref TaskInfo topInfo, int topIndex)
         {
-            if (this.autoOffset <= topInfo.Offset) // 手動タスク & Late & Fixed
-            {
-                MoveIndex(ref topInfo, GetSwapRawOffset() | UPDATE_TYPE_MAIN);
-            }
+            Dev.Assert(!topInfo.IsRunning);
+            topInfo.IsRunning = true; // InvokeCore の後で見て下ろす
+            var parentIndex = this.runningIndex;
+            this.runningIndex = topIndex;
+            topInfo.Run();
+            this.runningIndex = parentIndex;
+            // topInfo.IsRunning / this.runningException != null
+            // true  / true  => ありえない（GetResult が呼ばれなかったということなので、未実行のタスクに例外を処理させようとしたことになる）
+            // true  / false => 継続（利用者に例外 or キャンセルを握りつぶされた可能性はある）
+            // false / true  => 例外 or キャンセルが発生したが全て実行し終えた
+            // false / false => 全て実行し終えた（利用者に例外 or キャンセルを握りつぶされた可能性はある）
         }
 
-        void MoveIndex(ref TaskInfo topInfo, int toOffset) // topOffset ではない
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // IsNotCompleted からしか呼ばれないので
+        void UnsafeStack(int prevRootIndex, int nextTopIndex)
         {
-            var fromOffset = topInfo.Offset;
-            if (fromOffset == toOffset) { return; }
+            // 必要な情報取得
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            ref var prevRootInfo2 = ref pool.UnsafeGet2(prevRootIndex);
+            ref var nextTopInfo2 = ref pool.UnsafeGet2(nextTopIndex);
+            var prevTopIndex = prevRootInfo2.Next;
+            var nextRootIndex = nextTopInfo2.Prev;
 
-            // 元の位置の情報
-            Dev.Assert(0 <= fromOffset);
-            var fromUpdateType = fromOffset & UPDATE_TYPE_MASK;
-            ref var fromTopArray = ref GetTopArrayCore(fromUpdateType); // Addの後は参照しないように注意！
-            var fromRawOffset = fromOffset & ~UPDATE_TYPE_MASK;
-            var fromIndex = fromTopArray[fromRawOffset];
+            // 隣同士をつなぐ
+            prevRootInfo2.Next = nextTopIndex;
+            nextTopInfo2.Prev = prevRootIndex;
 
-            // 移動先の情報
-            Dev.Assert(0 <= toOffset);
-            var toUpdateType = toOffset & UPDATE_TYPE_MASK;
-            ref var toTopArray = ref GetTopArrayCore(toUpdateType); // Addの後は参照しないように注意！
-            var toRawOffset = toOffset & ~UPDATE_TYPE_MASK;
-            var toIndex = toTopArray[toRawOffset];
+            // リングをつなぐ
+            pool.UnsafeGet2(prevTopIndex).Prev = nextRootIndex;
+            pool.UnsafeGet2(nextRootIndex).Next = prevTopIndex;
 
-            // topInfo を to の位置に入れる
-            topInfo.Offset = toOffset;
-            toTopArray[toRawOffset] = fromIndex;
+            // band の繋ぎ変え：情報取得
+            ref var prevTopInfo = ref pool.UnsafeGet(prevTopIndex);
+            ref var nextTopInfo = ref pool.UnsafeGet(nextTopIndex);
+            Dev.Assert(prevTopInfo.HasOffset, string.Format(Messages.Exceptions.DoubleAwait, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            Dev.Assert(nextTopInfo.HasOffset, string.Format(Messages.Exceptions.AwaitingWhileAwaited, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            var prevOffset = prevTopInfo.Offset;
+            var nextOffset = nextTopInfo.Offset;
 
-            // 同タイプなら
-            if (fromUpdateType == toUpdateType)
+            // band の繋ぎ変え：実行
+            SetIndexOnBand(prevOffset, -1);
+            SetIndexOnBand(nextOffset, prevTopIndex);
+            prevTopInfo.Offset = nextOffset;
+            nextTopInfo.Offset = -1;
+
+            // 生存チェック情報を先頭へ反映
+            prevTopInfo.IsPinned = nextTopInfo.IsPinned;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeFreeCore を呼ぶので
+        void UnsafeFreeCore(int index)
+        {
+            UnsafeUnstack(index);
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            pool.UnsafeGet(index).Free();
+            pool.UnsafeGet2(index).Free();
+            pool.UnsafeFree(index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // UnsafeFreeCore からしか呼ばれないので
+        void UnsafeUnstack(int index)
+        {
+            // 必要な情報取得
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            ref var info = ref pool.UnsafeGet(index);
+            ref var info2 = ref pool.UnsafeGet2(index);
+            var offset = info.Offset;
+
+            // 単体なら band から外すだけ
+            if (info2.Next == index)
             {
-                // 入れ替える（to の位置にあったタスクを topInfo があった位置へ）
-                fromTopArray[fromRawOffset] = toIndex;
-                if (0 <= toIndex) { Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(toIndex).Offset = fromOffset; }
+                SetIndexOnBand(offset, -1);
                 return;
             }
 
-            // topInfo があった位置は空に
-            fromTopArray[fromRawOffset] = -1;
+            // リングから外す
+            var prevIndex = info2.Prev;
+            var nextIndex = info2.Next;
+            ref var prevInfo2 = ref pool.UnsafeGet2(prevIndex);
+            ref var nextInfo2 = ref pool.UnsafeGet2(nextIndex);
+            prevInfo2.Next = nextIndex;
+            nextInfo2.Prev = prevIndex;
 
-            // to の位置にタスクが存在していたらそれを末尾へ追加
-            if (0 <= toIndex) { Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(toIndex).Offset = toTopArray.Add(toIndex) | toUpdateType; }
+            // 先頭じゃないならここまで
+            if (offset < 0) { return; }
+
+            // 次を topArtray に設定する
+            SetIndexOnBand(offset, nextIndex);
+            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
+            nextInfo.Offset = offset;
+
+            // 次へ生存チェック情報を渡す
+            nextInfo.IsPinned = info.IsPinned;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Boot(Story.Task task)
+        {
+            if (!task.IsValid) { return false; }
+
+            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+            var rootIndex = task.Id.Index;
+            ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
+
+            var topIndex = rootInfo2.Next;
+            ref var topInfo = ref pool.UnsafeGet(topIndex);
+
+            Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.AlreadyBooted);
+
+            // 削除要求されたタスクが起動しようとした
+            if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
+
+            // 元の位置を退避してマスターがいなければ設定
+            var offset = topInfo.Offset;
+            TryKeep(ref rootInfo);
+
+            // 実行
+            if (UnsafeInvokeChain(topIndex))
+                // ここで
+                // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
+                // 可能性がある
+            {
+                // また、topIndex が指すタスクは
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
+
+                // switch する
+                SwitchBand(offset, LastAwaitBandNo);
+
+                return true;
+            }
+            else
+            {
+                // また、解放されてなければ topIndex が指すタスクは
+                // 「孤立して自動タスク化する」
+                // 加えて
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
+
+                // 例外が残っていたら投げる
+                TryThrowException();
+
+                return false;
+            }
+        }
+
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext(Story.Task task)
         {
             if (!task.IsValid) { return false; }
@@ -457,27 +608,51 @@ Dev.LoopBreak.Check(i.ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
             ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
 
-            var topIndex = rootInfo.Next;
+            var topIndex = rootInfo2.Next;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
 
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotMoveNextAutoTask);
 
+            // 削除要求されたタスクが起動しようとした
+            if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
+
             // 呼び出し元を設定（結局復元してる...）
-            pool.UnsafeGet2(topIndex).ManualNode = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
+            var offset = topInfo.Offset;
+            this.manualBand[offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
 
             // 実行
-            if (Invoke(ref topInfo, topIndex)) { return true; } // 呼び出し元で await Yield してるはずなのでそこで AwaitType が上書きされる
+            if (UnsafeInvokeChain(topIndex))
                 // ここで
                 // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                // 「(自身以外も含めて)手動タスクの offset が変わっている」
+                // 可能性がある
+            {
+                // また、topIndex が指すタスクは
+                // 「await Story.Task して top ではなくなっている」
                 // 可能性がある
 
-            TryLogException();
+                // 手動タスクは switch しない（他タスクから呼び出されているときはどの道そこで await Yield されているし）。
+                // SwitchBand(offset, LastAwaitBandNo);
 
-            return false;
+                return true;
+            }
+            else
+            {
+                // また、解放されてなければ topIndex が指すタスクは
+                // 「孤立して自動タスク化する」
+                // 加えて
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
+
+                // 例外が残っていたら投げる
+                TryThrowException();
+
+                return false;
+            }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeLink を呼ぶので
         public bool IsNotCompleted(Story.Task task)
         {
             Dev.Assert(IsRunningValid);
@@ -487,361 +662,107 @@ Dev.LoopBreak.Check(i.ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
             ref var rootInfo = ref pool.UnsafeGet(rootIndex);
+            ref var rootInfo2 = ref pool.UnsafeGet2(rootIndex);
 
-            TryKeep(ref rootInfo);
-
-            var topIndex = rootInfo.Next;
+            var topIndex = rootInfo2.Next;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
 
             Dev.ValidateManualTask(ref rootInfo, ref topInfo, Messages.Exceptions.CannotAwaitAutoTask);
 
+            // 削除要求されたタスクが起動しようとした
+            if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
+
+
+            // マスターがいなければ設定
+            TryKeep(ref rootInfo);
+
             // 実行
-            if (Invoke(ref topInfo, topIndex))
+            if (UnsafeInvokeChain(topIndex))
                 // ここで
                 // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                // 「(自身以外も含めて)手動タスクの offset が変わっている」
                 // 可能性がある
             {
-                // 待たせる状態へ
-                UnsafePushTaskChain(rootIndex, this.runningIndex);
+                // また、topIndex が指すタスクは
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
 
-                // Invoke 内で設定された AwaitType をそのまま呼び出し元へ渡す。呼び出し元が自動タスクならそこで SwitchUpdate される。
-                // Boot で AwaitType が書き換わっていてもその後で await Yield されている（されてなければタスクが終了しているのでここにはこない）。
+                // ここでは switch しない（呼び出し元で switch させる）
+                // SwitchBand(offset, LastAwaitBandNo);
 
-                // 継続
+                // 前へ積む
+                UnsafeStack(rootIndex, this.runningIndex);
+
                 return true;
             }
+            else
+            {
+                // また、解放されてなければ topIndex が指すタスクは
+                // 「孤立して自動タスク化する」
+                // 加えて
+                // 「await Story.Task して top ではなくなっている」
+                // 可能性がある
 
-            // await なので、この後の GetResult で処理させる
-            // TryLogException();
+                // 握りつぶしちゃダメ！呼び出し元へ伝える
+                // CaptureResult();
+                // CaptureException();
 
-            return false;
+                return false;
+            }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void UnsafePushTaskChain(int prevRootIndex, int nextIndex)
-        {
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            ref var prevRootInfo = ref pool.UnsafeGet(prevRootIndex);
-            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
-
-            // await される側
-            var prevActiveIndex = prevRootInfo.Next;
-            ref var prevActiveInfo = ref pool.UnsafeGet(prevActiveIndex);
-            var oldOffset = prevActiveInfo.Offset;
-            Dev.Assert(0 <= oldOffset, string.Format(Messages.Exceptions.DoubleAwait, prevRootInfo.GetMethodName(), nextInfo.GetMethodName()));
-
-            // await する側
-            var newOffset = nextInfo.Offset;
-            Dev.Assert(0 <= newOffset, string.Format(Messages.Exceptions.AwaitingWhileAwaited, prevRootInfo.GetMethodName(), nextInfo.GetMethodName()));
-            nextInfo.IsWaiting = true; // 待機状態に
-
-            // 繋ぎ変え
-            SetTaskIndex(oldOffset, -1);
-            SetTaskIndex(newOffset, prevActiveIndex);
-            prevActiveInfo.Offset = newOffset;
-            nextInfo.SetPrev(prevRootIndex);
-            prevRootInfo.Next = nextIndex;
-
-            // 生存チェック情報を先頭へ反映
-            prevActiveInfo.IsPinned = nextInfo.IsPinned;
-            if (IsManual(newOffset)) { pool.UnsafeGet2(prevActiveIndex).ManualNode = pool.UnsafeGet2(nextIndex).ManualNode; }
-
-            // 最後の Next に先頭を入れる（PrevとOffsetを共存させてるのでこんなことに...）
-Dev.LoopBreak.Init();
-            while(nextInfo.Next != nextIndex) {
-Dev.LoopBreak.Check(prevRootInfo.GetMethodName());
-                nextInfo = ref pool.UnsafeGet(nextInfo.Next); }
-            nextInfo.Next = prevActiveIndex;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetResult()
         {
             Dev.Assert(this.IsRunningValid);
             this.GetRunningInfo().IsRunning = false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetResult<R>(R result)
         {
             SetResult();
 
             // 結果格納
-            if (this.runningResult.IsValid)
-            {
-                Dev.LogWarning(string.Format(Messages.Warnings.ResultOverwritten, new Story.Task(this.runningResultId)));
-                this.runningResult.Free();
-            }
-            this.runningResultId = this.UnsafeRunningTask.Id;
             this.runningResult = Story.PoolMemory.Alloc<R>(in result);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetException(Exception e)
         {
             SetResult();
 
             // 例外格納
-            TryLogException();
-            if (e != CanceledException.Shared) { this.runningException = e; }
+            if (e != CanceledException.Shared)
+            {
+                CaptureException();
+                this.runningException = e;
+            }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult()
         {
+            CaptureResult();
             var e = this.runningException;
             if (e != null)
             {
                 this.runningException = null;
+                // ここで投げた例外は（利用者に握りつぶされなければ）SetException で受け取る
                 if (e == CanceledException.Shared) { throw e; }
                 else { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw(); }
             }
-
-            // 必要？
-            Dev.Assert(this.IsRunningValid);
-            GetRunningInfo().IsWaiting = false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public R GetResult<R>(Story.Task task)
+        public R GetResult<R>()
         {
             R result = default;
-            if (this.runningResultId.Matches(task.Id))
+            IsResultError = this.runningResult.IsFailed<R>();
+            if (!IsResultError)
             {
                 result = this.runningResult.Get<R>();
                 this.runningResult.Free();
                 this.runningResult = default;
-                this.runningResultId = default;
             }
-            else { Dev.LogWarning(string.Format(Messages.Warnings.ResultNotFound, task)); }
+
             GetResult();
+
             return result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool UnsafeInvoke(int index) => Invoke(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index), index);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool Invoke(ref TaskInfo info, int index)
-        {
-            Dev.Assert(info.HasOffset);
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-Dev.LoopBreak.Init();
-            while (true)
-            {
-Dev.LoopBreak.Check(info.GetMethodName());
-
-                if (!info.IsPinned && info.IsOrphaned) { index = CancelOne(ref info, index); } // これ以降 info 参照禁止
-                else if (InvokeCore(ref info, index)) { return true; } // Yield 時
-                else
-                {
-                    index = UnsafeFreeCore(index); }
-                    // ここで
-                    // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
-                    // 可能性がある
-
-                // 全て実行し終わった
-                if (index < 0) { return false; }
-
-                // 次へ
-                info = ref pool.UnsafeGet(index);
-            }
-        }
-
-        bool InvokeCore(ref TaskInfo info, int index)
-        {
-            if (info.IsRunning) // ここが true になることはないはずだが...
-            {
-                Dev.LogError(string.Format(Messages.Warnings.RecursiveInvokeIgnored, info.GetMethodName()));
-                if (this.runningException == CanceledException.Shared)
-                {
-                    Dev.LogWarning(Messages.Warnings.CancelPending);
-                    this.runningException = null;
-                    info.WillCancel = true;
-                }
-                return true; // 継続
-            }
-
-            var prev = this.runningIndex;
-            this.runningIndex = index;
-
-            info.IsRunning = true;
-            if (this.runningException != null || !info.IsPaused)
-            {
-                info.Run();
-                    // ここで
-                    // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
-                    // 可能性がある
-                info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index);
-            }
-
-            var isNotCompleted = info.IsRunning;
-            info.IsRunning = false;
-
-            if (info.WillCancel)
-            {
-                info.WillCancel = false;
-                TryLogException();
-                if (isNotCompleted)
-                {
-                    Dev.Log(string.Format(Messages.Warnings.CancelExecutedAfterRun, info.GetMethodName()));
-                    this.runningException = CanceledException.Shared;
-
-                    info.IsRunning = true;
-                    info.Run();
-                    // ここで
-                    // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
-                    // 可能性がある
-
-                    info = ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(index);
-                    isNotCompleted = info.IsRunning;
-                    info.IsRunning = false;
-                }
-                else { Dev.Log(string.Format(Messages.Warnings.CancelAbortedFinishedTask, info.GetMethodName())); }
-            }
-
-            this.runningIndex = prev;
-            return isNotCompleted;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int UnsafeFreeCore(int topIndex) => FreeCore(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex), topIndex);
-        int FreeCore(ref TaskInfo topInfo, int topIndex)
-        {
-            // Dev.Log($"free - {Task.UnsafeCreate(topIndex)}");
-            var nextIndex = Unlink(ref topInfo, topIndex);
-            topInfo.Free();
-            Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(topIndex).Free();
-            Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeFree(topIndex);
-            return nextIndex;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int Unlink(ref TaskInfo info, int index) // 削除前提でリンクを切る
-        {
-            var offset = info.Offset;
-            var nextIndex = info.Next;
-
-            // 自身のみの場合
-            if (index == nextIndex)
-            {
-                SetTaskIndex(offset, -1);
-                return -1;
-            }
-
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            ref var nextInfo = ref pool.UnsafeGet(nextIndex);
-
-            // 先頭ではない場合（先頭のタスクに対してしか呼ばれないはずだが一応）
-            if (offset < 0)
-            {
-                var prevIndex = info.Prev;
-                ref var prevInfo = ref pool.UnsafeGet(prevIndex);
-                prevInfo.Next = nextIndex;
-                if (nextInfo.HasOffset) { return -1; }
-                nextInfo.Prev = prevIndex;
-                return nextIndex;
-            }
-
-            // 先頭の場合
-            // 次を先頭へ
-            PopTopTask(offset, ref info, index, ref nextInfo, nextIndex);
-            return nextIndex;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void PopTopTask(int offset, ref TaskInfo oldInfo, int oldIndex, ref TaskInfo newInfo, int newIndex) // old と new は連続していること！
-        {
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-
-            // 繋ぎ変え
-            SetTaskIndex(offset, newIndex);
-            newInfo.SetOffset(offset);
-
-            // 生存チェック情報を先頭へ反映
-            newInfo.IsPinned = oldInfo.IsPinned;
-            if (IsManual(offset)) { pool.UnsafeGet2(newIndex).ManualNode = pool.UnsafeGet2(oldIndex).ManualNode; }
-
-            // 最後の Next に先頭を入れる（PrevとOffsetを共存させてるのでこんなことに...）
-Dev.LoopBreak.Init();
-            while(newInfo.Next != oldIndex) {
-Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
-                newInfo = ref pool.UnsafeGet(newInfo.Next); }
-            newInfo.Next = newIndex;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        int UnsafeCancelOne(int topIndex) => CancelOne(ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(topIndex), topIndex);
-        int CancelOne(ref TaskInfo topInfo, int topIndex)
-        {
-            // InvokeCore と同様にこのメソッドを呼ぶと以下の可能性がある
-            // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-            // 「(自身以外も含めて)手動タスクの offset が変わっている」
-
-            // 実行中なので終わってからキャンセルする
-            if (topInfo.IsRunning)
-            {
-                topInfo.WillCancel = true;
-                Dev.Log(string.Format(Messages.Warnings.CancelPendingWhileRunning, topInfo.GetMethodName()));
-                // キャンセル準備（単体で切り離して自動タスク化）だけはしておく
-                return PrepareCancel(ref topInfo, topIndex);
-            }
-
-            // 他を待ってない（初期状態）ならそのまま解放（多分このケースはないが一応）
-            if (!topInfo.IsWaiting)
-            {
-                var offset = topInfo.Offset;
-                FreeCore(ref topInfo, topIndex);
-                return GetTaskIndex(offset);
-            }
-
-            // キャンセル準備
-            var nextIndex = PrepareCancel(ref topInfo, topIndex);
-            if (this.runningException != null) { Dev.LogException(this.runningException); }
-            this.runningException = CanceledException.Shared;
-
-            // キャンセル実行
-            if (InvokeCore(ref topInfo, topIndex))
-            {
-                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                pool.UnsafeReborn(topIndex); // これまでの id を無効にする（これ以降、外部からこのタスクへはアクセスできない）
-                Dev.LogWarning(string.Format(Messages.Warnings.CancelFailedTaskRunning, pool.UnsafeGet(topIndex).GetMethodName()));
-            }
-            else
-            {
-                UnsafeFreeCore(topIndex); // nextIndex に受け取っちゃダメ
-            }
-
-            return nextIndex;
-        }
-
-        int PrepareCancel(ref TaskInfo topInfo, int topIndex)
-        {
-            var offset = topInfo.Offset;
-            var nextIndex = topInfo.Next;
-            var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-            if (topIndex == nextIndex) // 単独
-            {
-                nextIndex = -1;
-                MakeAuto(ref topInfo);
-            }
-            else
-            {
-                // topInfo を単体で切り離して（topInfoが宙ぶらりんになる）
-                PopTopTask(offset, ref topInfo, topIndex, ref pool.UnsafeGet(nextIndex), nextIndex);
-                topInfo.Next = topIndex; // PopTopTask は削除前提なので全メンバが更新されない。topInfoはこの後も使うので更新しておく。
-
-                // 自動タスクへ
-                var swapRawOffset = GetSwapRawOffset(); // topInfo の移動先
-                var swapIndex = this.mainTopArray[swapRawOffset];
-                if (0 <= swapIndex) { pool.UnsafeGet(swapIndex).Offset = this.mainTopArray.Add(swapIndex) | UPDATE_TYPE_MAIN; } // 移動先にタスクがあればそれを末尾に移動
-                this.mainTopArray[swapRawOffset] = topIndex;
-                topInfo.Offset = swapRawOffset | UPDATE_TYPE_MAIN;
-            }
-            topInfo.IsPinned = true;
-            return nextIndex;
         }
 
         public void Free(Story.Task task)
@@ -849,39 +770,25 @@ Dev.LoopBreak.Check(Story.Task.UnsafeCreate(oldIndex).ToString());
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             if (!pool.IsValid(task.Id)) { return; }
 
+            // 先頭までキャンセル指示
             var index = task.Id.Index;
             ref var info = ref pool.UnsafeGet(index);
-
-            // 先頭から
-Dev.LoopBreak.Init();
-            while (info.HasPrev)
-            {
-Dev.LoopBreak.Check(task.ToString());
-                index = info.Prev;
-                info = ref pool.UnsafeGet(index);
-            }
-
-            // 自身まで順番にキャンセルする
 Dev.LoopBreak.Init();
             while (true)
             {
 Dev.LoopBreak.Check(task.ToString());
-                var nextIndex = UnsafeCancelOne(index);
-                    // ここで
-                    // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
-                    // 「(自身以外も含めて)手動タスクの offset が変わっている」
-                    // 可能性がある
-                if (index == task.Id.Index) { break; }
-                index = nextIndex;
+                info.WillCancel = true;
+                if (info.HasOffset) { break; }
+                index = pool.UnsafeGet2(index).Prev;
+                info = ref pool.UnsafeGet(index);
             }
+
+            // キャンセル実行（即処理するため。実行中タスクならスキップされる）
+            UnsafeInvokeChain(index);
+
+            // 結果とキャンセルは渡さない
+            CaptureResult();
+            CaptureException();
         }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        public int MainIndexForDebug(int rawOffset) => this.mainTopArray[rawOffset];
-        public int LateIndexForDebug(int rawOffset) => this.lateTopArray[rawOffset];
-        public int FixedIndexForDebug(int rawOffset) => this.fixedTopArray[rawOffset];
-        public bool IsAutoForDebug(int offset) => offset < this.autoOffset;
-#endif
-
     }
 }

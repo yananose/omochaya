@@ -34,7 +34,7 @@ namespace Omochaya.HiddenStory
         enum SortMode
         {
             Order,
-            MasterName,
+            OwnerName,
             TaskId
         }
 
@@ -190,11 +190,11 @@ namespace Omochaya.HiddenStory
                 {
                     var task = this.filteredTasks[index];
                     var menu = new GenericMenu();
-                    menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuPingMaster), false, () =>
+                    menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuPingOwner), false, () =>
                     {
-                        Component master = null;
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref master, task);
-                        if (master != null) EditorGUIUtility.PingObject(master);
+                        Component owner = null;
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref owner, task);
+                        if (owner != null) EditorGUIUtility.PingObject(owner);
                     });
                     menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuForceFree), false, () =>
                     {
@@ -277,8 +277,8 @@ namespace Omochaya.HiddenStory
                 var result = 0;
                 var offsetA = 0L;
                 var offsetB = 0L;
-                Component masterA = null;
-                Component masterB = null;
+                Component ownerA = null;
+                Component ownerB = null;
                 switch (this.sortMode)
                 {
                     case SortMode.Order:
@@ -286,15 +286,15 @@ namespace Omochaya.HiddenStory
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
                         result = offsetA.CompareTo(offsetB);
                         break;
-                    case SortMode.MasterName:
+                    case SortMode.OwnerName:
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetA, a);
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref masterA, a);
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref masterB, b);
-                        string ma = masterA?.name ?? string.Empty;
-                        string mb = masterB?.name ?? string.Empty;
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerA, a);
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerB, b);
+                        string ma = ownerA?.name ?? string.Empty;
+                        string mb = ownerB?.name ?? string.Empty;
                         result = string.CompareOrdinal(ma, mb);
-                        // Master名が同じならOffsetでサブソート
+                        // Owner名が同じならOffsetでサブソート
                         if (result == 0) { result = offsetA.CompareTo(offsetB); }
                         break;
                     case SortMode.TaskId:

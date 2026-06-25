@@ -26,7 +26,7 @@ namespace Omochaya.HiddenStory
             public const string InfiniteLoop = "無限ループ:{0}(RunningTask.Name:{1})";
             public const string AlreadyAwaited = "{0}:他のタスクに await されている";
             public const string InvalidExtraOperation = "不正なタスクの Extra を操作しようとした";
-            public const string MasterCannotBeNull = "master を null にすることはできません。タスク外で Boot するときは master を指定してください";
+            public const string OwnerCannotBeNull = "owner を null にすることはできません。タスク外で Boot するときは owner を指定してください";
             public const string InvalidTaskOnBoot = "無効なタスクです。タスクを作成してから Boot するまでにフレームをまたぐ場合は Keep してください。";
             public const string AlreadyBooted = "{0}:既に起動されているので Boot できない";
             public const string CannotMoveNextAutoTask = "{0}:自動タスクなので MoveNext できない";
@@ -44,7 +44,7 @@ namespace Omochaya.HiddenStory
         {
             public const string CancelAbortedFinishedTask = "タスクが終点まで実行されたので、予定していたキャンセルの実行は中止します：{0}";
             public const string CancelPendingWhileRunning = "キャンセルを指示されましたがタスクが動作中なので、終わり次第キャンセルを実行します：{0}";
-            public const string CancelFailedTaskRunning = "キャンセルしたのに終了しませんでした。続きは自動タスクで処理します。以降はmasterを無視するので責任を持って終了させてください：{0}";
+            public const string CancelFailedTaskRunning = "キャンセルしたのに終了しませんでした。続きは自動タスクで処理します。以降はownerを無視するので責任を持って終了させてください：{0}";
             public const string ExpandOnly = "Expandはプールの拡張のみ可能です({0} -> {1})";
             public const string ArrayExpanded = "配列が拡張されました: {0} -> {1}({2}) [{3}]";
             public const string ArrayExpanded_StateMachine = "配列が拡張されました: {0} -> {1}({2}) [{3}] (StateMachine)";
@@ -58,7 +58,7 @@ namespace Omochaya.HiddenStory
         {
             // Task Monitor 関連
             public const string TaskMonitor_PlayModeOnly = "プレイモード中のみタスクを表示します。";
-            public const string TaskMonitor_MenuPingMaster = "マスターを検索";
+            public const string TaskMonitor_MenuPingOwner = "オーナーを検索";
             public const string TaskMonitor_MenuForceFree = "強制終了";
             public const string TaskMonitor_Refresh = "Refresh";
             public const string TaskMonitor_AutoRefresh = "Auto Refresh";
@@ -89,7 +89,7 @@ namespace Omochaya.HiddenStory
             public const string InvalidTask = "[INVALID Task ({0}:{1})]";
             public const string StatePinned = "[Pinned]";
             public const string StateDead = "[Dead]";
-            public const string MasterNull = "null";
+            public const string OwnerNull = "null";
             public const string TypeUnknown = "Unknown";
         }
 #else
@@ -103,7 +103,7 @@ namespace Omochaya.HiddenStory
             public const string InfiniteLoop = "Infinite loop detected: {0} (RunningTask.Name: {1})";
             public const string AlreadyAwaited = "{0}: Already being awaited by another task.";
             public const string InvalidExtraOperation = "Attempted to manipulate Extra on an invalid task.";
-            public const string MasterCannotBeNull = "Master cannot be null. When booting outside a task, a master must be specified.";
+            public const string OwnerCannotBeNull = "Owner cannot be null. When booting outside a task, a owner must be specified.";
             public const string InvalidTaskOnBoot = "Invalid task. If spanning frames between task creation and Boot, please call Keep().";
             public const string AlreadyBooted = "{0}: Cannot Boot because it is already running.";
             public const string CannotMoveNextAutoTask = "{0}: Cannot call MoveNext on an auto-task.";
@@ -121,7 +121,7 @@ namespace Omochaya.HiddenStory
         {
             public const string CancelAbortedFinishedTask = "Task has executed to the end, aborting the scheduled cancellation: {0}";
             public const string CancelPendingWhileRunning = "Cancellation requested while the task is running; it will be canceled upon completion: {0}";
-            public const string CancelFailedTaskRunning = "Task did not finish despite being canceled. The remainder will be processed as an auto-task. The master will be ignored from now on, so please ensure it is terminated properly: {0}";
+            public const string CancelFailedTaskRunning = "Task did not finish despite being canceled. The remainder will be processed as an auto-task. The owner will be ignored from now on, so please ensure it is terminated properly: {0}";
             public const string ExpandOnly = "Expand can only expand the pool. ({0} -> {1})";
             public const string ArrayExpanded = "Array is expanded: {0} -> {1}({2}) [{3}]";
             public const string ArrayExpanded_StateMachine = "Array is expanded: {0} -> {1}({2}) [{3}] (StateMachine)";
@@ -135,7 +135,7 @@ namespace Omochaya.HiddenStory
         {
             // Task Monitor
             public const string TaskMonitor_PlayModeOnly = "Tasks are only displayed during Play Mode.";
-            public const string TaskMonitor_MenuPingMaster = "Ping Master";
+            public const string TaskMonitor_MenuPingOwner = "Ping Owner";
             public const string TaskMonitor_MenuForceFree = "Force Free Task";
             public const string TaskMonitor_Refresh = "Refresh";
             public const string TaskMonitor_AutoRefresh = "Auto Refresh";
@@ -166,7 +166,7 @@ namespace Omochaya.HiddenStory
             public const string InvalidTask = "[INVALID Task ({0}:{1})]";
             public const string StatePinned = "[Pinned]";
             public const string StateDead = "[Dead]";
-            public const string MasterNull = "null";
+            public const string OwnerNull = "null";
             public const string TypeUnknown = "Unknown";
         }
 #endif

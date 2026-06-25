@@ -4,8 +4,6 @@
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
-//   Implements the centralized task manager engine and framework updater, controlling 
-//   automated execution loops, lifecycle resolution, and task cancellation packing.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -14,7 +12,6 @@
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 namespace Omochaya.HiddenStory
 {
-    // タスクマネージャ（アップデータ）
     /// <summary>Don't touch! Only for system.</summary>
     partial class TaskManager
     {
@@ -42,9 +39,9 @@ namespace Omochaya.HiddenStory
                 if (Caller.IsEmpty)
                 {
                     var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
-                    if (!pool.UnsafeGet(topIndex).IsOrphaned) { return false; } // 完全に未使用ならここで IsOrphaned をチェックして孤立していれば削除する。未使用なのでチェインにはなってない。
+                    if (!pool.UnsafeGet(topIndex).ShouldCancel) { return false; } // 完全に未使用ならここで ShouldCancel をチェック。未使用なのでチェインにはなってない。
                 }
-                else if (Caller.IsValid) { return false; } // 一度でも MoveNext されていれば次の MoveNext もあるはずなので、IsOrphaned はそこでチェックする。仮に放置されても呼び出したタスクが消えれば消える
+                else if (Caller.IsValid) { return false; } // 一度でも MoveNext されていれば ShouldCancel は次の MoveNext でチェックする。仮に放置されても呼び出したタスクが消えれば消える
 
                 // 消えるべきものが消えるだけ。必要経費
                 TaskManager.Shared.UnsafeCancelManualChain(topIndex);
@@ -68,6 +65,7 @@ namespace Omochaya.HiddenStory
             public ref T this[int index] => ref this.tops[index];
 
             // properties
+            public readonly bool HasValues => this.tops != null;
             public readonly int Count => this.count;
             public readonly int Type => this.type;
 

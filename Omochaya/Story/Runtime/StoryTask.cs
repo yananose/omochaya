@@ -26,23 +26,20 @@ namespace Omochaya
     ・Story.Update() を毎フレーム実行すること。
     ・自動タスクは毎フレーム TaskManager.Update でステートマシンが MoveNext される。順番は後で登録された（自動タスクになった）ものほど先に実行される。
     ・手動タスクは任意のタイミングで MoveNext や foreach 等で実行する。
-    ・awaitされたタスクはawaitしたタスクの実行位置で実行されるようになる。
-    ・awaitされたタスクが存在している間はawaitしたタスクは実行されない。
+    ・タスクAがタスクBをawaitするとタスクAの代わりにタスクBが実行されるようになる。タスクBが終了するとタスクAが実行されるようになる。
 
     【注意点】
     ・メインスレッド限定。
-    ・Story.Task で await できるのは Story.Task, Story.Yield、Story.Void のみ。
     ・他の非同期タスクで await Story.Task することはできない。
-    ・Story.Task 外で Boot する場合はコンポーネントを master として指定する必要がある。
+    ・Story.Task で他の非同期タスクを await することはできない。await できるのは Story.Task, Story.Yield系、Story.Void のみ。
+    ・Story.Task 外で Boot する場合はコンポーネントを owner として指定する必要がある。
     ・await されたタスク及びBootしたタスクを await することはできない。 待つ場合は while (task.IsValid) { await Story.Yield; } すること。なお、結果を受け取ることはできない。
     ・await が終了したタスクから結果を受け取ることはできない。
-    ・高速化のため、可能であれば master に指定するコンポーネントは ITaskMaster インターフェイスを実装すること。Story.TaskBehaviour を継承してもよい。
-    ・Story.Task がキャンセル（Task.Free 実行 / foreach 中の beak / master 等消失による削除）された場合は finally ブロックを実行する。
-    ・finally ブロックで master に指定したコンポーネントを参照してはならない。
-    ・キャンセル発生以降は master を無視するので await する場合は使用者が責任を持って解放すること。
-    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。（←必ずしもそうはならない？）
-    ・Extra<E> は１タスクにつき１つしか持てない。
-    ・Extra<E> を ref で持ち続けることは避け、必要な時に都度取得して使用すること。
+    ・高速化のため、可能であれば owner に指定するコンポーネントは ITaskOwner インターフェイスを実装すること。Story.TaskBehaviour を継承してもよい。
+    ・Story.Task がキャンセル（Task.Free 実行 / foreach 中の beak / owner 等消失による削除）された場合は finally ブロックを実行する。
+    ・finally ブロックで owner に指定したコンポーネントを参照してはならない。
+    ・キャンセル発生以降は owner を無視するので await する場合は使用者が責任を持って解放すること。
+    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.IsResultInvalid でキャンセルされたことを検知できる。
 
     */
     public static partial class Story
@@ -63,9 +60,25 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BandUpdate(int bandNo) => TaskManager.Shared.BandUpdate(bandNo);
 
+        /// <summary>A globally accessible token to await a single-frame yield.</summary>
+        public static YieldCore Yield => new(0);
+
+        /// <summary></summary>
+        public static YieldCore YieldLate => new(1);
+
+        /// <summary></summary>
+        public static YieldCore YieldFixed => new(2);
+
+        /// <summary></summary>
+        public static YieldCore YieldNo(int bandNo) => new(bandNo);
+
+        // 即返却（await しない async メソッドの遅延実行用）
+        /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
+        public static VoidCore Void => default;
+
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsResultError() => TaskManager.Shared.IsResultError;
+        public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // タスク（ハンドラ）
@@ -123,27 +136,27 @@ namespace Omochaya
                 TaskManager.Shared.Free(this);
             }
 
-            /// <summary>Anchors the task to a specific master component to govern its lifecycle.</summary>
+            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Keep(Component master) => this.Info().Keep(master);
+            public void Keep(Component owner) => this.Info().Keep(owner);
 
-            /// <summary>Anchors the task to the currently running task's master component.</summary>
+            /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep()
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                this.Info().Keep(TaskManager.Shared.GetRunningInfo().Master);
+                this.Info().Keep(TaskManager.Shared.GetRunningInfo().Owner);
             }
 
-            /// <summary>Anchors the task to a master component and registers it to the automation loop.</summary>
+            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Boot(Component master)
+            public bool Boot(Component owner)
             {
-                Keep(master);
+                Keep(owner);
                 return Boot();
             }
 
-            /// <summary>Registers the task to the automation loop using its pre-assigned master component.</summary>
+            /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Boot() => TaskManager.Shared.Boot(this);
 
@@ -156,11 +169,11 @@ namespace Omochaya
                 if (!info.IsValid) { return false; }
 
                 // keep
-                if (info.Master is null && TaskManager.Shared.IsRunningValid)
+                if (info.Owner is null && TaskManager.Shared.IsRunningValid)
                 {
-                    var master = TaskManager.Shared.GetRunningInfo().Master;
-                    Dev.Assert(!(master is null));
-                    info.Keep(master);
+                    var owner = TaskManager.Shared.GetRunningInfo().Owner;
+                    Dev.Assert(!(owner is null));
+                    info.Keep(owner);
                 }
 
                 return TaskManager.Shared.MoveNext(this);
@@ -261,17 +274,17 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Free() => this.rawTask.Free();
 
-            /// <summary>Anchors the task to a specific master component to govern its lifecycle.</summary>
+            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep() => this.rawTask.Keep();
 
-            /// <summary>Anchors the task to the currently running task's master component.</summary>
+            /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Keep(Component master) => this.rawTask.Keep(master);
+            public void Keep(Component owner) => this.rawTask.Keep(owner);
 
-            /// <summary>Anchors the task to a master component and registers it to the automation loop.</summary>
+            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Boot(Component master) => this.rawTask.Boot(master);
+            public bool Boot(Component owner) => this.rawTask.Boot(owner);
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -306,11 +319,11 @@ namespace Omochaya
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // 偽装nullチェック回避と一時停止対応用
 
-        /// <summary>Defines a master object that governs the lifecycle and destruction state of associated tasks.</summary>
-        public interface ITaskMaster { bool IsDestroyed { get; set; } bool IsPaused { get; } }
+        /// <summary>Defines a owner object that governs the lifecycle and destruction state of associated tasks.</summary>
+        public interface ITaskOwner { bool IsDestroyed { get; set; } bool IsPaused { get; } }
 
-        /// <summary>A base MonoBehaviour that implements ITaskMaster to manage tasks bound to its lifecycle.</summary>
-        public class TaskBehaviour : MonoBehaviour, ITaskMaster // 実装漏れ回避用
+        /// <summary>A base MonoBehaviour that implements ITaskOwner to manage tasks bound to its lifecycle.</summary>
+        public class TaskBehaviour : MonoBehaviour, ITaskOwner // 実装漏れ回避用
         {
             protected virtual void OnDestroyed() {}
             protected virtual void OnEnabled() {}
@@ -343,9 +356,10 @@ namespace Omochaya
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // extra
+        // オプション機能。タスク内外でアクセスできるゼロアロケーション領域。タスク毎に１つのみ。
 
         /// <summary>Gets a reference to the custom extra metadata structure bound to the currently executing task.</summary>
-        public static ref E GetTaskExtra<E>()
+        public static ref E GetExtra<E>()
         {
             Dev.Assert(TaskManager.Shared.IsRunningValid);
             return ref TaskManager.Shared.GetRunningInfo2().GetExtra<E>();
@@ -365,24 +379,6 @@ namespace Omochaya
             self.GetExtra<E>() = extra;
         }
 
-        // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-        // others
-
-        /// <summary>A globally accessible token to await a single-frame yield.</summary>
-        public static YieldCore Yield => new(0);
-
-        /// <summary></summary>
-        public static YieldCore YieldLate => new(1);
-
-        /// <summary></summary>
-        public static YieldCore YieldFixed => new(2);
-
-        /// <summary></summary>
-        public static YieldCore YieldNo(int bandNo) => new(bandNo);
-
-        // 即返却（await しない async メソッドの遅延実行用）
-        /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
-        public static VoidCore Void => default;
     }
 }
 
@@ -414,511 +410,14 @@ namespace Omochaya.HiddenStory
         }
     }
 
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct YieldCore : INotifyCompletion
-    {
-        readonly int bandNo;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public YieldCore(int bandNo) { this.bandNo = bandNo; }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                TaskManager.Shared.LastAwaitBandNo = this.bandNo;
-                return false;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public YieldCore GetAwaiter() => this;
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct VoidCore : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                return true;
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetResult() { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnCompleted(Action continuation) { }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public VoidCore GetAwaiter() => this;
-    }
-
-    // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-    // awaiter
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct Awaiter : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public readonly Story.Task task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Awaiter(Story.Task task) =>  this.task = task;
-
-        // for INotifyCompletion
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                return !TaskManager.Shared.IsNotCompleted(this.task);
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void GetResult() => TaskManager.Shared.GetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void OnCompleted(Action continuation) { }
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct Awaiter<R> : INotifyCompletion
-    {
-        /// <summary>Don't touch! Only for system.</summary>
-        public readonly Story.Task task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Awaiter(Story.Task task) =>  this.task = task;
-
-        // for INotifyCompletion
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool IsCompleted
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
-                return !TaskManager.Shared.IsNotCompleted(this.task);
-            }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public R GetResult() => TaskManager.Shared.GetResult<R>();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnCompleted(Action continuation) { }
-    }
-
-    // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-    // enumerator
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public struct TaskEnumerator
-    {
-        Story.Task task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TaskEnumerator(Story.Task task)
-        {
-            this.task = task;
-
-            // 事前計算（とりあえず Keep だけ。ToDo.他に高速化できる余地があるかは後で考える）
-            ref var info = ref task.Info();
-            Dev.Assert(info.IsValid);
-            TaskManager.Shared.TryKeep(ref info);
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public readonly object Current
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => null;
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() => TaskManager.Shared.MoveNext(this.task);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose() => this.task.Free();
-    }
-
-    // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-    // builder
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public struct TaskMethodBuilder
-    {
-        // fields
-        Story.Task task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public static TaskMethodBuilder Create() => default;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void Start<S>(ref S s)
-            where S : struct, IAsyncStateMachine
-        {
-            this.task = TaskManager.Shared.Entry(StateMachine.Alloc(in s)); // 常にプールする。AwaitOnCompleted 内でやると直前のステートマシンのコピーを避けられないため。
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public Story.Task Task => this.task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetResult() => TaskManager.Shared.SetResult();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetException(Exception e) => TaskManager.Shared.SetException(e);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AwaitOnCompleted<A, S>(ref A a, ref S s)
-            where A : INotifyCompletion
-            where S : IAsyncStateMachine
-            => Dev.ValidateAwaiter<A>();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
-            where A : ICriticalNotifyCompletion
-            where S : IAsyncStateMachine
-            => Dev.ValidateAwaiter<A>();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetStateMachine(IAsyncStateMachine s) { }
-    }
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public struct TaskMethodBuilder<R>
-    {
-        // fields
-        Story.Task<R> task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public static TaskMethodBuilder<R> Create() => default;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void Start<S>(ref S s)
-            where S : struct, IAsyncStateMachine
-        {
-            this.task = TaskManager.Shared.Entry<R>(StateMachine.Alloc(in s));
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public Story.Task<R> Task => this.task;
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetResult(R result) => TaskManager.Shared.SetResult(result);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetException(Exception e) => TaskManager.Shared.SetException(e);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AwaitOnCompleted<A, S>(ref A a, ref S s)
-            where A : INotifyCompletion
-            where S : IAsyncStateMachine
-            => Dev.ValidateAwaiter<A>();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
-            where A : ICriticalNotifyCompletion
-            where S : IAsyncStateMachine
-            => Dev.ValidateAwaiter<A>();
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public void SetStateMachine(IAsyncStateMachine s) { }
-    }
-
-    // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-    // ステートマシン
-    // UnsafePool相当。コードブロートを軽減するための独自定義。
-
-    /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct StateMachine
-    {
-        // fields
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        /// <summary>Don't touch! Only for system.</summary>
-        public
-#endif
-        readonly IStateMachinePool pool;
-        readonly int index;
-
-        // interfaces
-
-        /// <summary>Don't touch! Only for system.</summary>
-        public interface IStateMachinePool { void Free(int index); void MoveNext(int index);  void Expand(int length); }
-
-        // constructors
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        StateMachine(IStateMachinePool pool, int index) { this.pool = pool; this.index = index; }
-
-        // methods
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Free() => this.pool.Free(this.index);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MoveNext() => this.pool.MoveNext(this.index);
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int length) => this.pool.Expand(length);
-
-        // ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
-
-        // creators
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-        public static StateMachine Alloc<S>(in S value) where S : struct, IAsyncStateMachine
-        {
-            var pool = StateMachinePool<S>.Shared;
-            return new StateMachine(pool, pool.Alloc(value));
-        }
-
-        // inner classes
-
-        class StateMachinePool<S> : IStateMachinePool
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-            , IPoolMonitorForDebug
-#endif
-            where S : struct, IAsyncStateMachine
-        {
-            /// <summary>Don't touch! Only for system.</summary>
-            public static readonly StateMachinePool<S> Shared = new();
-
-            // fields
-            Core core;
-            S[] array;
-
-            StateMachinePool() => Dev.PoolMonitorRegister(this);
-
-            // methods
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
-            public int Alloc(in S value)
-            {
-                if (this.core.IsUsedUp)
-                {
-                    var count = this.core.ExpandAtAlloc(Unsafe.SizeOf<S>());
-                    if (this.array == null) { this.array = new S[count]; }
-                    else
-                    {
-                        Dev.Assert(this.array.Length < count);
-                        Dev.SetInt(this.array.Length);
-                        System.Array.Resize(ref this.array, count);
-                        Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded_StateMachine, Dev.GetInt(), array.Length, Dev.FormatMemorySize(Unsafe.SizeOf<S>() * array.Length), typeof(S).Name));
-                    }
-                }
-
-                var ret = this.core.Alloc();
-                this.array[ret] = value;
-                return ret;
-            }
-
-            // for IStateMachinePool
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public void Free(int index)
-            {
-                this.array[index] = default;
-                this.core.Free(index);
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public void MoveNext(int index)
-            {
-                var array = this.array;
-                array[index].MoveNext();
-                if (this.array != array) { this.array[index] = array[index]; } // 配列拡張時に新しい配列へ情報を反映
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public void Expand(int length)
-            {
-                if (this.core.Expand(length)) { System.Array.Resize(ref this.array, length); }
-            }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-            /// <summary>Don't touch! Only for system.</summary>
-            public string PoolName => Dev.StateMachinePool<S>.Name;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int ActiveCount => this.core.ActiveCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int WorstCount { get; set; }
-            /// <summary>Don't touch! Only for system.</summary>
-            public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int TotalBytes => this.core.ArraySize + Unsafe.SizeOf<S>() * (this.array?.Length ?? 0) + Unsafe.SizeOf<StateMachinePool<S>>();
-#endif
-        }
-
-        // ↑↑↑↑↑↑ ここまでステートマシンのジェネリクスによるコードブロート対象 ↑↑↑↑↑↑
-
-        /// <summary>Don't touch! Only for system.</summary>
-        // StateMachinePool用のコア機能
-        public struct Core
-        {
-            // fields
-            int[] nextFree;
-            int freeHead;
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-            int useCount;
-#endif
-
-            // properties
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public readonly bool IsUsedUp
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => this.nextFree == null || this.freeHead == -1;
-            }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-            /// <summary>Don't touch! Only for system.</summary>
-            public int ActiveCount => this.useCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int TotalCount => this.nextFree?.Length ?? 0;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int ArraySize => TotalCount * Unsafe.SizeOf<int>();
-#endif
-
-            // methods
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public int Alloc()
-            {
-                var index = this.freeHead;
-                this.freeHead = this.nextFree[index];
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-                this.useCount++;
-#endif
-
-                return index;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Free(int index)
-            {
-                this.nextFree[index] = this.freeHead;
-                this.freeHead = index;
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-                this.useCount--;
-#endif
-
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            public int ExpandAtAlloc(int itemSize)
-            {
-                if (this.nextFree != null && this.freeHead != -1) { return 0; }
-
-                int oldLength;
-                if (this.nextFree == null)
-                {
-                    oldLength = 0;
-                    this.freeHead = -1;
-                    Story.Pool.CreateBasedOnItemSize(ref this.nextFree, itemSize);
-                }
-                else
-                {
-                    oldLength = this.nextFree.Length;
-                    Story.Pool.ExpandBasedOnItemSize(ref this.nextFree, itemSize);
-                }
-
-                MakeLink(oldLength);
-
-                return this.nextFree.Length;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            public bool Expand(int length)
-            {
-                Dev.Assert(this.nextFree != null);
-
-                var oldLength = this.nextFree.Length;
-                if (length <= oldLength)
-                {
-                    Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, oldLength, length));
-                    return false;
-                }
-
-                System.Array.Resize(ref this.nextFree, length);
-                MakeLink(oldLength);
-
-                return true;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            void MakeLink(int oldLength)
-            {
-                var newLength = this.nextFree.Length;
-                for (var i = oldLength; i < newLength-1; ++i) { this.nextFree[i] = i + 1; }
-                this.nextFree[newLength - 1] = this.freeHead;
-                this.freeHead = oldLength;
-            }
-        }
-    }
-
     // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
     // タスク（中身）
 
-    /// <summary>Don't touch! Only for system.</summary>
     [StructLayout(LayoutKind.Sequential, Size = 32)]
     struct TaskInfo
     {
         // static
 
-        /// <summary>Don't touch! Only for system.</summary>
         public static TaskInfo Invalid;
 
         static TaskInfo()
@@ -932,17 +431,16 @@ namespace Omochaya.HiddenStory
         {
             None = 0,
             IsValid = 1 << 0,
-            IsUsing = 1 << 1,
-            HasException = 1 << 2,
-            IsFastMaster = 1 << 3,
-            IsPinned = 1 << 4,
-            IsRunning = 1 << 5,
-            WillCancel = 1 << 6,
+            IsStarted = 1 << 1,
+            IsFastOwner = 1 << 2,
+            IsPinned = 1 << 3,
+            IsRunning = 1 << 4,
+            WillCancel = 1 << 5,
         }
 
         // fields
         StateMachine stateMachine; // 12 バイトしか使ってないが 16 バイトを占有
-        Component master;
+        Component owner;
         public int Offset;
         Flags flags; // 1 バイトで足りるが後々のため 2 バイト
 
@@ -958,29 +456,20 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public bool IsUsing
+        public bool IsStarted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.IsUsing) != 0;
+            readonly get => (this.flags & Flags.IsStarted) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsUsing; } else { this.flags &= ~Flags.IsUsing; } }
+            set { if (value) { this.flags |= Flags.IsStarted; } else { this.flags &= ~Flags.IsStarted; } }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        public bool HasException
+        bool IsFastOwner
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.HasException) != 0;
+            readonly get => (this.flags & Flags.IsFastOwner) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.HasException; } else { this.flags &= ~Flags.HasException; } }
-        }
-
-        bool IsFastMaster
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.IsFastMaster) != 0;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsFastMaster; } else { this.flags &= ~Flags.IsFastMaster; } }
+            set { if (value) { this.flags |= Flags.IsFastOwner; } else { this.flags &= ~Flags.IsFastOwner; } }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1011,7 +500,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public Component Master => this.master;
+        public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
         public readonly bool HasOffset
@@ -1021,15 +510,15 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly bool IsOrphaned // 偽装nullチェック
+        public readonly bool ShouldCancel // 偽装nullチェック
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (WillCancel) { return true; }
                 if (IsPinned) { return false; }
-                if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsDestroyed; }
-                return this.master == null;
+                if (IsFastOwner) { return ((Story.ITaskOwner)this.owner).IsDestroyed; }
+                return this.owner == null;
             }
         }
 
@@ -1039,7 +528,7 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (IsFastMaster) { return ((Story.ITaskMaster)this.master).IsPaused; }
+                if (IsFastOwner) { return ((Story.ITaskOwner)this.owner).IsPaused; }
                 return false;
             }
         }
@@ -1057,13 +546,13 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Keep(Component master)
+        public void Keep(Component owner)
         {
             Dev.Assert(IsValid);
-            Dev.Assert(!(master is null), Messages.Exceptions.MasterCannotBeNull);
-            this.master = master;
-            IsFastMaster = master is Story.ITaskMaster;
-            IsPinned = false; // ピン留め外してマスター依存に戻す
+            Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
+            this.owner = owner;
+            IsFastOwner = owner is Story.ITaskOwner;
+            IsPinned = false; // ピン留めを外してオーナー依存に戻す
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -1078,7 +567,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Run()
         {
-            IsUsing = true;
+            IsStarted = true;
             this.stateMachine.MoveNext();
         }
 
@@ -1166,105 +655,4 @@ namespace Omochaya.HiddenStory
             return ref this.extra.Get<E>();
         }
     }
-
-/* Task の実行イメージ
-
-static int step;
-Task Prepare()
-{
-    step = 0;
-    return Root();
-}
-async Task Root()
-{
-    step = 1;
-    var any = Any(); // step = 1 （変わらない）
-    await any;       // step = 2 （次フレ step = 3）
-    step = 4;
-}
-async Task Any()
-{
-    step = 2;
-    await Yield; // 次フレにここから実行するように登録
-    step = 3;
-}
-
-void main()
-{
-    var node = Prepare();   // step = 0
-    node.Boot();            // step = 1(by node) -> 2(by any)
-}
-    次フレ                   // step = 3(by any) -> 4(by node)
-
-*/
-
-/*
-
-[CompilerGenerated]
-private sealed class <<Main>$>d__0 : IAsyncStateMachine
-{
-	public int <>1__state;
-
-	public AsyncTaskMethodBuilder <>t__builder;
-
-	public string[] args;
-
-	private TaskAwaiter <>u__1;
-
-	private void MoveNext()
-	{
-		int num = <>1__state;
-		try
-		{
-			TaskAwaiter awaiter;
-			if (num != 0)
-			{
-				awaiter = Task.Delay(100).GetAwaiter();
-				if (!awaiter.IsCompleted)
-				{
-					num = (<>1__state = 0);
-					<>u__1 = awaiter;
-					<<Main>$>d__0 stateMachine = this;
-					<>t__builder.AwaitUnsafeOnCompleted(ref awaiter, ref stateMachine);
-					return;
-				}
-			}
-			else
-			{
-				awaiter = <>u__1;
-				<>u__1 = default(TaskAwaiter);
-				num = (<>1__state = -1);
-			}
-			var ret = awaiter.GetResult();
-			Console.WriteLine("waited:" + ret);
-		}
-		catch (Exception exception)
-		{
-			<>1__state = -2;
-			<>t__builder.SetException(exception);
-			return;
-		}
-		<>1__state = -2;
-		<>t__builder.SetResult();
-	}
-
-	void IAsyncStateMachine.MoveNext()
-	{
-		//ILSpy generated this explicit interface implementation from .override directive in MoveNext
-		this.MoveNext();
-	}
-
-	[DebuggerHidden]
-	private void SetStateMachine(IAsyncStateMachine stateMachine)
-	{
-	}
-
-	void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
-	{
-		//ILSpy generated this explicit interface implementation from .override directive in SetStateMachine
-		this.SetStateMachine(stateMachine);
-	}
-}
-
-*/
 }

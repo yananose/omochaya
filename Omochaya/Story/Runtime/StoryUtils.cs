@@ -19,21 +19,21 @@ namespace Omochaya
     // タスク制御
     public static partial class Story
     {
-        /// <summary>Expands the underlying task info pools to the specified initial capacity.</summary>
+        /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void SetInitialTaskCount(int count)
+        public static void Custom(int bandCount = 3, int taskCount = 1024)
         {
-            Pool<TaskInfo, TaskInfo2>.Shared.Expand(count);
-            TaskManager.Shared.Expand(count); // 概ねプールと連動する。大抵は下回るが特殊な条件では上回る。
+            Pool<TaskInfo, TaskInfo2>.Shared.Expand(taskCount);
+            TaskManager.Shared.Custom(bandCount, taskCount);
         }
 
-        /// <summary>Replaces the current task with a new one, anchoring it to a master component and booting it.</summary>
+        /// <summary>Replaces the current task with a new one, anchoring it to a owner component and booting it.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Boot(ref this Task self, Component master, Task task)
+        public static bool Boot(ref this Task self, Component owner, Task task)
         {
             self.Free();
             self = task;
-            return self.Boot(master);
+            return self.Boot(owner);
         }
 
         /// <summary>Suspends the execution for the specified amount of seconds.</summary>

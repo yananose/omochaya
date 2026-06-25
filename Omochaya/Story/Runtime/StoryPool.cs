@@ -95,7 +95,7 @@ namespace Omochaya
             public static void ExpandBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = 1024 * 128)
             {
                 var newLength = array.Length;
-                newLength += Mathf.Clamp(newLength, 1, limit / itemSize);
+                newLength += Mathf.Min(newLength, Mathf.Max(4, limit / itemSize));
                 Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded_BasedOn, array.Length, newLength, Dev.FormatMemorySize(Unsafe.SizeOf<T>() * newLength), typeof(T).Name));
                 System.Array.Resize(ref array, newLength);
             }

@@ -18,7 +18,6 @@ namespace Omochaya.HiddenStory
     using System.Runtime.CompilerServices;
     using UnityEngine;
 
-    // タスクマネージャ（アップデータ）
     /// <summary>Don't touch! Only for system.</summary>
     partial class TaskManager
     {
@@ -49,7 +48,7 @@ namespace Omochaya.HiddenStory
         Exception runningException = null;
         Story.PoolMemory runningResult;
         public int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
-        public bool IsResultError;
+        public bool IsResultInvalid;
 
         // properties
         public bool IsRunningValid
@@ -71,7 +70,7 @@ namespace Omochaya.HiddenStory
             this.manualBand = new (BAND_TYPE_MANUAL);
             this.bandArray = new Band<Top>[bandCount];
             for (int i=0; i<bandCount; ++i) { this.bandArray[i] = new (GetBandType(i)); }
-            this.updateOffset = -1;
+            this.updateOffset = -2;
         }
 
         // methods
@@ -96,10 +95,17 @@ namespace Omochaya.HiddenStory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int count)
+        public void Custom(int bandCount, int taskCount)
         {
-            this.manualBand.Expand(count);
-            for (var i=0; i<this.bandArray.Length; ++i) { this.bandArray[i].Expand(count); }
+            Dev.Assert(!this.manualBand.HasValues, "使用後はカスタムできません");
+            Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
+            this.manualBand.Expand(taskCount);
+            this.bandArray = new Band<Top>[bandCount];
+            for (int i=0; i<bandCount; ++i)
+            {
+                this.bandArray[i] = new (GetBandType(i));
+                this.bandArray[i].Expand(taskCount);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,45 +124,53 @@ namespace Omochaya.HiddenStory
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(runningIndex); }
         }
 
+        // 起動したフレームは AutoBand で実行しないための処理（YieldLate 等でずらした場合は同フレームも実行）
         void FrameCheck()
         {
-            // if (0 <= this.updateOffset) { return; } // Time.frameCount が重いらしいので設定済みかもチェック → キャッシュされるようになったらしい
+            // Time.frameCount が重いらしいので更新済みかもチェック
+            // （Time.frameCount 参照はフレーム開始〜 Update or BandUpdate開始までは1回のみ。それ以外は Update と BandUpdate 外での起動のたび）
+            if (-1 <= this.updateOffset) { return; }
+
             var frameCount = Time.frameCount;
             if (this.frameCount == frameCount) { return; }
             this.frameCount = frameCount;
-            this.updateOffset = AutoBand.Count;
+            this.updateOffset = AutoBand.Count; // フレーム開始に処理すべき自動タスクを決定
+        }
+        void FrameCheckDisable()
+        {
+            FrameCheck();
+            if (this.updateOffset == -2) { this.updateOffset = -1; }
+        }
+        void FrameCheckEnable()
+        {
+            if (this.updateOffset == -1) { this.updateOffset = -2; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Update()
         {
-            // auto：実行
-            FrameCheck();
+            FrameCheckDisable();
+
             BandInvoke(0, this.updateOffset);
             this.updateOffset = -1;
 
-            // auto：詰める
             AutoBand.Compact();
 
-            // manual：生存チェックしながら詰める
             this.manualBand.Compact();
 
             // 次が遠いのでここで放す
             CaptureResult();
             CaptureException();
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int GetBandNo(int offset) => (offset >> BAND_TYPE_SHIFT) - 1;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int GetBandType(int bandNo) => (bandNo + 1) << BAND_TYPE_SHIFT;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static bool IsMatchBand(int offset, int bandNo) => offset >> BAND_TYPE_SHIFT == bandNo + 1;
+            FrameCheckEnable();
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void BandUpdate(int bandNo)
         {
             Dev.Assert(0 < bandNo, string.Format(Messages.Exceptions.NotSupportedBandUpdate, bandNo));
+
+            FrameCheckDisable();
 
             BandInvoke(bandNo, this.bandArray[bandNo].Count);
             this.bandArray[bandNo].Compact();
@@ -164,11 +178,20 @@ namespace Omochaya.HiddenStory
             // 次が遠いのでここで放す
             CaptureResult();
             CaptureException();
+
+            FrameCheckEnable();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void LateUpdate() => BandUpdate(1);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FixedUpdate() => BandUpdate(2);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int GetBandNo(int offset) => (offset >> BAND_TYPE_SHIFT) - 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int GetBandType(int bandNo) => (bandNo + 1) << BAND_TYPE_SHIFT;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool IsMatchBand(int offset, int bandNo) => offset >> BAND_TYPE_SHIFT == bandNo + 1;
 
         void BandInvoke(int bandNo, int rawOffset)
         {
@@ -305,7 +328,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void TryKeep(ref TaskInfo info)
         {
-            if (info.Master is null)
+            if (info.Owner is null)
             {
                 ref var runningInfo = ref GetRunningInfo();
                 if (runningInfo.IsPinned) // ピン留めされてるタスクから起動されたピン留めする
@@ -313,9 +336,9 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                     info.IsPinned = true;
                     return;
                 }
-                var master = runningInfo.Master;
-                Dev.Assert(!(master is null));
-                info.Keep(master);
+                var owner = runningInfo.Owner;
+                Dev.Assert(!(owner is null));
+                info.Keep(owner);
             }
         }
 
@@ -346,10 +369,10 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
                 Dev.Assert(!topInfo.IsRunning);
 
-                if (topInfo.IsOrphaned)
+                if (topInfo.ShouldCancel)
                 {
                     // 使用中のみ
-                    if (topInfo.IsUsing)
+                    if (topInfo.IsStarted)
                     {
                         // キャンセル要求を下ろしてピン留め
                         topInfo.WillCancel = false;
@@ -566,7 +589,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 削除要求されたタスクが起動しようとした
             if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
 
-            // 元の位置を退避してマスターがいなければ設定
+            // 元の位置を退避してオーナーがいなければ設定
             var offset = topInfo.Offset;
             TryKeep(ref rootInfo);
 
@@ -673,7 +696,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
 
 
-            // マスターがいなければ設定
+            // オーナーがいなければ設定
             TryKeep(ref rootInfo);
 
             // 実行
@@ -752,8 +775,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         public R GetResult<R>()
         {
             R result = default;
-            IsResultError = this.runningResult.IsFailed<R>();
-            if (!IsResultError)
+            IsResultInvalid = this.runningResult.IsFailed<R>();
+            if (!IsResultInvalid)
             {
                 result = this.runningResult.Get<R>();
                 this.runningResult.Free();

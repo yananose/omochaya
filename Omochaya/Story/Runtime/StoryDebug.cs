@@ -67,8 +67,8 @@ namespace Omochaya.HiddenStory
             /// <summary></summary>
             public static void FetchFixedCount(ref int count) => count = TaskManager.Shared.FixedTopCount;
 
-            /// <summary>Extracts the binding lifecycle master component from the target task info block.</summary>
-            public static void ExtractMaster(ref Component master, Story.Task task) => master = task.Info().Master;
+            /// <summary>Extracts the binding lifecycle owner component from the target task info block.</summary>
+            public static void ExtractOwner(ref Component owner, Story.Task task) => owner = task.Info().Owner;
 
             /// <summary>Retrieves the unique sorting layout key assigned to the specified debug task handle.</summary>
             public static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
@@ -180,8 +180,7 @@ Dev.LoopBreak.Check(index.ToString());
 
             var stateStr = info2.StateForDebug;
             var methodName = info.IsValid ? info.GetMethodName() : string.Format(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age);
-            if (info.HasException) { methodName += " -EXCEPTION"; }
-            var masterName = GetMasterName(ref info);
+            var ownerName = GetOwnerName(ref info);
 
             var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
             var prevIndex = info.HasOffset ? -1 : info2.Prev;
@@ -189,7 +188,7 @@ Dev.LoopBreak.Check(index.ToString());
             if (0 <= nextIndex &&
                 Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
 
-            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
+            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {ownerName}";
         }
         public static class Type<T> { public static string Name = GetTypeName(typeof(T)); }
         public static class Pool<T> { public static string Name = "[Pool] " + Type<T>.Name; }
@@ -252,12 +251,12 @@ Dev.LoopBreak.Check(index.ToString());
             if (0 < end) { return name.Substring(0, end); }
             return name;
         }
-        static string GetMasterName(ref TaskInfo info)
+        static string GetOwnerName(ref TaskInfo info)
         {
             if (info.IsPinned) { return Messages.DebugInfo.StatePinned; }
-            if (info.Master is null) { return Messages.DebugInfo.MasterNull; }
-            if (info.IsOrphaned) { return Messages.DebugInfo.StateDead; }
-            return info.Master.name;
+            if (info.Owner is null) { return Messages.DebugInfo.OwnerNull; }
+            if (info.ShouldCancel) { return Messages.DebugInfo.StateDead; }
+            return info.Owner.name;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
@@ -312,7 +311,7 @@ Dev.LoopBreak.Check(index.ToString());
             [Conditional("DUMMY")] public static void FetchManualCount(ref int count) {}
             [Conditional("DUMMY")] public static void FetchLateCount(ref int count) {}
             [Conditional("DUMMY")] public static void FetchFixedCount(ref int count) {}
-            [Conditional("DUMMY")] public static void ExtractMaster(ref Component master, Story.Task task) {}
+            [Conditional("DUMMY")] public static void ExtractOwner(ref Component owner, Story.Task task) {}
             [Conditional("DUMMY")] public static void GetOrder(ref long offset, Story.Task task) {}
             [Conditional("DUMMY")] public static void GetTaskList(List<Story.Task> outTasks) {}
         }

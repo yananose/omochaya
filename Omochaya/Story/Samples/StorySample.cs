@@ -24,7 +24,7 @@ public class StorySample : MonoBehaviour
         // 使用するタスク数を宣言します。
         // 宣言した数を超えても動作しますが、管理配列がリサイズされてアロケートが発生します。
         // 気にしない場合は省略しても問題ありません。
-        Story.SetInitialTaskCount(10);
+        Story.Custom(taskCount: 10);
 
         // タスクを起動します。
         // ここではテスト用のルートタスクを起動しています。
@@ -202,7 +202,6 @@ public class StorySample : MonoBehaviour
                 else { await Story.YieldFixed; }
             }
         }
-
     }
 
     // 【非同期タスクを返すメソッドのテスト】右端まで移動させる

@@ -19,44 +19,57 @@ namespace Omochaya.HiddenStory
     using UnityEngine;
 
     /// <summary>Don't touch! Only for system.</summary>
-    partial class TaskManager
+    internal class TaskManager
     {
         // static
 
         /// <summary>Don't touch! Only for system.</summary>
-        public static TaskManager Shared { get; } = new TaskManager(3);
+        internal static TaskManager Shared { get; } = new TaskManager(3);
 
-        /// <summary>Thrown internally when a task is forcibly freed or canceled.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         class CanceledException : Exception
         {
-            public static readonly CanceledException Shared = new CanceledException();
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static readonly CanceledException Shared = new CanceledException();
             CanceledException() : base(Messages.Exceptions.TaskCanceled) { }
         }
 
         // const
+
         const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
-        public const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
-        public const int BAND_TYPE_MANUAL = 0 << BAND_TYPE_SHIFT; // 手動更新 & 初期位置
-        public const int BAND_TYPE_AUTO = 1 << BAND_TYPE_SHIFT; // Update更新 & 削除位置
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int BAND_TYPE_MANUAL = 0 << BAND_TYPE_SHIFT; // 手動更新 & 初期位置
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int BAND_TYPE_AUTO = 1 << BAND_TYPE_SHIFT; // Update更新 & 削除位置
 
         // fields
-        Band<ManualTop> manualBand;
-        Band<Top>[] bandArray;
+        TaskBand<ManualTaskTop> manualBand;
+        TaskBand<TaskTop>[] bandArray;
         int frameCount;
         int updateOffset;
         int runningIndex = -1;
         Exception runningException = null;
         Story.PoolMemory runningResult;
-        public int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
-        public bool IsResultInvalid;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool IsResultInvalid;
 
         // properties
-        public bool IsRunningValid
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool IsRunningValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => 0 <= runningIndex;
         }
-        ref Band<Top> AutoBand
+
+        ref TaskBand<TaskTop> AutoBand
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref this.bandArray[0];
@@ -68,14 +81,16 @@ namespace Omochaya.HiddenStory
             Dev.Assert(0 < bandCount);
             this.frameCount = Time.frameCount;
             this.manualBand = new (BAND_TYPE_MANUAL);
-            this.bandArray = new Band<Top>[bandCount];
+            this.bandArray = new TaskBand<TaskTop>[bandCount];
             for (int i=0; i<bandCount; ++i) { this.bandArray[i] = new (GetBandType(i)); }
             this.updateOffset = -2;
         }
 
         // methods
+
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-        public Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
+        internal Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
             if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
@@ -86,21 +101,24 @@ namespace Omochaya.HiddenStory
             FrameCheck();
             return new Story.Task(id);
         }
+
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
-        public Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
+        internal Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
             if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
             var task = Entry(stateMachine);
             return new Story.Task<R>(task);
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Custom(int bandCount, int taskCount)
+        internal void Custom(int bandCount, int taskCount)
         {
             Dev.Assert(!this.manualBand.HasValues, "使用後はカスタムできません");
             Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
             this.manualBand.Expand(taskCount);
-            this.bandArray = new Band<Top>[bandCount];
+            this.bandArray = new TaskBand<TaskTop>[bandCount];
             for (int i=0; i<bandCount; ++i)
             {
                 this.bandArray[i] = new (GetBandType(i));
@@ -108,17 +126,21 @@ namespace Omochaya.HiddenStory
             }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsManualBand(int offset) => (offset & BAND_TYPE_MASK) == BAND_TYPE_MANUAL;
+        internal bool IsManualBand(int offset) => (offset & BAND_TYPE_MASK) == BAND_TYPE_MANUAL;
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref TaskInfo GetRunningInfo()
+        internal ref TaskInfo GetRunningInfo()
         {
             if (runningIndex < 0) { return ref TaskInfo.Invalid; }
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(runningIndex); }
         }
+
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref TaskInfo2 GetRunningInfo2()
+        internal ref TaskInfo2 GetRunningInfo2()
         {
             if (runningIndex < 0) { return ref TaskInfo2.Invalid; }
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(runningIndex); }
@@ -146,8 +168,9 @@ namespace Omochaya.HiddenStory
             if (this.updateOffset == -1) { this.updateOffset = -2; }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Update()
+        internal void Update()
         {
             FrameCheckDisable();
 
@@ -165,8 +188,9 @@ namespace Omochaya.HiddenStory
             FrameCheckEnable();
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void BandUpdate(int bandNo)
+        internal void BandUpdate(int bandNo)
         {
             Dev.Assert(0 < bandNo, string.Format(Messages.Exceptions.NotSupportedBandUpdate, bandNo));
 
@@ -181,10 +205,14 @@ namespace Omochaya.HiddenStory
 
             FrameCheckEnable();
         }
+
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void LateUpdate() => BandUpdate(1);
+        internal void LateUpdate() => BandUpdate(1);
+
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FixedUpdate() => BandUpdate(2);
+        internal void FixedUpdate() => BandUpdate(2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static int GetBandNo(int offset) => (offset >> BAND_TYPE_SHIFT) - 1;
@@ -229,8 +257,9 @@ namespace Omochaya.HiddenStory
             }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UnsafeCancelManualChain(int topIndex)
+        internal void UnsafeCancelManualChain(int topIndex)
         {
             // チェインをたどりながら全てキャンセル要求
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
@@ -325,8 +354,9 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void TryKeep(ref TaskInfo info)
+        internal void TryKeep(ref TaskInfo info)
         {
             if (info.Owner is null)
             {
@@ -439,18 +469,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
                         // 実行中にキャンセルされていない
                         if (!info.WillCancel) { return true; } // 継続
-
-                        // 先頭までキャンセル指示（※キャンセルされたタスクは await できないので不要）
-//                         var index = topIndex;
-// Dev.LoopBreak.Init();
-//                         while (!info.HasOffset)
-//                         {
-// Dev.LoopBreak.Check(info.GetMethodName());
-//                             if (info.HasOffset) { break; }
-//                             index = pool.UnsafeGet2(index).Prev;
-//                             info = ref pool.UnsafeGet(index);
-//                             info.WillCancel = true;
-//                         }
                     }
                     else
                     {
@@ -572,7 +590,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             nextInfo.IsPinned = info.IsPinned;
         }
 
-        public bool Boot(Story.Task task)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool Boot(Story.Task task)
         {
             if (!task.IsValid) { return false; }
 
@@ -623,8 +642,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext(Story.Task task)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool MoveNext(Story.Task task)
         {
             if (!task.IsValid) { return false; }
 
@@ -675,8 +694,9 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeLink を呼ぶので
-        public bool IsNotCompleted(Story.Task task)
+        internal bool IsNotCompleted(Story.Task task)
         {
             Dev.Assert(IsRunningValid);
 
@@ -733,13 +753,15 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        public void SetResult()
+        /// <summary>Don't touch! Only for system.</summary>
+        internal void SetResult()
         {
             Dev.Assert(this.IsRunningValid);
             this.GetRunningInfo().IsRunning = false;
         }
 
-        public void SetResult<R>(R result)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal void SetResult<R>(R result)
         {
             SetResult();
 
@@ -747,7 +769,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             this.runningResult = Story.PoolMemory.Alloc<R>(in result);
         }
 
-        public void SetException(Exception e)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal void SetException(Exception e)
         {
             SetResult();
 
@@ -759,7 +782,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        public void GetResult()
+        /// <summary>Don't touch! Only for system.</summary>
+        internal void GetResult()
         {
             CaptureResult();
             var e = this.runningException;
@@ -772,7 +796,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        public R GetResult<R>()
+        /// <summary>Don't touch! Only for system.</summary>
+        internal R GetResult<R>()
         {
             R result = default;
             IsResultInvalid = this.runningResult.IsFailed<R>();
@@ -788,7 +813,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             return result;
         }
 
-        public void Free(Story.Task task)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal void Free(Story.Task task)
         {
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             if (!pool.IsValid(task.Id)) { return; }
@@ -813,5 +839,25 @@ Dev.LoopBreak.Check(task.ToString());
             CaptureResult();
             CaptureException();
         }
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int ManualTopCount => this.manualBand.Count;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int AutoTopCount => this.bandArray[0].Count;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int LateTopCount => this.bandArray[1].Count;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int FixedTopCount => this.bandArray[2].Count;
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int ManualIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int AutoIndexForDebug(int rawOffset) => this.bandArray[0][rawOffset].Index;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int LateIndexForDebug(int rawOffset) => this.bandArray[1][rawOffset].Index;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal int FixedIndexForDebug(int rawOffset) => this.bandArray[2][rawOffset].Index;
+#endif
     }
 }

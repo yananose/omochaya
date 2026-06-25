@@ -109,12 +109,12 @@ namespace Omochaya.HiddenStory
     // UnsafePool相当。コードブロートを軽減するための独自定義。
 
     /// <summary>Don't touch! Only for system.</summary>
-    public readonly struct StateMachine
+    internal readonly struct StateMachine
     {
         // fields
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
         /// <summary>Don't touch! Only for system.</summary>
-        public
+        internal
 #endif
         readonly IStateMachinePool pool;
         readonly int index;
@@ -122,7 +122,12 @@ namespace Omochaya.HiddenStory
         // interfaces
 
         /// <summary>Don't touch! Only for system.</summary>
-        public interface IStateMachinePool { void Free(int index); void MoveNext(int index);  void Expand(int length); }
+        internal interface IStateMachinePool
+        {
+            void Free(int index);
+            void MoveNext(int index);
+            void Expand(int length);
+        }
 
         // constructors
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -132,15 +137,15 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Free() => this.pool.Free(this.index);
+        internal void Free() => this.pool.Free(this.index);
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void MoveNext() => this.pool.MoveNext(this.index);
+        internal void MoveNext() => this.pool.MoveNext(this.index);
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int length) => this.pool.Expand(length);
+        internal void Expand(int length) => this.pool.Expand(length);
 
         // ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
 
@@ -148,7 +153,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-        public static StateMachine Alloc<S>(in S value) where S : struct, IAsyncStateMachine
+        internal static StateMachine Alloc<S>(in S value) where S : struct, IAsyncStateMachine
         {
             var pool = StateMachinePool<S>.Shared;
             return new StateMachine(pool, pool.Alloc(value));
@@ -163,7 +168,7 @@ namespace Omochaya.HiddenStory
             where S : struct, IAsyncStateMachine
         {
             /// <summary>Don't touch! Only for system.</summary>
-            public static readonly StateMachinePool<S> Shared = new();
+            internal static readonly StateMachinePool<S> Shared = new();
 
             // fields
             Core core;
@@ -175,7 +180,7 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
-            public int Alloc(in S value)
+            internal int Alloc(in S value)
             {
                 if (this.core.IsUsedUp)
                 {
@@ -236,7 +241,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         // StateMachinePool用のコア機能
-        public struct Core
+        internal struct Core
         {
             // fields
             int[] nextFree;
@@ -249,7 +254,7 @@ namespace Omochaya.HiddenStory
             // properties
 
             /// <summary>Don't touch! Only for system.</summary>
-            public readonly bool IsUsedUp
+            internal readonly bool IsUsedUp
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get => this.nextFree == null || this.freeHead == -1;
@@ -257,18 +262,18 @@ namespace Omochaya.HiddenStory
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
             /// <summary>Don't touch! Only for system.</summary>
-            public int ActiveCount => this.useCount;
+            internal int ActiveCount => this.useCount;
             /// <summary>Don't touch! Only for system.</summary>
-            public int TotalCount => this.nextFree?.Length ?? 0;
+            internal int TotalCount => this.nextFree?.Length ?? 0;
             /// <summary>Don't touch! Only for system.</summary>
-            public int ArraySize => TotalCount * Unsafe.SizeOf<int>();
+            internal int ArraySize => TotalCount * Unsafe.SizeOf<int>();
 #endif
 
             // methods
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public int Alloc()
+            internal int Alloc()
             {
                 var index = this.freeHead;
                 this.freeHead = this.nextFree[index];
@@ -282,7 +287,7 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Free(int index)
+            internal void Free(int index)
             {
                 this.nextFree[index] = this.freeHead;
                 this.freeHead = index;
@@ -295,7 +300,7 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            public int ExpandAtAlloc(int itemSize)
+            internal int ExpandAtAlloc(int itemSize)
             {
                 if (this.nextFree != null && this.freeHead != -1) { return 0; }
 
@@ -319,7 +324,7 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            public bool Expand(int length)
+            internal bool Expand(int length)
             {
                 Dev.Assert(this.nextFree != null);
 
@@ -354,11 +359,11 @@ namespace Omochaya.HiddenStory
     public readonly struct Awaiter : INotifyCompletion
     {
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly Story.Task task;
+        readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Awaiter(Story.Task task) =>  this.task = task;
+        internal Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
 
@@ -386,11 +391,11 @@ namespace Omochaya.HiddenStory
     public readonly struct Awaiter<R> : INotifyCompletion
     {
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly Story.Task task;
+        readonly Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Awaiter(Story.Task task) =>  this.task = task;
+        internal Awaiter(Story.Task task) =>  this.task = task;
 
         // for INotifyCompletion
 
@@ -423,7 +428,7 @@ namespace Omochaya.HiddenStory
         readonly int bandNo;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public YieldCore(int bandNo) { this.bandNo = bandNo; }
+        internal YieldCore(int bandNo) { this.bandNo = bandNo; }
 
         /// <summary>Don't touch! Only for system.</summary>
         public bool IsCompleted
@@ -487,7 +492,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TaskEnumerator(Story.Task task)
+        internal TaskEnumerator(Story.Task task)
         {
             this.task = task;
 

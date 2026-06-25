@@ -8,6 +8,9 @@
 //   for the Omochaya Story framework.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("com.omochaya.story.Editor")]
+
 namespace Omochaya
 {
     using System;
@@ -213,6 +216,7 @@ namespace Omochaya
             public TaskEnumerator GetEnumerator() => new TaskEnumerator(this);
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+            /// <summary></summary>
             public override string ToString() => Dev.ToString(this);
 #endif
         }
@@ -320,7 +324,13 @@ namespace Omochaya
         // 偽装nullチェック回避と一時停止対応用
 
         /// <summary>Defines a owner object that governs the lifecycle and destruction state of associated tasks.</summary>
-        public interface ITaskOwner { bool IsDestroyed { get; set; } bool IsPaused { get; } }
+        public interface ITaskOwner
+        {
+            /// <summary></summary>
+            bool IsDestroyed { get; set; }
+            /// <summary></summary>
+            bool IsPaused { get; }
+        }
 
         /// <summary>A base MonoBehaviour that implements ITaskOwner to manage tasks bound to its lifecycle.</summary>
         public class TaskBehaviour : MonoBehaviour, ITaskOwner // 実装漏れ回避用
@@ -329,9 +339,12 @@ namespace Omochaya
             protected virtual void OnEnabled() {}
             protected virtual void OnDisabled() {}
 
+            /// <summary></summary>
             public bool IsDestroyed { get; set; }
+            /// <summary></summary>
             public bool IsPaused { get; set; }
 
+            /// <summary></summary>
             // 派生クラスで OnDestroy を定義する場合は base.OnDestroy を呼び出してください。あるいは OnDestroy の代わりに OnDestroyed を定義すれば base 呼び出しは不要です。
             protected void OnDestroy()
             {
@@ -339,6 +352,7 @@ namespace Omochaya
                 OnDestroyed();
             }
 
+            /// <summary></summary>
             // 派生クラスで OnEnable を定義する場合は base.OnEnable を呼び出してください。あるいは OnEnable の代わりに OnEnabled を定義すれば base 呼び出しは不要です。
             protected void OnEnable()
             {
@@ -346,6 +360,7 @@ namespace Omochaya
                 OnEnabled();
             }
 
+            /// <summary></summary>
             // 派生クラスで OnDisable を定義する場合は base.OnDisable を呼び出してください。あるいは OnDisable の代わりに OnDisabled を定義すれば base 呼び出しは不要です。
             protected void OnDisable()
             {

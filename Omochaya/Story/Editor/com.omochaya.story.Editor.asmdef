@@ -1,0 +1,18 @@
+{
+    "name": "com.omochaya.story.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bd68f2731e60748a0b86322c49c270db"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

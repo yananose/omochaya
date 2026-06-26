@@ -15,5 +15,12 @@
     "coroutine",
     "performance"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "samples": [
+    {
+      "displayName": "フレームワーク動作検証・アロケーションテスト",
+      "description": "タスクのライフサイクル、並列実行ロジック、および厳密なゼロアロケーション検証を網羅した Unity Test Framework (UTF) 向けテストコード群です。",
+      "path": "Samples~/Tests"
+    }
+  ]
 }

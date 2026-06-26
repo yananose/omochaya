@@ -59,7 +59,7 @@ namespace Omochaya.HiddenStory
         internal static class EditorUI
         {
             // Task Monitor 関連
-            internal const string TaskMonitor_PlayModeOnly = "プレイモード中のみタスクを表示します。";
+            internal const string TaskMonitor_PlayModeOnly = "Playモードに入ると、実行中のタスクのリアルタイム状況が表示されます。";
             internal const string TaskMonitor_MenuPingOwner = "オーナーを検索";
             internal const string TaskMonitor_MenuForceFree = "強制終了";
             internal const string TaskMonitor_Refresh = "Refresh";

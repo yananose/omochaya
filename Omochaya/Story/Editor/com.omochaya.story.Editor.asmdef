@@ -2,7 +2,7 @@
     "name": "com.omochaya.story.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:bd68f2731e60748a0b86322c49c270db"
+        "com.omochaya.story"
     ],
     "includePlatforms": [
         "Editor"

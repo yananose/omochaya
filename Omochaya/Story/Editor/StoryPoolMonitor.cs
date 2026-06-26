@@ -1,10 +1,10 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryPoolMonitor.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
-//   Provides a custom Unity EditorWindow interface to visualize, monitor, and profile real-time
+//   Provides a custom Unity EditorWindow interface using UI Toolkit to visualize, monitor, and profile real-time
 //   memory footprints and allocation capacities of active object pools within the framework.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
@@ -16,169 +16,285 @@
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 namespace Omochaya.HiddenStory
 {
-    using UnityEditor;
-    using UnityEngine;
-    using System.Linq;
     using System.Collections.Generic;
+    using System.Linq;
+    using UnityEditor;
+    using UnityEditor.UIElements;
+    using UnityEngine;
+    using UnityEngine.UIElements;
 
     class PoolMonitorForDebug : EditorWindow
     {
-        Vector2 scrollPosition;
-
-        // ★ ソート用の状態管理
         enum SortColumn { Name, Active, Worst, Free, MemorySize }
-        SortColumn currentSortColumn = SortColumn.Name;
-        bool sortAscending = true;
 
-        /// <summary>Opens or focuses the custom Omochaya Pool Monitor tracking window in the Unity Editor.</summary>
         [MenuItem("Window/Omochaya/Pool Monitor")]
         public static void ShowWindow()
         {
             var window = GetWindow<PoolMonitorForDebug>("Pool Monitor");
-            window.Show();
+            window.minSize = new Vector2(500, 300);
         }
 
-        void OnInspectorUpdate()
+        // 状態管理
+        readonly List<IPoolMonitorForDebug> displayList = new();
+        ListView listView;
+        Label infoLabel;
+        HelpBox playModeHelpBox;
+
+        SortColumn currentSortColumn = SortColumn.Name;
+        bool sortAscending = true;
+
+        public void CreateGUI()
         {
-            Repaint();
+            var root = this.rootVisualElement;
+
+            // 1. ツールバーの作成
+            var toolbar = new Toolbar();
+            root.Add(toolbar);
+
+            // 2. プレイモード警告ボックス
+            this.playModeHelpBox = new HelpBox(Messages.EditorUI.PoolMonitor_PlayModeOnly, HelpBoxMessageType.Info);
+            root.Add(this.playModeHelpBox);
+
+            // 3. ヘッダー（ソートボタン付きの行）の作成
+            var headerContainer = new VisualElement();
+            headerContainer.style.flexDirection = FlexDirection.Row;
+            headerContainer.style.height = 24;
+            headerContainer.style.borderBottomWidth = 1;
+            headerContainer.style.borderBottomColor = Color.gray;
+            headerContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
+            root.Add(headerContainer);
+
+            var btnActive = CreateHeaderButton(Messages.EditorUI.PoolMonitor_ColActive, SortColumn.Active, 60);
+            var btnWorst = CreateHeaderButton(Messages.EditorUI.PoolMonitor_ColWorst, SortColumn.Worst, 60);
+            var btnFree = CreateHeaderButton(Messages.EditorUI.PoolMonitor_ColFree, SortColumn.Free, 60);
+            var btnMemory = CreateHeaderButton(Messages.EditorUI.PoolMonitor_ColMemory, SortColumn.MemorySize, 100);
+            var btnName = CreateHeaderButton(Messages.EditorUI.PoolMonitor_ColName, SortColumn.Name, 0);
+            btnName.style.flexGrow = 1;
+
+            headerContainer.Add(btnActive);
+            headerContainer.Add(btnWorst);
+            headerContainer.Add(btnFree);
+            headerContainer.Add(btnMemory);
+            headerContainer.Add(btnName);
+
+            // 4. リストビューの初期化
+            this.listView = new ListView(this.displayList, 20, MakeItem, BindItem);
+            this.listView.style.flexGrow = 1;
+            this.listView.showAlternatingRowBackgrounds = AlternatingRowBackground.All;
+            root.Add(this.listView);
+
+            // 5. フッター（ステータス情報ラベル）の作成
+            var footer = new VisualElement();
+            footer.style.height = 24;
+            footer.style.borderTopWidth = 1;
+            footer.style.borderTopColor = Color.gray;
+            footer.style.paddingLeft = 6;
+            footer.style.justifyContent = Justify.Center;
+            footer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
+            root.Add(footer);
+
+            this.infoLabel = new Label { style = { unityFontStyleAndWeight = FontStyle.Bold } }; // 修正: unityFontStyleAndWeight
+            footer.Add(this.infoLabel);
+
+            RefreshDisplay();
+        }
+
+        Button CreateHeaderButton(string text, SortColumn column, float width)
+        {
+            var button = new Button(() => ToggleSort(column)) { text = text };
+            button.style.borderTopWidth = 0;
+            button.style.borderBottomWidth = 0;
+            button.style.borderLeftWidth = 0;
+            button.style.borderRightWidth = 1;
+            button.style.borderRightColor = Color.gray;
+            
+            // 修正: 個別の角丸プロパティで 0 を指定
+            button.style.borderTopLeftRadius = 0;
+            button.style.borderTopRightRadius = 0;
+            button.style.borderBottomLeftRadius = 0;
+            button.style.borderBottomRightRadius = 0;
+            
+            button.style.unityTextAlign = TextAnchor.MiddleLeft;
+            button.style.backgroundColor = Color.clear;
+            if (width > 0)
+            {
+                button.style.width = width;
+            }
+            return button;
+        }
+
+        VisualElement MakeItem()
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+
+            var activeLabel = new Label() { name = "Active", style = { width = 65, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } };
+            var worstLabel = new Label() { name = "Worst", style = { width = 65, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } };
+            var freeLabel = new Label() { name = "Free", style = { width = 65, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } };
+            var memoryLabel = new Label() { name = "Memory", style = { width = 100, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } };
+            var nameLabel = new Label() { name = "Name", style = { flexGrow = 1, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } };
+
+            row.Add(activeLabel);
+            row.Add(worstLabel);
+            row.Add(freeLabel);
+            row.Add(memoryLabel);
+            row.Add(nameLabel);
+
+            return row;
+        }
+
+        void BindItem(VisualElement element, int index)
+        {
+            if (index < 0 || index >= this.displayList.Count) return;
+
+            var monitor = this.displayList[index];
+            if (monitor == null) return;
+
+            element.Q<Label>("Active").text = monitor.ActiveCount.ToString();
+            element.Q<Label>("Worst").text = monitor.WorstCount.ToString();
+            element.Q<Label>("Free").text = monitor.FreeCount.ToString();
+            element.Q<Label>("Memory").text = DevForEditor.FormatMemorySize(monitor.TotalBytes);
+            element.Q<Label>("Name").text = monitor.PoolName;
         }
 
         void Update()
         {
-            if (!Application.isPlaying || EditorApplication.isPaused) return;
-            foreach (var monitor in IPoolMonitorForDebug.Monitors) { monitor.WorstCount = Mathf.Max(monitor.WorstCount, monitor.ActiveCount); }
+            // UI生成前の実行をガード
+            if (this.playModeHelpBox == null || this.listView == null) return;
+
+            var isPlaying = Application.isPlaying;
+
+            // プレイモード状態に応じてUIの表示・非表示を切り替え
+            this.playModeHelpBox.style.display = isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
+            // this.listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+
+            // プレイモードでない、または一時停止中の場合はここで処理を打ち切る
+            if (!isPlaying || EditorApplication.isPaused)
+            {
+                // // プレイモードを抜けた瞬間のみリストをクリアする
+                // if (!isPlaying && this.displayList.Count > 0)
+                // {
+                //     this.displayList.Clear();
+                //     this.listView.RefreshItems();
+                // }
+                return;
+            }
+
+            // --- これ以降はプレイ中かつ動いている時のみ実行される ---
+
+            foreach (var monitor in IPoolMonitorForDebug.Monitors)
+            {
+                if (monitor != null)
+                {
+                    monitor.WorstCount = Mathf.Max(monitor.WorstCount, monitor.ActiveCount);
+                }
+            }
+
+            this.displayList.Clear();
+            this.displayList.AddRange(IPoolMonitorForDebug.Monitors.Where(m => m != null));
+
+            ApplySort();
+            RefreshFooter();
         }
 
-        void OnGUI()
+        void ToggleSort(SortColumn column)
         {
-            GUILayout.Space(10);
-            GUILayout.Label("Omochaya Pool Monitor", EditorStyles.boldLabel);
-            GUILayout.Space(5);
-
-            if (!Application.isPlaying)
+            if (this.currentSortColumn == column)
             {
-                EditorGUILayout.HelpBox(Messages.EditorUI.PoolMonitor_PlayModeOnly, MessageType.Info);
+                this.sortAscending = !this.sortAscending;
+            }
+            else
+            {
+                this.currentSortColumn = column;
+                this.sortAscending = (column == SortColumn.Name);
             }
 
-            // テーブルのヘッダー描画（ここでクリック入力を受け付ける）
-            DrawHeader();
+            RefreshDisplay();
+        }
 
-            // ★ Linq を使って表示用にソート
-            IEnumerable<IPoolMonitorForDebug> sortedMonitors = IPoolMonitorForDebug.Monitors.Where(m => m != null);
-            switch (currentSortColumn)
+        void ApplySort()
+        {
+            this.displayList.Sort((a, b) =>
             {
-                case SortColumn.Name:
-                    sortedMonitors = sortAscending ? sortedMonitors.OrderBy(m => m.PoolName) : sortedMonitors.OrderByDescending(m => m.PoolName);
-                    break;
-                case SortColumn.Active:
-                    sortedMonitors = sortAscending ? sortedMonitors.OrderBy(m => m.ActiveCount) : sortedMonitors.OrderByDescending(m => m.ActiveCount);
-                    break;
-                case SortColumn.Worst:
-                    sortedMonitors = sortAscending ? sortedMonitors.OrderBy(m => m.WorstCount) : sortedMonitors.OrderByDescending(m => m.WorstCount);
-                    break;
-                case SortColumn.Free:
-                    sortedMonitors = sortAscending ? sortedMonitors.OrderBy(m => m.FreeCount) : sortedMonitors.OrderByDescending(m => m.FreeCount);
-                    break;
-                case SortColumn.MemorySize:
-                    sortedMonitors = sortAscending ? sortedMonitors.OrderBy(m => m.TotalBytes) : sortedMonitors.OrderByDescending(m => m.TotalBytes);
-                    break;
-            }
+                int result = 0;
+                switch (this.currentSortColumn)
+                {
+                    case SortColumn.Name:
+                        result = string.CompareOrdinal(a.PoolName, b.PoolName);
+                        break;
+                    case SortColumn.Active:
+                        result = a.ActiveCount.CompareTo(b.ActiveCount);
+                        break;
+                    case SortColumn.Worst:
+                        result = a.WorstCount.CompareTo(b.WorstCount);
+                        break;
+                    case SortColumn.Free:
+                        result = a.FreeCount.CompareTo(b.FreeCount);
+                        break;
+                    case SortColumn.MemorySize:
+                        result = a.TotalBytes.CompareTo(b.TotalBytes);
+                        break;
+                }
+                return this.sortAscending ? result : -result;
+            });
 
-            // スクロールビュー開始
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            this.listView?.RefreshItems();
+        }
+
+        void RefreshDisplay()
+        {
+            if (this.rootVisualElement == null) return;
+
+            UpdateButtonText(SortColumn.Active, Messages.EditorUI.PoolMonitor_ColActive);
+            UpdateButtonText(SortColumn.Worst, Messages.EditorUI.PoolMonitor_ColWorst);
+            UpdateButtonText(SortColumn.Free, Messages.EditorUI.PoolMonitor_ColFree);
+            UpdateButtonText(SortColumn.MemorySize, Messages.EditorUI.PoolMonitor_ColMemory);
+            UpdateButtonText(SortColumn.Name, Messages.EditorUI.PoolMonitor_ColName);
+
+            ApplySort();
+        }
+
+        void UpdateButtonText(SortColumn column, string baseText)
+        {
+            var btn = this.rootVisualElement.Query<Button>().Where(b => b.text.StartsWith(baseText) || b.text.Contains(baseText)).First();
+            if (btn != null)
+            {
+                if (this.currentSortColumn == column)
+                {
+                    btn.text = baseText + (this.sortAscending ? " ▲" : " ▼");
+                }
+                else
+                {
+                    btn.text = baseText;
+                }
+            }
+        }
+
+        void RefreshFooter()
+        {
+            if (this.infoLabel == null) return;
 
             long grandTotalBytes = 0;
             double grandTotalActiveBytes = 0;
 
-            // ソート済みのリストをループ処理
-            foreach (var monitor in sortedMonitors)
+            foreach (var monitor in this.displayList)
             {
-                DrawRow(
-                    monitor.PoolName,
-                    monitor.ActiveCount.ToString(),
-                    monitor.WorstCount.ToString(),
-                    monitor.FreeCount.ToString(),
-                    DevForEditor.FormatMemorySize(monitor.TotalBytes)
-                );
-
                 grandTotalBytes += monitor.TotalBytes;
-                grandTotalActiveBytes += monitor.TotalBytes * (monitor.ActiveCount / (double)(monitor.ActiveCount + monitor.FreeCount));
+                int totalCount = monitor.ActiveCount + monitor.FreeCount;
+                if (totalCount > 0)
+                {
+                    grandTotalActiveBytes += monitor.TotalBytes * (monitor.ActiveCount / (double)totalCount);
+                }
             }
 
-            EditorGUILayout.EndScrollView();
-
-            // フッター（合計値の表示）
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label(string.Format(Messages.EditorUI.PoolMonitor_StatCount, IPoolMonitorForDebug.Monitors.Count), EditorStyles.boldLabel, GUILayout.Width(120));
-            GUILayout.Label(string.Format(Messages.EditorUI.PoolMonitor_StatUsage, grandTotalActiveBytes/grandTotalBytes), EditorStyles.boldLabel, GUILayout.Width(180));
-            GUILayout.Label(string.Format(Messages.EditorUI.PoolMonitor_StatMemory, DevForEditor.FormatMemorySize((int)Mathf.Min(grandTotalBytes, int.MaxValue))), EditorStyles.boldLabel, GUILayout.Width(200));
-            EditorGUILayout.EndHorizontal();
+            string countStr = string.Format(Messages.EditorUI.PoolMonitor_StatCount, IPoolMonitorForDebug.Monitors.Count);
             
-            GUILayout.Space(10);
-        }
-
-        void DrawHeader()
-        {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+            double usageRate = grandTotalBytes > 0 ? grandTotalActiveBytes / grandTotalBytes : 0.0;
+            string usageStr = string.Format(Messages.EditorUI.PoolMonitor_StatUsage, usageRate);
             
-            // ★ ラベルをボタンに変更し、クリックでソート状態を切り替え
-            if (GUILayout.Button(GetHeaderLabel(Messages.EditorUI.PoolMonitor_ColActive, SortColumn.Active), EditorStyles.toolbarButton, GUILayout.Width(60)))
-                ToggleSort(SortColumn.Active);
+            string memoryStr = string.Format(Messages.EditorUI.PoolMonitor_StatMemory, DevForEditor.FormatMemorySize((int)Mathf.Min(grandTotalBytes, int.MaxValue)));
 
-            if (GUILayout.Button(GetHeaderLabel(Messages.EditorUI.PoolMonitor_ColWorst, SortColumn.Worst), EditorStyles.toolbarButton, GUILayout.Width(60)))
-                ToggleSort(SortColumn.Worst);
-
-            if (GUILayout.Button(GetHeaderLabel(Messages.EditorUI.PoolMonitor_ColFree, SortColumn.Free), EditorStyles.toolbarButton, GUILayout.Width(60)))
-                ToggleSort(SortColumn.Free);
-
-            if (GUILayout.Button(GetHeaderLabel(Messages.EditorUI.PoolMonitor_ColMemory, SortColumn.MemorySize), EditorStyles.toolbarButton, GUILayout.Width(100)))
-                ToggleSort(SortColumn.MemorySize);
-
-            if (GUILayout.Button(GetHeaderLabel(Messages.EditorUI.PoolMonitor_ColName, SortColumn.Name), EditorStyles.toolbarButton, GUILayout.Width(460)))
-                ToggleSort(SortColumn.Name);
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        void DrawRow(string name, string active, string worst, string free, string memory)
-        {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label(active, GUILayout.Width(55));
-            GUILayout.Label(worst, GUILayout.Width(55));
-            GUILayout.Label(free, GUILayout.Width(55));
-            GUILayout.Label(memory, GUILayout.Width(100));
-            GUILayout.Label(name, GUILayout.Width(460));
-            EditorGUILayout.EndHorizontal();
-        }
-
-        // --- ソート用ヘルパー ---
-
-        void ToggleSort(SortColumn column)
-        {
-            if (currentSortColumn == column)
-            {
-                // 同じ列をクリックしたら昇順/降順を反転
-                sortAscending = !sortAscending;
-            }
-            else
-            {
-                // 別の列をクリックしたら、その列を対象にしてデフォルトの向きにする
-                currentSortColumn = column;
-                // メモリやカウントは最初から降順（大きい順）で見たいことが多いので、名前以外は降順をデフォルトにする
-                sortAscending = column == SortColumn.Name;
-            }
-        }
-
-        string GetHeaderLabel(string text, SortColumn column)
-        {
-            if (currentSortColumn == column)
-            {
-                return text + (sortAscending ? " ▲" : " ▼");
-            }
-            return text;
+            this.infoLabel.text = $"{countStr}    |    {usageStr}    |    {memoryStr}";
         }
     }
 }

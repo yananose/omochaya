@@ -123,7 +123,7 @@ Dev.LoopBreak.Check(index.ToString());
                     outTasks.Add(Story.Task.UnsafeCreate(index));
                     index = info2.Next;
                     info = ref pool.UnsafeGet(index);
-                } while (!info.HasOffset);
+                } while (!info.IsTop);
             }
         }
     }
@@ -191,11 +191,11 @@ Dev.LoopBreak.Check(index.ToString());
             var methodName = info.IsValid ? info.GetMethodName() : string.Format(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age);
             var ownerName = GetOwnerName(ref info);
 
-            var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
-            var prevIndex = info.HasOffset ? -1 : info2.Prev;
+            var offset = info.IsTop ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
+            var prevIndex = info.IsTop ? -1 : info2.Prev;
             var nextIndex = info2.Next;
             if (0 <= nextIndex &&
-                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
+                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).IsTop) { nextIndex = -1; }
 
             return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {ownerName}";
         }
@@ -232,17 +232,8 @@ Dev.LoopBreak.Check(index.ToString());
         /// <summary>Don't touch! Only for system.</summary>
         internal static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
         {
-            Assert(topInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
+            Assert(topInfo.IsTop, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        internal static void DumpPlayerLoop()
-        {
-            var rootLoop = PlayerLoop.GetCurrentPlayerLoop();
-            var sb = new StringBuilder();
-            DumpPlayerLoop(rootLoop, sb, 0);
-            Dev.Log(sb.ToString());
         }
 
         // for debug only
@@ -279,21 +270,6 @@ Dev.LoopBreak.Check(index.ToString());
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
-        static void DumpPlayerLoop(PlayerLoopSystem system, StringBuilder sb, int indent)
-        {
-            if (system.type != null)
-            {
-                sb.AppendLine($"{new string(' ', indent * 2)}- {system.type.Name}");
-            }
-
-            if (system.subSystemList != null)
-            {
-                foreach (var sub in system.subSystemList)
-                {
-                    DumpPlayerLoop(sub, sb, indent + 1);
-                }
-            }
-        }
     }
 
 #else
@@ -335,8 +311,6 @@ Dev.LoopBreak.Check(index.ToString());
             [Conditional("DUMMY")] internal static void GetOrder(ref long offset, Story.Task task) {}
             [Conditional("DUMMY")] internal static void GetTaskList(List<Story.Task> outTasks) {}
         }
-
-        [Conditional("DUMMY")] internal static void DumpPlayerLoop() {}
     }
 
     internal class Debug

@@ -215,8 +215,9 @@ namespace Omochaya
             }
 
             /// <summary></summary>
+            // 型が一致しない
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool IsFailed<T>() => UnsafePool<T>.Shared != this.pool;
+            public bool IsMissType<T>() => UnsafePool<T>.Shared != this.pool;
 
             /// <summary>Disposes of the unmanaged memory handle, safely recycling its index slot.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

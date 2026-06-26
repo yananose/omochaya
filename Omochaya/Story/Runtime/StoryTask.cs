@@ -518,7 +518,7 @@ namespace Omochaya.HiddenStory
         public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly bool HasOffset
+        public readonly bool IsTop
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => 0 <= this.Offset;

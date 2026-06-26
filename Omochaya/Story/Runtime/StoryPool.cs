@@ -214,7 +214,7 @@ namespace Omochaya
                 return ref UnsafePool<T>.Shared.Get(this.index);
             }
 
-            /// <summary></summary>
+            /// <summary>Determines whether the allocated memory type does not match the specified type.</summary>
             // 型が一致しない
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool IsMissType<T>() => UnsafePool<T>.Shared != this.pool;

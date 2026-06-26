@@ -4,6 +4,8 @@
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
+//   Provides the custom async method builders and low-level execution context wiring 
+//   necessary to enable zero-allocation async/await operations within the framework.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 

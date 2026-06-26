@@ -19,7 +19,7 @@ namespace Omochaya
     // タスク制御
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Custom(int bandCount = 3, int taskCount = 1024)
         {

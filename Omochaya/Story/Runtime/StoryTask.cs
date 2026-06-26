@@ -51,35 +51,35 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Update() => TaskManager.Shared.Update();
 
-        /// <summary></summary>
+        /// <summary>Drives the late task manager loop forward, executing all registered automated late tasks.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LateUpdate() => TaskManager.Shared.BandUpdate(1);
 
-        /// <summary></summary>
+        /// <summary>Drives the fixed task manager loop forward, executing all registered automated fixed tasks.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void FixedUpdate() => TaskManager.Shared.BandUpdate(2);
 
-        /// <summary></summary>
+        /// <summary>Drives a specific execution band loop forward based on the provided band index.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BandUpdate(int bandNo) => TaskManager.Shared.BandUpdate(bandNo);
 
         /// <summary>A globally accessible token to await a single-frame yield.</summary>
         public static YieldCore Yield => new(0);
 
-        /// <summary></summary>
+        /// <summary>A globally accessible token to await a late-frame yield.</summary>
         public static YieldCore YieldLate => new(1);
 
-        /// <summary></summary>
+        /// <summary>A globally accessible token to await a fixed-frame yield.</summary>
         public static YieldCore YieldFixed => new(2);
 
-        /// <summary></summary>
+        /// <summary>Creates a custom yield token bound to a specific execution band index.</summary>
         public static YieldCore YieldNo(int bandNo) => new(bandNo);
 
         // 即返却（await しない async メソッドの遅延実行用）
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
         public static VoidCore Void => default;
 
-        /// <summary></summary>
+        /// <summary>Determines whether the result of the last awaited task was invalidated by a cancellation.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
 
@@ -111,7 +111,7 @@ namespace Omochaya
                 get => !IsEmpty && Pool<TaskInfo, TaskInfo2>.Shared.IsValid(this.Id);
             }
 
-            /// <summary></summary>
+            /// <summary>Gets a value indicating whether this task is marked or requested for cancellation.</summary>
             public bool WillCancel
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -216,7 +216,7 @@ namespace Omochaya
             public TaskEnumerator GetEnumerator() => new TaskEnumerator(this);
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-            /// <summary></summary>
+            /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => Dev.ToString(this);
 #endif
         }
@@ -254,7 +254,7 @@ namespace Omochaya
                 get => this.rawTask.IsValid;
             }
 
-            /// <summary></summary>
+            /// <summary>Gets a value indicating whether this task is marked or requested for cancellation.</summary>
             public bool WillCancel
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -318,6 +318,11 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             public TaskEnumerator GetEnumerator() => this.rawTask.GetEnumerator();
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+            /// <summary>Returns a string that represents the current task status and identification.</summary>
+            public override string ToString() => this.rawTask.ToString();
+#endif
         }
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
@@ -326,25 +331,29 @@ namespace Omochaya
         /// <summary>Defines a owner object that governs the lifecycle and destruction state of associated tasks.</summary>
         public interface ITaskOwner
         {
-            /// <summary></summary>
+            /// <summary>Gets or sets a value indicating whether the owner object has been destroyed.</summary>
             bool IsDestroyed { get; set; }
-            /// <summary></summary>
+            /// <summary>Gets a value indicating whether the owner object is currently paused or inactive.</summary>
             bool IsPaused { get; }
         }
 
         /// <summary>A base MonoBehaviour that implements ITaskOwner to manage tasks bound to its lifecycle.</summary>
         public class TaskBehaviour : MonoBehaviour, ITaskOwner // 実装漏れ回避用
         {
+            /// <summary>Invoked when the component is destroyed, allowing derived classes to perform custom cleanup.</summary>
             protected virtual void OnDestroyed() {}
+
+            /// <summary>Invoked when the component becomes enabled and active, allowing derived classes to handle initialization.</summary>
             protected virtual void OnEnabled() {}
+
+            /// <summary>Invoked when the component becomes disabled or inactive, allowing derived classes to handle pausing logic.</summary>
             protected virtual void OnDisabled() {}
 
-            /// <summary></summary>
+            /// <summary>Gets or sets a value indicating whether this component has been destroyed.</summary>
             public bool IsDestroyed { get; set; }
-            /// <summary></summary>
+            /// <summary>Gets or sets a value indicating whether this component is currently paused or inactive.</summary>
             public bool IsPaused { get; set; }
 
-            /// <summary></summary>
             // 派生クラスで OnDestroy を定義する場合は base.OnDestroy を呼び出してください。あるいは OnDestroy の代わりに OnDestroyed を定義すれば base 呼び出しは不要です。
             protected void OnDestroy()
             {
@@ -352,7 +361,6 @@ namespace Omochaya
                 OnDestroyed();
             }
 
-            /// <summary></summary>
             // 派生クラスで OnEnable を定義する場合は base.OnEnable を呼び出してください。あるいは OnEnable の代わりに OnEnabled を定義すれば base 呼び出しは不要です。
             protected void OnEnable()
             {
@@ -360,7 +368,6 @@ namespace Omochaya
                 OnEnabled();
             }
 
-            /// <summary></summary>
             // 派生クラスで OnDisable を定義する場合は base.OnDisable を呼び出してください。あるいは OnDisable の代わりに OnDisabled を定義すれば base 呼び出しは不要です。
             protected void OnDisable()
             {

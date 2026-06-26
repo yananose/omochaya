@@ -4,6 +4,8 @@
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
+//   Implements the execution band structures and dense pointer arrays that group, 
+//   prioritize, and systematically compact active task nodes during the framework update.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 

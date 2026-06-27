@@ -23,17 +23,23 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Custom(int bandCount = 3, int taskCount = 1024)
         {
+            if (TaskManager.Shared.HasValues)
+            {
+                Dev.LogWarning("用後はカスタムできません");
+                return;
+            }
+
             Pool<TaskInfo, TaskInfo2>.Shared.Expand(taskCount);
             TaskManager.Shared.Custom(bandCount, taskCount);
         }
 
-        /// <summary>Replaces the current task with a new one, anchoring it to a owner component and booting it.</summary>
+        /// <summary>Replaces the current task with a new one, anchoring it to a owner component and starting it.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Boot(ref this Task self, Component owner, Task task)
+        public static bool Start(ref this Task self, Component owner, Task task)
         {
-            self.Free();
+            self.Stop();
             self = task;
-            return self.Boot(owner);
+            return self.Start(owner);
         }
 
         /// <summary>Suspends the execution for the specified amount of seconds.</summary>
@@ -207,7 +213,7 @@ namespace Omochaya
         /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
         /// <remarks>
         /// <b>[重要]</b> 標準の <c>Task.WhenAll</c> とは挙動が異なります。
-        /// 実行中のいずれかのタスクが外部から強制キャンセル（<c>Free()</c>）されても、残りのタスクを道連れにしてキャンセルすることはありません。
+        /// 実行中のいずれかのタスクが外部から強制キャンセル（<c>Stop()</c>）されても、残りのタスクを道連れにしてキャンセルすることはありません。
         /// ゲームのキャラクター制御（例：足の移動と腕の振りを独立して実行する）などを想定し、それぞれが独立して完了・中断するのを最後まで待機します。
         /// </remarks>
         public static async Task With(this Task self, Task other)
@@ -249,15 +255,15 @@ namespace Omochaya
         /// <summary>Executes the current task until the specified interrupting task completes.</summary>
         /// <remarks>
         /// <b>[重要]</b> 標準の <c>Task.WhenAny</c> とは挙動が異なります。
-        /// どちらか一方が完了または中断した瞬間、もう一方のタスク（敗者）は自動的に道連れとして <c>Free()</c> され、即座に終了します。
+        /// どちらか一方が完了または中断した瞬間、もう一方のタスク（敗者）は自動的に道連れとして <c>Stop()</c> され、即座に終了します。
         /// この際、敗者のタスク内で例外はスローされず、安全に <c>finally</c> ブロックへ遷移してクリーンアップされます。
         /// </remarks>
         public static async Task Until(this Task a, Task b)
         {
             while (true)
             {
-                if (!a.MoveNext()) { b.Free(); return; }
-                if (!b.MoveNext()) { a.Free(); return; }
+                if (!a.MoveNext()) { b.Stop(); return; }
+                if (!b.MoveNext()) { a.Stop(); return; }
                 await Yield;
             }
         }
@@ -267,9 +273,9 @@ namespace Omochaya
         {
             while (true)
             {
-                if (!a.MoveNext()) { b.Free(); c.Free(); return; }
-                if (!b.MoveNext()) { c.Free(); a.Free(); return; }
-                if (!c.MoveNext()) { a.Free(); b.Free(); return; }
+                if (!a.MoveNext()) { b.Stop(); c.Stop(); return; }
+                if (!b.MoveNext()) { c.Stop(); a.Stop(); return; }
+                if (!c.MoveNext()) { a.Stop(); b.Stop(); return; }
                 await Yield;
             }
         }
@@ -279,10 +285,10 @@ namespace Omochaya
         {
             while (true)
             {
-                if (!a.MoveNext()) { b.Free(); c.Free(); d.Free(); return; }
-                if (!b.MoveNext()) { c.Free(); d.Free(); a.Free(); return; }
-                if (!c.MoveNext()) { d.Free(); a.Free(); b.Free(); return; }
-                if (!d.MoveNext()) { a.Free(); b.Free(); c.Free(); return; }
+                if (!a.MoveNext()) { b.Stop(); c.Stop(); d.Stop(); return; }
+                if (!b.MoveNext()) { c.Stop(); d.Stop(); a.Stop(); return; }
+                if (!c.MoveNext()) { d.Stop(); a.Stop(); b.Stop(); return; }
+                if (!d.MoveNext()) { a.Stop(); b.Stop(); c.Stop(); return; }
                 await Yield;
             }
         }

@@ -28,9 +28,9 @@ namespace Omochaya.HiddenStory
             internal const string InfiniteLoop = "無限ループ:{0}(RunningTask.Name:{1})";
             internal const string AlreadyAwaited = "{0}:他のタスクに await されている";
             internal const string InvalidExtraOperation = "不正なタスクの Extra を操作しようとした";
-            internal const string OwnerCannotBeNull = "owner を null にすることはできません。タスク外で Boot するときは owner を指定してください";
-            internal const string InvalidTaskOnBoot = "無効なタスクです。タスクを作成してから Boot するまでにフレームをまたぐ場合は Keep してください。";
-            internal const string AlreadyBooted = "{0}:既に起動されているので Boot できない";
+            internal const string OwnerCannotBeNull = "owner を null にすることはできません。タスク外で Start するときは owner を指定してください";
+            internal const string InvalidTaskOnBoot = "無効なタスクです。タスクを作成してから Start するまでにフレームをまたぐ場合は Keep してください。";
+            internal const string AlreadyBooted = "{0}:既に起動されているので Start できない";
             internal const string CannotMoveNextAutoTask = "{0}:自動タスクなので MoveNext できない";
             internal const string CannotAwaitAutoTask = "{0}:自動タスクは await できません。 while (task.IsValid) {{ await Story.Yield; }} してください";
             internal const string DoubleAwait = "await されているのに await された：[{0}] - [{1}]";
@@ -105,9 +105,9 @@ namespace Omochaya.HiddenStory
             internal const string InfiniteLoop = "Infinite loop detected: {0} (RunningTask.Name: {1})";
             internal const string AlreadyAwaited = "{0}: Already being awaited by another task.";
             internal const string InvalidExtraOperation = "Attempted to manipulate Extra on an invalid task.";
-            internal const string OwnerCannotBeNull = "Owner cannot be null. When booting outside a task, a owner must be specified.";
-            internal const string InvalidTaskOnBoot = "Invalid task. If spanning frames between task creation and Boot, please call Keep().";
-            internal const string AlreadyBooted = "{0}: Cannot Boot because it is already running.";
+            internal const string OwnerCannotBeNull = "Owner cannot be null. When starting outside a task, a owner must be specified.";
+            internal const string InvalidTaskOnBoot = "Invalid task. If spanning frames between task creation and Start, please call Keep().";
+            internal const string AlreadyBooted = "{0}: Cannot Start because it is already running.";
             internal const string CannotMoveNextAutoTask = "{0}: Cannot call MoveNext on an auto-task.";
             internal const string CannotAwaitAutoTask = "{0}: Auto-tasks cannot be awaited. Please use 'while (task.IsValid) {{ await Story.Yield; }}'.";
             internal const string DoubleAwait = "Awaited while already being awaited: [{0}] - [{1}]";

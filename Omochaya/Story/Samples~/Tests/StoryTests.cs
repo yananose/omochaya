@@ -66,7 +66,103 @@ namespace OmochayaTests
 
             Debug.Log("〜 各タスク起動 〜");
             this.owner.StartCoroutine(coroutineTask); // コルーチンの場合
-            storyTask.Boot(this.owner); // Story の場合
+            storyTask.Start(this.owner); // Story の場合
+
+            // 各タスクが最後のループに到達するくらいまで待つ
+            yield return new WaitForSeconds(0.5f);
+
+            Debug.Log("〜 各タスク終了 〜");
+            this.owner.StopCoroutine(coroutineTask); // コルーチンの場合
+            storyTask.Stop(); // Story の場合
+
+            Debug.Log("〜 0.1秒待つ 〜");
+            yield return new WaitForSeconds(0.1f);
+
+            // 結果
+            Utils.Result(this.runner);
+            Utils.Result(coroutineNote, storyNote);
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            // メインタスク（コルーチン）
+            IEnumerator CoroutineMain(List<int> note)
+            {
+                Utils.Take(note); Debug.Log("開始した（コルーチン：メイン）");
+                yield return null;
+
+                Utils.Take(note); Debug.Log("サブタスクの呼び出し（コルーチン：メイン）");
+                yield return CoroutineSub(note).GetEnumerator();
+
+                Utils.Take(note); Debug.Log("サブタスクを手動で回す（コルーチン：メイン）");
+                foreach (var _ in CoroutineSub(note))
+                {
+                    yield return null;
+                    Utils.Take(note);
+                }
+
+                Utils.Take(note); Debug.Log("最後のループに到達（コルーチン：メイン）");
+                while (true)
+                {
+                    yield return null;
+                    Utils.Take(note);
+                }
+            }
+
+            // メインタスク（Story）
+            async Story.Task StoryMain(List<int> note)
+            {
+                Utils.Take(note); Debug.Log("開始した（Story：メイン）");
+                await Story.Yield;
+
+                Utils.Take(note); Debug.Log("サブタスクの呼び出し（Story：メイン）");
+                await StorySub(note);
+
+                Utils.Take(note); Debug.Log("サブタスクを手動で回す（Story：メイン）");
+                foreach (var _ in StorySub(note))
+                {
+                    await Story.Yield;
+                    Utils.Take(note);
+                }
+
+                Utils.Take(note); Debug.Log("最後のループに到達（Story：メイン）");
+                while (true)
+                {
+                    await Story.Yield;
+                    Utils.Take(note);
+                }
+            }
+
+            // サブタスク（コルーチン）
+            IEnumerable CoroutineSub(List<int> note)
+            {
+                Utils.Take(note); Debug.Log("開始（コルーチン：サブ）");
+                yield return null;
+                Utils.Take(note); Debug.Log("システムから戻る（コルーチン：サブ）");
+                yield return null;
+                Utils.Take(note); Debug.Log("終了（コルーチン：サブ）");
+            }
+
+            // サブタスク（Story）
+            async Story.Task StorySub(List<int> note)
+            {
+                Utils.Take(note); Debug.Log("開始（Story：サブ）");
+                await Story.Yield;
+                Utils.Take(note); Debug.Log("システムから戻る（Story：サブ）");
+                await Story.Yield;
+                Utils.Take(note); Debug.Log("終了（Story：サブ）");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator UpdateTiming_コルーチンとの比較()
+        {
+            // 記録帳
+            var coroutineNote = new List<double>();
+            var storyNote = new List<double>();
+
+            Debug.Log("〜 各タスク生成/起動 〜");
+            this.owner.StartCoroutine(CoroutineMain(coroutineNote)); // コルーチンの場合
+            StoryMain(storyNote).Start(this.owner); // Story の場合
 
             // 各タスクが最後のループに到達するくらいまで待つ
             yield return new WaitForSeconds(0.5f);
@@ -86,74 +182,72 @@ namespace OmochayaTests
             // 結果
             Utils.Result(this.runner);
             Utils.Result(coroutineNote, storyNote);
-        }
 
-        // メインタスク（コルーチン）
-        IEnumerator CoroutineMain(List<int> note)
-        {
-            Utils.Take(note); Debug.Log("開始した（コルーチン：メイン）");
-            yield return null;
+            // 〜〜 ここからタスク定義 〜〜
 
-            Utils.Take(note); Debug.Log("サブタスクの呼び出し（コルーチン：メイン）");
-            yield return CoroutineSub(note).GetEnumerator();
-
-            Utils.Take(note); Debug.Log("サブタスクを手動で回す（コルーチン：メイン）");
-            foreach (var _ in CoroutineSub(note))
+            // メインタスク（コルーチン）
+            IEnumerator CoroutineMain(List<double> note)
             {
+                Utils.Take(note); Debug.Log("開始した（コルーチン）");
                 yield return null;
-                Utils.Take(note);
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(0)（コルーチン）");
+                yield return new WaitForEndOfFrame();
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(1)（コルーチン）");
+                yield return new WaitForEndOfFrame();
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(2)（コルーチン）");
+                yield return new WaitForEndOfFrame();
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(0)（コルーチン）");
+                yield return new WaitForFixedUpdate();
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(1)（コルーチン）");
+                yield return new WaitForFixedUpdate();
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(2)（コルーチン）");
+                yield return new WaitForFixedUpdate();
+
+                Utils.Take(note); Debug.Log("最後のループに到達（コルーチン）");
+                while (true)
+                {
+                    yield return null;
+                    Utils.Take(note);
+                }
             }
 
-            Utils.Take(note); Debug.Log("最後のループに到達（コルーチン：メイン）");
-            while (true)
+            // メインタスク（Story）
+            async Story.Task StoryMain(List<double> note)
             {
-                yield return null;
-                Utils.Take(note);
-            }
-        }
-
-        // メインタスク（Story）
-        async Story.Task StoryMain(List<int> note)
-        {
-            Utils.Take(note); Debug.Log("開始した（Story：メイン）");
-            await Story.Yield;
-
-            Utils.Take(note); Debug.Log("サブタスクの呼び出し（Story：メイン）");
-            await StorySub(note);
-
-            Utils.Take(note); Debug.Log("サブタスクを手動で回す（Story：メイン）");
-            foreach (var _ in StorySub(note))
-            {
+                Utils.Take(note); Debug.Log("開始した（Story）");
                 await Story.Yield;
-                Utils.Take(note);
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(0)（Story）");
+                await Story.YieldLate;
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(1)（Story）");
+                await Story.YieldLate;
+
+                Utils.Take(note); Debug.Log("フレーム終わりまで待つ(2)（Story）");
+                await Story.YieldLate;
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(0)（Story）");
+                await Story.YieldFixed;
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(1)（Story）");
+                await Story.YieldFixed;
+
+                Utils.Take(note); Debug.Log("FixedUpdate まで待つ(2)（Story）");
+                await Story.YieldFixed;
+
+                Utils.Take(note); Debug.Log("最後のループに到達（Story）");
+                while (true)
+                {
+                    await Story.Yield;
+                    Utils.Take(note);
+                }
             }
-
-            Utils.Take(note); Debug.Log("最後のループに到達（Story：メイン）");
-            while (true)
-            {
-                await Story.Yield;
-                Utils.Take(note);
-            }
-        }
-
-        // サブタスク（コルーチン）
-        IEnumerable CoroutineSub(List<int> note)
-        {
-            Utils.Take(note); Debug.Log("開始（コルーチン：サブ）");
-            yield return null;
-            Utils.Take(note); Debug.Log("システムから戻る（コルーチン：サブ）");
-            yield return null;
-            Utils.Take(note); Debug.Log("終了（コルーチン：サブ）");
-        }
-
-        // サブタスク（Story）
-        async Story.Task StorySub(List<int> note)
-        {
-            Utils.Take(note); Debug.Log("開始（Story：サブ）");
-            await Story.Yield;
-            Utils.Take(note); Debug.Log("システムから戻る（Story：サブ）");
-            await Story.Yield;
-            Utils.Take(note); Debug.Log("終了（Story：サブ）");
         }
     }
 }

@@ -517,7 +517,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose() => this.task.Free();
+        public void Dispose() => this.task.Stop();
     }
 
 /*

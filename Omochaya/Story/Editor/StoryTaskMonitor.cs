@@ -188,7 +188,7 @@ namespace Omochaya.HiddenStory
                     });
                     menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuForceFree), false, () =>
                     {
-                        task.Free();
+                        task.Stop();
                         RefreshData();
                     });
                     menu.ShowAsContext();

@@ -99,7 +99,7 @@ namespace OmochayaTests
             for (var i=0; i<noteA.Count; ++i)
             {
                 var delta = noteA[i] - noteB[i];
-                Assert.IsTrue(Mathf.Approximately((float)delta, 0.001f), $"[タイミングが同じこと] {i} ({delta})");
+                Assert.IsTrue(Mathf.Abs((float)delta) < 0.005f, $"[タイミングが同じこと] {i} ({delta})");
             }
         }
     }

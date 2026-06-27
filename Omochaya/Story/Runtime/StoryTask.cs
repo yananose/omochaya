@@ -35,11 +35,11 @@ namespace Omochaya
     ・メインスレッド限定。
     ・他の非同期タスクで await Story.Task することはできない。
     ・Story.Task で他の非同期タスクを await することはできない。await できるのは Story.Task, Story.Yield系、Story.Void のみ。
-    ・Story.Task 外で Boot する場合はコンポーネントを owner として指定する必要がある。
-    ・await されたタスク及びBootしたタスクを await することはできない。 待つ場合は while (task.IsValid) { await Story.Yield; } すること。なお、結果を受け取ることはできない。
+    ・Story.Task 外で Start する場合はコンポーネントを owner として指定する必要がある。
+    ・await されたタスク及び Start したタスクを await することはできない。 待つ場合は while (task.IsValid) { await Story.Yield; } すること。なお、結果を受け取ることはできない。
     ・await が終了したタスクから結果を受け取ることはできない。
     ・高速化のため、可能であれば owner に指定するコンポーネントは ITaskOwner インターフェイスを実装すること。Story.TaskBehaviour を継承してもよい。
-    ・Story.Task がキャンセル（Task.Free 実行 / foreach 中の beak / owner 等消失による削除）された場合は finally ブロックを実行する。
+    ・Story.Task がキャンセル（Task.Stop 実行 / foreach 中の beak / owner 等消失による削除）された場合は finally ブロックを実行する。
     ・finally ブロックで owner に指定したコンポーネントを参照してはならない。
     ・キャンセル発生以降は owner を無視するので await する場合は使用者が責任を持って解放すること。
     ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.IsResultInvalid でキャンセルされたことを検知できる。
@@ -127,20 +127,28 @@ namespace Omochaya
 
             // methods
 
-            /// <summary>Determines whether this task matches the specified task.</summary>
+            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Matches(Task a) => this.Id.Matches(a.Id);
+            public bool Start(Component owner)
+            {
+                Keep(owner);
+                return Start();
+            }
+
+            /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool Start() => TaskManager.Shared.Boot(this);
 
             /// <summary>Explicitly releases and cancels the task, recycling its resources.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Free()
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Stop()
             {
                 if (IsEmpty) { return; }
                 TaskManager.Shared.Free(this);
             }
 
             /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.Info().Keep(owner);
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
@@ -148,23 +156,11 @@ namespace Omochaya
             public void Keep()
             {
                 Dev.Assert(TaskManager.Shared.IsRunningValid);
-                this.Info().Keep(TaskManager.Shared.GetRunningInfo().Owner);
+                Keep(TaskManager.Shared.GetRunningInfo().Owner);
             }
-
-            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Boot(Component owner)
-            {
-                Keep(owner);
-                return Boot();
-            }
-
-            /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Boot() => TaskManager.Shared.Boot(this);
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
                 if (IsEmpty) { return false; }
@@ -182,6 +178,10 @@ namespace Omochaya
                 return TaskManager.Shared.MoveNext(this);
             }
 
+            /// <summary>Determines whether this task matches the specified task.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool Matches(Task a) => this.Id.Matches(a.Id);
+
             /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Expand(int length)
@@ -192,6 +192,7 @@ namespace Omochaya
             }
 
             /// <summary>Creates a task handle directly from a raw pool index without validation.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static Task UnsafeCreate(int index) => new Task(Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGetId(index));
 
             // for awaiter（利用者による呼び出し禁止）
@@ -270,29 +271,33 @@ namespace Omochaya
 
             // methods
 
-            /// <summary>Determines whether this task matches the specified task.</summary>
+            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Matches(Task<R> a) => this.rawTask.Matches(a.rawTask);
+            public bool Start(Component owner) => this.rawTask.Start(owner);
+
+            /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool Start() => this.rawTask.Start();
 
             /// <summary>Explicitly releases and cancels the task, recycling its resources.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Free() => this.rawTask.Free();
-
-            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Keep() => this.rawTask.Keep();
+            public void Stop() => this.rawTask.Stop();
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.rawTask.Keep(owner);
 
-            /// <summary>Anchors the task to a owner component and registers it to the automation loop.</summary>
+            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Boot(Component owner) => this.rawTask.Boot(owner);
+            public void Keep() => this.rawTask.Keep();
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext() => this.rawTask.MoveNext();
+
+            /// <summary>Determines whether this task matches the specified task.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool Matches(Task<R> a) => this.rawTask.Matches(a.rawTask);
 
             /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

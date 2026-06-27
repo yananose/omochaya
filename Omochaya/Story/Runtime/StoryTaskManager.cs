@@ -63,6 +63,13 @@ namespace Omochaya.HiddenStory
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
+        internal bool HasValues
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.manualBand.HasValues;
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
         internal bool IsRunningValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -115,7 +122,6 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Custom(int bandCount, int taskCount)
         {
-            Dev.Assert(!this.manualBand.HasValues, "使用後はカスタムできません");
             Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
             this.manualBand.Expand(taskCount);
             this.bandArray = new TaskBand<TaskTop>[bandCount];

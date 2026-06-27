@@ -2,7 +2,7 @@ using UnityEngine;
 using Omochaya;
 
 public class StorySample : MonoBehaviour
-// public class StorySample : Story.TaskBehaviour // こちらだと Boot に指定した場合にタスクが高速化されます。OnDestroy が必要な場合は代わりに OnDestroyed を override してください。
+// public class StorySample : Story.TaskBehaviour // こちらだと Start に指定した場合にタスクが高速化されます。OnDestroy が必要な場合は代わりに OnDestroyed を override してください。
 {
     const float Range = 500f;
     const float Speed = 250f;
@@ -30,7 +30,7 @@ public class StorySample : MonoBehaviour
         // ここではテスト用のルートタスクを起動しています。
         // タスク外で起動する場合は、誰に所属するか指定する必要があります。
         // ここでは this を指定しています。
-        RootTask().Boot(this);
+        RootTask().Start(this);
 
         // テスト前に初期位置へ移動させておく
         void SetInitialPosition(RectTransform rt)
@@ -76,19 +76,19 @@ public class StorySample : MonoBehaviour
         // タスク内でタスクを起動するときは、誰に所属するかは省略できます。
         // 省略した場合は起動したタスクと同じところに所属します。
         var whiteSubTask = SubTask(this.white);
-        whiteSubTask.Boot();
+        whiteSubTask.Start();
 
         // 別の所属先を指定することも可能です。
-        SubTask(this.red).Boot(this.red);
-        SubTask(this.blue).Boot(this.red);
-        // BlueTask(this.blue).Boot(this.red); // SubTask の代わりにこちらで finally ブロックのテストができます。赤が消えた後も青が左端まで移動します
+        SubTask(this.red).Start(this.red);
+        SubTask(this.blue).Start(this.red);
+        // BlueTask(this.blue).Start(this.red); // SubTask の代わりにこちらで finally ブロックのテストができます。赤が消えた後も青が左端まで移動します
 
         // 【タスク停止のテスト】待つ
         wait = Time.time + 1f;
         while (Time.time < wait) { await Story.Yield; }
 
         // 【タスク解放のテスト】白が停止します。
-        whiteSubTask.Free();
+        whiteSubTask.Stop();
 
         // 【タスク停止のテスト】待つ
         wait = Time.time + 1f;
@@ -124,7 +124,7 @@ public class StorySample : MonoBehaviour
             // 青 が所属している 赤 が消えると 青 の移動（タスク）が停止します。
             // 青のタスクはルートタスクの後で起動しているため、青のタスクがルートタスクよりも先に処理されます（後着優先）。
             // そのためルートタスクで操作（赤のタスクの削除）した結果が青のタスクに反映されるのは１フレーム後になります。
-            // ルートタスクを先に処理したい場合は、ルートタスクは Boot せずに Story.Update の前で手動実行してください。
+            // ルートタスクを先に処理したい場合は、ルートタスクは Start せずに Story.Update の前で手動実行してください。
             // なお、このサンプルでは左右移動にかかるフレーム数は一定ではないため、赤が右端に移動する前に消えることがあり、合わせて青も手前で止まることがあります。
             if (this.red != null)
             {

@@ -164,17 +164,6 @@ namespace Omochaya
             public bool MoveNext()
             {
                 if (IsEmpty) { return false; }
-                ref var info = ref this.Info();
-                if (!info.IsValid) { return false; }
-
-                // keep
-                if (info.Owner is null && TaskManager.Shared.IsRunningValid)
-                {
-                    var owner = TaskManager.Shared.GetRunningInfo().Owner;
-                    Dev.Assert(!(owner is null));
-                    info.Keep(owner);
-                }
-
                 return TaskManager.Shared.MoveNext(this);
             }
 
@@ -575,7 +564,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Keep(Component owner)
         {
-            Dev.Assert(IsValid);
+            if (!IsValid) { throw new Exception("無効な（あるいは終了した）タスクは操作できません"); }
             Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;

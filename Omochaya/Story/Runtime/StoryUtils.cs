@@ -25,7 +25,7 @@ namespace Omochaya
         {
             if (TaskManager.Shared.HasValues)
             {
-                Dev.LogWarning("用後はカスタムできません");
+                Dev.LogWarning("使用を開始した後はカスタムできません");
                 return;
             }
 
@@ -367,6 +367,7 @@ namespace Omochaya
         // await other;
         public static async Task Then(this Task self, Task other)
         {
+            TaskManager.Shared.TryKeep(ref other.Info());
             await self;
             await other;
         }

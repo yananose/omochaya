@@ -122,6 +122,7 @@ namespace Omochaya.HiddenStory
             this.headerContainer = new VisualElement();
             this.headerContainer.style.flexDirection = FlexDirection.Row;
             this.headerContainer.style.height = 24;
+            this.headerContainer.style.flexShrink = 0;
             this.headerContainer.style.borderBottomWidth = 1;
             this.headerContainer.style.borderBottomColor = Color.gray;
             this.headerContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
@@ -200,6 +201,7 @@ namespace Omochaya.HiddenStory
             // 5. フッター（ステータス情報ラベル）
             this.footer = new VisualElement();
             this.footer.style.height = 24;
+            this.footer.style.flexShrink = 0;
             this.footer.style.borderTopWidth = 1;
             this.footer.style.borderTopColor = Color.gray;
             this.footer.style.paddingLeft = 6;

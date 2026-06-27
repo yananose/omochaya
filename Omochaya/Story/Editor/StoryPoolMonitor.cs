@@ -59,6 +59,7 @@ namespace Omochaya.HiddenStory
             var headerContainer = new VisualElement();
             headerContainer.style.flexDirection = FlexDirection.Row;
             headerContainer.style.height = 24;
+            headerContainer.style.flexShrink = 0;
             headerContainer.style.borderBottomWidth = 1;
             headerContainer.style.borderBottomColor = Color.gray;
             headerContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
@@ -86,6 +87,7 @@ namespace Omochaya.HiddenStory
             // 5. フッター（ステータス情報ラベル）の作成
             var footer = new VisualElement();
             footer.style.height = 24;
+            footer.style.flexShrink = 0;
             footer.style.borderTopWidth = 1;
             footer.style.borderTopColor = Color.gray;
             footer.style.paddingLeft = 6;

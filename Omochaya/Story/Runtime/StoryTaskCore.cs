@@ -375,7 +375,6 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
                 return !TaskManager.Shared.IsNotCompleted(this.task);
             }
         }
@@ -407,7 +406,6 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Dev.Assert(TaskManager.Shared.IsRunningValid);
                 return !TaskManager.Shared.IsNotCompleted(this.task);
             }
         }

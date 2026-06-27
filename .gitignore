@@ -108,4 +108,6 @@ InitTestScene*.unity*
 !**/Samples~/
 !**/Samples~/**
 
+**/Samples~/*/*.meta
+
 .DS_Store

@@ -540,7 +540,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         /// <summary>Don't touch! Only for system.</summary>
         internal bool Boot(Story.Task task)
         {
-            if (!task.IsValid) { return false; }
+            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -555,8 +555,10 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 削除要求されたタスクが起動しようとした
             // if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
 
-            // 元の位置を退避してオーナーがいなければ設定
+            // 元の位置を退避
             var offset = topInfo.Offset;
+
+            // オーナーがいなければ設定
             TryKeep(ref rootInfo);
 
             // 実行
@@ -595,8 +597,10 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             if (GetRunningInfo().WillCancel) { return false; } // 終了を返す
 
             // 呼び出し元を設定（結局復元してる...）
-            var offset = topInfo.Offset;
-            this.manualBand[offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
+            this.manualBand[topInfo.Offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
+
+            // オーナーがいなければ設定
+            TryKeep(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -621,7 +625,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         {
             Dev.Assert(IsRunningValid);
 
-            if (!task.IsValid) { return false; }
+            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;

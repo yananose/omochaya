@@ -24,7 +24,7 @@ namespace OmochayaTests
             // methods
             void Awake()
             {
-                Story.Custom(3, 2048);
+                Story.Custom(3, 1024);
                 this.gcRecorder = Recorder.Get("GC.Alloc");
             }
 

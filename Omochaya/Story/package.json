@@ -18,8 +18,8 @@
   "license": "MIT",
   "samples": [
     {
-      "displayName": "フレームワーク動作検証・アロケーションテスト",
-      "description": "タスクのライフサイクル、並列実行ロジック、および厳密なゼロアロケーション検証を網羅した Unity Test Framework (UTF) 向けテストコード群です。",
+      "displayName": "Framework Validation & Allocation Tests",
+      "description": "A suite of Unity Test Framework (UTF) scripts covering task lifecycles, parallel execution logic, and strict zero-allocation validation.",
       "path": "Samples~/Tests"
     }
   ]

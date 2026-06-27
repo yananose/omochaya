@@ -1,76 +1,19 @@
 namespace OmochayaTests
 {
     using System.Collections;
+    using System.Collections.Generic;
     using NUnit.Framework;
     using UnityEngine;
     using UnityEngine.TestTools;
-    using UnityEngine.Profiling;
     using Omochaya;
-    using Assert = UnityEngine.Assertions.Assert;
+    // using Assert = UnityEngine.Assertions.Assert;
 
     public class StoryTests
     {
-        // inner classes
-        class StoryTestRunner : MonoBehaviour
-        {
-            // fields
-            Recorder gcRecorder;
-            int lastSampleCount;
-            bool isRecording;
-
-            // properties
-            public int TotalAllocatedFrames { get; private set; }
-
-            // methods
-            void Awake() => this.gcRecorder = Recorder.Get("GC.Alloc");
-
-            void Update() 
-            { 
-                StartRecord();
-                Story.Update(); 
-                EndRecord();
-            }
-
-            void LateUpdate()
-            {
-                StartRecord();
-                Story.LateUpdate();
-                EndRecord();
-            }
-
-            void FixedUpdate()
-            {
-                StartRecord();
-                Story.FixedUpdate();
-                EndRecord();
-            }
-
-            void StartRecord()
-            {
-                this.isRecording = this.gcRecorder != null && this.gcRecorder.isValid;
-                if (this.isRecording)
-                {
-                    this.gcRecorder.enabled = true;
-                    this.lastSampleCount = this.gcRecorder.sampleBlockCount;
-                }
-            }
-
-            void EndRecord()
-            {
-                if (this.isRecording)
-                {
-                    this.gcRecorder.enabled = false;
-                    if (this.lastSampleCount != this.gcRecorder.sampleBlockCount)
-                    {
-                        TotalAllocatedFrames++;
-                    }
-                }
-            }
-        }
-
         // fields
+
         GameObject runnerObj;
-        StoryTestRunner runner;
+        Utils.StoryTestRunner runner;
         GameObject ownerObj;
         Story.TaskBehaviour owner;
 
@@ -80,9 +23,9 @@ namespace OmochayaTests
         public void Setup()
         {
             this.runnerObj = new GameObject("StoryTestRunner");
-            this.runner = this.runnerObj.AddComponent<StoryTestRunner>();
+            this.runner = this.runnerObj.AddComponent<Utils.StoryTestRunner>();
             this.ownerObj = new GameObject("StoryTestOwner");
-            this.owner = this.runnerObj.AddComponent<Story.TaskBehaviour>();
+            this.owner = this.ownerObj.AddComponent<Story.TaskBehaviour>();
         }
 
         [TearDown]
@@ -102,46 +45,115 @@ namespace OmochayaTests
             }
         }
 
-        void Terminate()
-        {
-#if STORY_FAST
-            if (this.runner != null)
-            {
-                Assert.IsTrue(this.runner.TotalAllocatedFrames == 0, "アロケーションが発生していないこと");
-            }
-#endif
-        }
-
         // 〜〜〜〜〜〜 ここからテスト 〜〜〜〜〜〜 
 
-
         [UnityTest]
-        public IEnumerator WaitTime_指定時間後にタスクが完了すること()
+        public IEnumerator LifeCycle_コルーチンとの比較()
         {
-            bool isCompleted = false;
+            // 記録帳
+            var coroutineNote = new List<int>();
+            var storyNote = new List<int>();
 
-            // テスト用のタスク定義
-            async Story.Task TestTask()
-            {
-                await Story.WaitTime(0.1f);
-                isCompleted = true; // クロージャはあかん
-            }
+            Debug.Log("〜 各タスク生成 〜");
+            var coroutineTask = CoroutineMain(coroutineNote); // コルーチンの場合
+            var storyTask = StoryMain(storyNote); // Story の場合
 
-            // 2. 実行 (Act)
-            TestTask().Boot(this.owner);
+            // 【Story専用】フレームをまたいだ時にオーナーがいないと解放されてしまうのでKeepしておく（直接Bootするなら不要）。
+            storyTask.Keep(this.owner);
 
-            // 0.05秒待つ（まだ完了していないはず）
-            yield return new WaitForSeconds(0.05f);
-            Assert.IsFalse(isCompleted, "指定時間前には完了していないこと");
-
-            // さらに0.1秒待つ（完了しているはず）
+            Debug.Log("〜 0.1秒待つ 〜");
             yield return new WaitForSeconds(0.1f);
 
-            // 3. 検証 (Assert)
-            Assert.IsTrue(isCompleted, "指定時間後にタスクが完了していること");
+            Debug.Log("〜 各タスク起動 〜");
+            this.owner.StartCoroutine(coroutineTask); // コルーチンの場合
+            storyTask.Boot(this.owner); // Story の場合
 
-            // 後片付け
-            Terminate();
+            // 各タスクが最後のループに到達するくらいまで待つ
+            yield return new WaitForSeconds(0.5f);
+
+            Debug.Log("〜 タスクを終了させる 〜");
+            // コルーチンとStoryのどちらも、紐づいたオブジェクトが削除されると終了する
+            if (this.ownerObj != null)
+            {
+                Object.Destroy(this.ownerObj);
+                this.ownerObj = null;
+                this.owner = null;
+            }
+
+            Debug.Log("〜 0.1秒待つ 〜");
+            yield return new WaitForSeconds(0.1f);
+
+            // 結果
+            Utils.Result(this.runner);
+            Utils.Result(coroutineNote, storyNote);
+        }
+
+        // メインタスク（コルーチン）
+        IEnumerator CoroutineMain(List<int> note)
+        {
+            Utils.Take(note); Debug.Log("開始した（コルーチン：メイン）");
+            yield return null;
+
+            Utils.Take(note); Debug.Log("サブタスクの呼び出し（コルーチン：メイン）");
+            yield return CoroutineSub(note).GetEnumerator();
+
+            Utils.Take(note); Debug.Log("サブタスクを手動で回す（コルーチン：メイン）");
+            foreach (var _ in CoroutineSub(note))
+            {
+                yield return null;
+                Utils.Take(note);
+            }
+
+            Utils.Take(note); Debug.Log("最後のループに到達（コルーチン：メイン）");
+            while (true)
+            {
+                yield return null;
+                Utils.Take(note);
+            }
+        }
+
+        // メインタスク（Story）
+        async Story.Task StoryMain(List<int> note)
+        {
+            Utils.Take(note); Debug.Log("開始した（Story：メイン）");
+            await Story.Yield;
+
+            Utils.Take(note); Debug.Log("サブタスクの呼び出し（Story：メイン）");
+            await StorySub(note);
+
+            Utils.Take(note); Debug.Log("サブタスクを手動で回す（Story：メイン）");
+            foreach (var _ in StorySub(note))
+            {
+                await Story.Yield;
+                Utils.Take(note);
+            }
+
+            Utils.Take(note); Debug.Log("最後のループに到達（Story：メイン）");
+            while (true)
+            {
+                await Story.Yield;
+                Utils.Take(note);
+            }
+        }
+
+        // サブタスク（コルーチン）
+        IEnumerable CoroutineSub(List<int> note)
+        {
+            Utils.Take(note); Debug.Log("開始（コルーチン：サブ）");
+            yield return null;
+            Utils.Take(note); Debug.Log("システムから戻る（コルーチン：サブ）");
+            yield return null;
+            Utils.Take(note); Debug.Log("終了（コルーチン：サブ）");
+        }
+
+        // サブタスク（Story）
+        async Story.Task StorySub(List<int> note)
+        {
+            Utils.Take(note); Debug.Log("開始（Story：サブ）");
+            await Story.Yield;
+            Utils.Take(note); Debug.Log("システムから戻る（Story：サブ）");
+            await Story.Yield;
+            Utils.Take(note); Debug.Log("終了（Story：サブ）");
         }
     }
 }

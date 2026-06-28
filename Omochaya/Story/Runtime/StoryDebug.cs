@@ -272,7 +272,7 @@ Dev.LoopBreak.Check(index.ToString());
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
     }
 
-#else
+#else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK == false
 
     /// <summary>Don't touch! Only for system.</summary>
     internal class Dev : Debug
@@ -316,14 +316,14 @@ Dev.LoopBreak.Check(index.ToString());
     internal class Debug
     {
 
-#if false   // 製品版でパフォーマンスを重視したいとき
+#if STORY_FAST || SIMPLE_CHECK // 製品版でパフォーマンスを重視したいとき
 
         [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
         [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
         [Conditional("DUMMY")] internal static void LogError(object message) {}
 
-#else       // 製品版でリスクヘッジしたいとき
+#else // 製品版でリスクヘッジしたいとき
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Assert(bool condition, string message) { if (!condition) { throw new Exception(message); } }

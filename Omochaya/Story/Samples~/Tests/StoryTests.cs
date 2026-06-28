@@ -6,14 +6,45 @@ namespace OmochayaTests
     using UnityEngine;
     using UnityEngine.TestTools;
     using Omochaya;
-    // using Assert = UnityEngine.Assertions.Assert;
 
     public class StoryTests
     {
+        // static
+        static StoryTestRunner runner;
+
+        // inner classes
+        internal class StoryTestRunner : MonoBehaviour
+        {
+            // methods
+            void Awake()
+            {
+                Story.Custom(3, 1024);
+            }
+
+            void Update() 
+            { 
+                Utils.StartRecord();
+                Story.Update(); 
+                Utils.EndRecord();
+            }
+
+            void LateUpdate()
+            {
+                Utils.StartRecord();
+                Story.LateUpdate();
+                Utils.EndRecord();
+            }
+
+            void FixedUpdate()
+            {
+                Utils.StartRecord();
+                Story.FixedUpdate();
+                Utils.EndRecord();
+            }
+        }
+
         // fields
 
-        GameObject runnerObj;
-        Utils.StoryTestRunner runner;
         GameObject ownerObj;
         Story.TaskBehaviour owner;
 
@@ -22,8 +53,10 @@ namespace OmochayaTests
         [SetUp]
         public void Setup()
         {
-            this.runnerObj = new GameObject("StoryTestRunner");
-            this.runner = this.runnerObj.AddComponent<Utils.StoryTestRunner>();
+            if (runner == null)
+            {
+                StoryTests.runner = new GameObject("StoryTestRunner").AddComponent<StoryTestRunner>();
+            }
             this.ownerObj = new GameObject("StoryTestOwner");
             this.owner = this.ownerObj.AddComponent<Story.TaskBehaviour>();
         }
@@ -31,12 +64,6 @@ namespace OmochayaTests
         [TearDown]
         public void Teardown()
         {
-            if (this.runnerObj != null)
-            {
-                Object.DestroyImmediate(this.runnerObj);
-                this.runnerObj = null;
-                this.runner = null;
-            }
             if (this.ownerObj != null)
             {
                 Object.DestroyImmediate(this.ownerObj);
@@ -81,7 +108,7 @@ namespace OmochayaTests
             yield return new WaitForSeconds(0.1f);
 
             // 結果
-            Utils.Result(this.runner);
+            Utils.LogRecord();
             Utils.Result(coroutineNote, storyNote);
 
             // 〜〜 ここからタスク定義 〜〜
@@ -173,6 +200,9 @@ namespace OmochayaTests
 
             Assert.IsFalse(task.IsValid, "実行が完了したタスクはプールに返却され、自動的に無効になるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task SimpleTask()
             {
                 await Story.Yield;
@@ -196,7 +226,10 @@ namespace OmochayaTests
             // ※ StoryDebug.cs の仕様により、不正操作時は System.Exception がスローされる
             Assert.Throws<System.Exception>(() => task.Start(this.owner), "解放済みタスクのStartは例外(Assert)を出して弾かれるべき");
             Assert.Throws<System.Exception>(() => task.Keep(this.owner), "解放済みタスクのKeepは例外(Assert)を出して弾かれるべき");
-            
+
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]            
             async Story.Task EmptyTask() { await Story.Void; }
         }
 
@@ -242,6 +275,9 @@ namespace OmochayaTests
                 t.Stop();
             }
 
+            Utils.LogRecord();
+
+            [Story.Capacity(1024)]
             async Story.Task EmptyTask() { await Story.Void; }
         }
 
@@ -258,18 +294,18 @@ namespace OmochayaTests
             var task = CancelTestTask();
             task.Start(this.owner);
 
-            // タスクが最初のYieldで待機するまで1フレーム進める
-            yield return null;
-
             // 外部から強制キャンセル
             task.Stop();
 
-            // キャンセル処理をシステムに反映させるため1フレーム進める
+            // タスクが動作していないことを確認するために1フレーム進める
             yield return null;
 
             Assert.IsFalse(hasExecutedAfterYield, "キャンセルされたため、Yield以降の通常処理は実行されないべき");
             Assert.IsTrue(hasReachedFinally, "キャンセルされた場合でも、finallyブロックは確実に実行されるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task CancelTestTask()
             {
                 try
@@ -307,6 +343,9 @@ namespace OmochayaTests
 
             Assert.IsTrue(hasReachedFinally, "オーナーが破棄された場合、システムはそれを検知してfinallyブロックを実行させるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task OwnerDestroyTestTask()
             {
                 try
@@ -342,6 +381,9 @@ namespace OmochayaTests
             Assert.IsTrue(childFinally, "親がキャンセルされた際、実行中の子タスクにもキャンセルが伝播してfinallyが実行されるべき");
             Assert.IsTrue(parentFinally, "子タスクのキャンセル処理（finally）が終わった後、親タスクのfinallyも実行されるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task ParentTask()
             {
                 try
@@ -354,6 +396,7 @@ namespace OmochayaTests
                 }
             }
 
+            [Story.Capacity(8)]
             async Story.Task ChildTask()
             {
                 try
@@ -395,12 +438,16 @@ namespace OmochayaTests
 
             Assert.IsTrue(taskBCompleted, "Withで束ねられたTaskAがキャンセルされても、TaskBは道連れにされず最後まで実行されるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task TaskA()
             {
                 // 終わらないタスク
                 while (true) { await Story.Yield; }
             }
 
+            [Story.Capacity(8)]
             async Story.Task TaskB()
             {
                 // すぐに終わるタスク
@@ -427,12 +474,16 @@ namespace OmochayaTests
 
             Assert.IsTrue(loserFinallyExecuted, "Untilで勝者が決まった瞬間、敗者タスクは自動的にStopが呼ばれfinallyが実行されるべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task WinnerTask()
             {
                 // 早く終わるタスク（勝者）
                 await Story.WaitTime(0.05f);
             }
 
+            [Story.Capacity(8)]
             async Story.Task LoserTask()
             {
                 // 終わらないタスク（敗者）
@@ -459,12 +510,16 @@ namespace OmochayaTests
             
             yield return new WaitForSeconds(0.15f);
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task ExecuteAndGetResult()
             {
                 var result = await taskA.Until(taskB);
                 Assert.AreEqual("Winner", result, "先に完了したタスクの結果が返却されるべき");
             }
 
+            [Story.Capacity(8)]
             async Story.Task<string> DelayedResultTask(float delay, string result)
             {
                 await Story.WaitTime(delay);
@@ -496,6 +551,9 @@ namespace OmochayaTests
             yield return new WaitForFixedUpdate();
             Assert.AreEqual(3, executionStep, "FixedUpdateが経過したので、最後まで完了しているべき");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task BandTestTask()
             {
                 executionStep = 1;
@@ -529,6 +587,9 @@ namespace OmochayaTests
             int waitedFrames = endFrame - startFrame;
             Assert.IsTrue(waitedFrames == 5 || waitedFrames == 6, $"WaitFrame(5)は指定フレーム数経過後に再開されるべき（実測: {waitedFrames}フレーム）");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task FrameTask()
             {
                 await Story.WaitFrame(5);
@@ -558,6 +619,9 @@ namespace OmochayaTests
             Assert.IsTrue(duration >= targetWaitTime && duration < targetWaitTime + 0.05f, 
                 $"WaitTime({targetWaitTime}f)は指定時間経過後に再開されるべき（実測: {duration}秒）");
 
+            Utils.LogRecord();
+
+            [Story.Capacity(8)]
             async Story.Task TimeTask()
             {
                 await Story.WaitTime(targetWaitTime);

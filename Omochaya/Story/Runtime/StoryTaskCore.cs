@@ -387,12 +387,27 @@ namespace Omochaya.HiddenStory
                 var smName = stateMachineType.Name;
                 if (!smName.StartsWith("<")) { return -1; }
                 var index = smName.IndexOf('>');
-                if (index < 3) { return -1; }
+                if (index < 2) { return -1; }
                 var targetMethodName = smName.Substring(1, index - 1);
-                var methods = declaringType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+                var methods = declaringType.GetMethods(
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Static);
+                // 通常の非同期メソッド
                 foreach (var method in methods)
                 {
                     if (method.Name != targetMethodName) continue;
+                    var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
+                    if (asyncAttr == null) { continue; }
+                    if (asyncAttr.StateMachineType != stateMachineType) { continue; }
+                    var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
+                    return capacityAttr != null ? capacityAttr.Capacity : 0;
+                }
+                // ローカル関数等の名前が特殊な非同期メソッド
+                foreach (var method in methods)
+                {
+                    // if (method.Name != targetMethodName) continue;
                     var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
                     if (asyncAttr == null) { continue; }
                     if (asyncAttr.StateMachineType != stateMachineType) { continue; }

@@ -107,7 +107,7 @@ https://github.com/yananose/omochaya?path=Omochaya/Story
 
 ### 1. マネージャーの更新設定
 タスクを処理するため、プロジェクトの任意の場所（シングルトンやメインループを管理するクラスなど）で、各実行タイミングの Update を呼び出してください。
-また、同時に扱うタスク数が多い環境化でアロケーションが発生してしまう場合は、Story.Custom(taskCount: ) で使用するタスク数を宣言しておくことで回避できます。
+また、同時に扱うタスク数が多い環境化でアロケーションが発生してしまう場合は、`Story.Custom(taskCount: )` で使用するタスク数を宣言しておくことで回避できます。
 
 ```csharp
 using Omochaya;
@@ -157,6 +157,9 @@ public class Actor : MonoBehaviour
         Debug.Log("全シーケンス完了");
     }
 
+    // [Story.Capacity] をつけることで、
+    // 初回実行時に確保されるこのタスク専用のプールのサイズを指定できます（オプション）
+    [Story.Capacity(128)]
     async Story.Task SubSequence()
     {
         Debug.Log("サブタスク開始");
@@ -195,6 +198,9 @@ public class HeavyActor : Story.TaskBehaviour
     }
 }
 ```
+
+> **💡 Tips: プール事前拡張の無効化**
+> `[Story.Capacity]` 属性による初回実行時のプールサイズ指定（リフレクション走査）のCPU負荷を避けたい場合は、Scripting Define Symbols に `STORY_NO_PRE_CAPACITY` を定義することで、この機能を完全に無効化（オプトアウト）できます。
 
 ---
 

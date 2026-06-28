@@ -2,54 +2,30 @@ namespace OmochayaTests
 {
     using System.Collections.Generic;
     using UnityEngine;
-    using UnityEngine.Profiling;
-    using Omochaya;
     using NUnit.Framework;
-
-    // using Assert = UnityEngine.Assertions.Assert;
 
     static class Utils
     {
         // inner classes
-        internal class StoryTestRunner : MonoBehaviour
+        class Recorder
         {
+            public static Recorder Shared = new();
+
             // fields
-            Recorder gcRecorder;
+            UnityEngine.Profiling.Recorder gcRecorder;
             int lastSampleCount;
             bool isRecording;
 
             // properties
-            public int TotalAllocatedFrames { get; private set; }
+            public int TotalAllocatedFrames { get; set; }
 
             // methods
-            void Awake()
+            Recorder()
             {
-                Story.Custom(3, 1024);
-                this.gcRecorder = Recorder.Get("GC.Alloc");
+                this.gcRecorder = UnityEngine.Profiling.Recorder.Get("GC.Alloc");
             }
 
-            void Update() 
-            { 
-                StartRecord();
-                Story.Update(); 
-                EndRecord();
-            }
-
-            void LateUpdate()
-            {
-                StartRecord();
-                Story.LateUpdate();
-                EndRecord();
-            }
-
-            void FixedUpdate()
-            {
-                StartRecord();
-                Story.FixedUpdate();
-                EndRecord();
-            }
-
-            void StartRecord()
+            public void Start()
             {
                 this.isRecording = this.gcRecorder != null && this.gcRecorder.isValid;
                 if (this.isRecording)
@@ -59,26 +35,26 @@ namespace OmochayaTests
                 }
             }
 
-            void EndRecord()
+            public void End()
             {
                 if (this.isRecording)
                 {
                     this.gcRecorder.enabled = false;
-                    if (this.lastSampleCount != this.gcRecorder.sampleBlockCount)
-                    {
-                        TotalAllocatedFrames++;
-                    }
+                    TotalAllocatedFrames = Mathf.Max(TotalAllocatedFrames, this.gcRecorder.sampleBlockCount - this.lastSampleCount);
                 }
             }
         }
 
-        internal static void Result(StoryTestRunner runner)
+        internal static void StartRecord() => Recorder.Shared.Start();
+
+        internal static void EndRecord() => Recorder.Shared.End();
+
+        internal static void LogRecord()
         {
+            var count = Recorder.Shared.TotalAllocatedFrames;
+            Recorder.Shared.TotalAllocatedFrames = 0;
 #if STORY_NO_DEBUG
-            if (runner != null)
-            {
-                Assert.IsTrue(runner.TotalAllocatedFrames == 0, $"[アロケーションが発生していないこと] {runner.TotalAllocatedFrames}");
-            }
+            Assert.IsTrue(count == 0, $"[アロケーションが発生していないこと] {count}");
 #endif
         }
 

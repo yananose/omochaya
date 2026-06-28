@@ -95,7 +95,7 @@ Unity Package Manager (UPM) を使用してインストールします。
 3. 以下のURLを入力して `Add` をクリックします。
 
 ```text
-https://github.com/yananose/omochaya?path=Omochaya/Story
+https://github.com/yananose/omochaya.git?path=/Omochaya/Story
 ```
 
 > **💡 テストコードの導入**

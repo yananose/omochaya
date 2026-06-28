@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTask.cs" company="Omochaya">
+// <copyright file="StoryTaskMonitor.cs" company="Omochaya">
 //   Copyright (c) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -8,7 +8,7 @@
 //   the live status and execution order of automated and manual tasks during runtime.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
@@ -34,20 +34,16 @@ namespace Omochaya.HiddenStory
         enum SortMode
         {
             Order,
-            MasterName,
+            OwnerName,
             TaskId
         }
 
         // UI要素
         ListView listView;
-        Label lblAutoCount;
-        Label lblManualCount;
-        Label lblLateCount;
-        Label lblFixedCount;
-        Label lblWaitingCount;
-        Label lblTotalCount;
+        Label infoLabel;
         HelpBox playModeHelpBox;
-        VisualElement dashboard;
+        VisualElement headerContainer;
+        VisualElement footer;
         ToolbarSearchField searchField;
         ToolbarButton btnSortOrder;
 
@@ -64,7 +60,6 @@ namespace Omochaya.HiddenStory
         SortMode sortMode = SortMode.Order;
         bool sortAscending = false; // デフォルトは降順（実行位置が新しいもの上にするため）
 
-        // ★ Playモード切り替え時のイベントフック
         void OnEnable()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
@@ -77,7 +72,7 @@ namespace Omochaya.HiddenStory
 
         void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            // ★ Playモード開始時（編集モード退出時）に検索状態をクリーンアップ
+            // Playモード開始時（編集モード退出時）に検索状態をクリーンアップ
             if (state == PlayModeStateChange.ExitingEditMode)
             {
                 this.searchString = "";
@@ -93,6 +88,8 @@ namespace Omochaya.HiddenStory
 
         void CreateGUI()
         {
+            var root = this.rootVisualElement;
+
             // 1. ツールバーの構築
             var toolbar = new Toolbar();
             
@@ -103,31 +100,11 @@ namespace Omochaya.HiddenStory
             toggleAuto.RegisterValueChangedCallback(evt => this.autoRefresh = evt.newValue);
             toolbar.Add(toggleAuto);
 
-            toolbar.Add(new ToolbarSpacer { style = { width = 15, flexGrow = 0 } });
-
-            // ソート条件のドロップダウン
-            var sortEnum = new EnumField(this.sortMode) { style = { width = 100 } };
-            sortEnum.RegisterValueChangedCallback(evt => 
-            {
-                this.sortMode = (SortMode)evt.newValue;
-                RefreshData();
-            });
-            toolbar.Add(sortEnum);
-
-            // 昇順/降順の切り替えボタン
-            this.btnSortOrder = new ToolbarButton(() => 
-            {
-                this.sortAscending = !this.sortAscending;
-                this.btnSortOrder.text = this.sortAscending ? "▲" : "▼";
-                RefreshData();
-            }) { text = this.sortAscending ? "▲" : "▼", style = { width = 25 } };
-            toolbar.Add(this.btnSortOrder);
-
             toolbar.Add(new ToolbarSpacer { style = { flexGrow = 1 } });
 
             // 検索フィールド
             this.searchField = new ToolbarSearchField();
-            this.searchField.value = this.searchString; // ★ 生成時に前回の状態を復元（同期ズレ防止）
+            this.searchField.value = this.searchString; // 生成時に前回の状態を復元（同期ズレ防止）
             this.searchField.RegisterValueChangedCallback(evt => 
             {
                 this.searchString = evt.newValue ?? "";
@@ -135,30 +112,44 @@ namespace Omochaya.HiddenStory
             });
             toolbar.Add(this.searchField);
 
-            rootVisualElement.Add(toolbar);
+            root.Add(toolbar);
 
             // 2. プレイモード警告ボックス
             this.playModeHelpBox = new HelpBox(Messages.EditorUI.TaskMonitor_PlayModeOnly, HelpBoxMessageType.Info);
-            rootVisualElement.Add(this.playModeHelpBox);
+            root.Add(this.playModeHelpBox);
 
-            // 3. ダッシュボード（健康状態）
-            this.dashboard = new VisualElement { style = { flexDirection = FlexDirection.Row, paddingBottom = 4, paddingTop = 4, paddingLeft = 6, paddingRight = 6 } };
-            this.dashboard.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f, 0.3f));
-            
-            this.lblAutoCount = new Label();
-            this.lblManualCount = new Label { style = { marginLeft = 10 } };
-            this.lblLateCount = new Label { style = { marginLeft = 10 } };
-            this.lblFixedCount = new Label { style = { marginLeft = 10 } };
-            this.lblWaitingCount = new Label { style = { marginLeft = 10 } };
-            this.lblTotalCount = new Label { style = { marginLeft = 10 } };
-            
-            this.dashboard.Add(this.lblAutoCount);
-            this.dashboard.Add(this.lblManualCount);
-            this.dashboard.Add(this.lblLateCount);
-            this.dashboard.Add(this.lblFixedCount);
-            this.dashboard.Add(this.lblWaitingCount);
-            this.dashboard.Add(this.lblTotalCount);
-            rootVisualElement.Add(this.dashboard);
+            // 3. ヘッダー（ソート機能を含む）
+            this.headerContainer = new VisualElement();
+            this.headerContainer.style.flexDirection = FlexDirection.Row;
+            this.headerContainer.style.height = 24;
+            this.headerContainer.style.flexShrink = 0;
+            this.headerContainer.style.borderBottomWidth = 1;
+            this.headerContainer.style.borderBottomColor = Color.gray;
+            this.headerContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
+            this.headerContainer.style.alignItems = Align.Center;
+            root.Add(this.headerContainer);
+
+            var headerTitle = new Label("Task Signature") { style = { flexGrow = 1, paddingLeft = 6, unityFontStyleAndWeight = FontStyle.Bold } };
+            this.headerContainer.Add(headerTitle);
+
+            var sortLabel = new Label("Sort by:") { style = { paddingRight = 4 } };
+            this.headerContainer.Add(sortLabel);
+
+            var sortEnum = new EnumField(this.sortMode) { style = { width = 100 } };
+            sortEnum.RegisterValueChangedCallback(evt => 
+            {
+                this.sortMode = (SortMode)evt.newValue;
+                RefreshData();
+            });
+            this.headerContainer.Add(sortEnum);
+
+            this.btnSortOrder = new ToolbarButton(() => 
+            {
+                this.sortAscending = !this.sortAscending;
+                this.btnSortOrder.text = this.sortAscending ? "▲" : "▼";
+                RefreshData();
+            }) { text = this.sortAscending ? "▲" : "▼", style = { width = 25, unityTextAlign = TextAnchor.MiddleCenter } };
+            this.headerContainer.Add(this.btnSortOrder);
 
             // 4. ListView の初期化と設定
             this.listView = new ListView
@@ -170,7 +161,7 @@ namespace Omochaya.HiddenStory
             };
 
             // 行の見た目（セル）を生成
-            this.listView.makeItem = () => new Label { style = { paddingLeft = 10, unityTextAlign = TextAnchor.MiddleLeft } };
+            this.listView.makeItem = () => new Label { style = { paddingLeft = 6, unityTextAlign = TextAnchor.MiddleLeft } };
 
             // セルにデータをバインド
             this.listView.bindItem = (element, index) =>
@@ -190,22 +181,36 @@ namespace Omochaya.HiddenStory
                 {
                     var task = this.filteredTasks[index];
                     var menu = new GenericMenu();
-                    menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuPingMaster), false, () =>
+                    menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuPingOwner), false, () =>
                     {
-                        Component master = null;
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref master, task);
-                        if (master != null) EditorGUIUtility.PingObject(master);
+                        Component owner = null;
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref owner, task);
+                        if (owner != null) EditorGUIUtility.PingObject(owner);
                     });
                     menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuForceFree), false, () =>
                     {
-                        task.Free();
+                        task.Stop();
                         RefreshData();
                     });
                     menu.ShowAsContext();
                 }
             });
 
-            rootVisualElement.Add(this.listView);
+            root.Add(this.listView);
+
+            // 5. フッター（ステータス情報ラベル）
+            this.footer = new VisualElement();
+            this.footer.style.height = 24;
+            this.footer.style.flexShrink = 0;
+            this.footer.style.borderTopWidth = 1;
+            this.footer.style.borderTopColor = Color.gray;
+            this.footer.style.paddingLeft = 6;
+            this.footer.style.justifyContent = Justify.Center;
+            this.footer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
+            root.Add(this.footer);
+
+            this.infoLabel = new Label { style = { unityFontStyleAndWeight = FontStyle.Bold } };
+            this.footer.Add(this.infoLabel);
 
             // 初回描画
             RefreshData();
@@ -213,10 +218,15 @@ namespace Omochaya.HiddenStory
 
         void Update()
         {
+            // UI生成前の実行をガード
+            if (this.playModeHelpBox == null || this.listView == null) return;
+
             var isPlaying = Application.isPlaying;
+            
             this.playModeHelpBox.style.display = isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
-            this.dashboard.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
-            this.listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+            // this.headerContainer.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+            // this.listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+            // this.footer.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
 
             if (!isPlaying || EditorApplication.isPaused) return;
 
@@ -233,9 +243,9 @@ namespace Omochaya.HiddenStory
         /// </summary>
         void RefreshData()
         {
-            if (!Application.isPlaying) return;
+            if (!Application.isPlaying || this.infoLabel == null) return;
 
-            // ★ UIと内部変数の同期ズレを確実に防ぐため、毎回UIから値を取得する
+            // UIと内部変数の同期ズレを確実に防ぐため、毎回UIから値を取得する
             if (this.searchField != null)
             {
                 this.searchString = this.searchField.value ?? "";
@@ -249,16 +259,19 @@ namespace Omochaya.HiddenStory
             DevForEditor.TaskMonitorAPI.FetchManualCount(ref manualCount);
             DevForEditor.TaskMonitorAPI.FetchLateCount(ref lateCount);
             DevForEditor.TaskMonitorAPI.FetchFixedCount(ref fixedCount);
-            this.lblAutoCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatAuto, autoCount);
-            this.lblManualCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatManual, manualCount);
-            this.lblLateCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatLate, lateCount);
-            this.lblFixedCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatFixed, fixedCount);
-
             DevForEditor.TaskMonitorAPI.GetTaskList(this.allTasks);
-            this.lblTotalCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatTotal, this.allTasks.Count);
 
             var waitCount = this.allTasks.Count - (autoCount + manualCount + lateCount + fixedCount);
-            this.lblWaitingCount.text = string.Format(Messages.EditorUI.TaskMonitor_StatWait, waitCount);
+
+            // フッター用文字列の生成
+            string sAuto = string.Format(Messages.EditorUI.TaskMonitor_StatAuto, autoCount);
+            string sManual = string.Format(Messages.EditorUI.TaskMonitor_StatManual, manualCount);
+            string sLate = string.Format(Messages.EditorUI.TaskMonitor_StatLate, lateCount);
+            string sFixed = string.Format(Messages.EditorUI.TaskMonitor_StatFixed, fixedCount);
+            string sWait = string.Format(Messages.EditorUI.TaskMonitor_StatWait, waitCount);
+            string sTotal = string.Format(Messages.EditorUI.TaskMonitor_StatTotal, this.allTasks.Count);
+
+            this.infoLabel.text = $"{sAuto}    |    {sManual}    |    {sLate}    |    {sFixed}    |    {sWait}    |    {sTotal}";
 
             this.filteredTasks.Clear();
             bool hasSearch = !string.IsNullOrEmpty(this.searchString);
@@ -277,8 +290,8 @@ namespace Omochaya.HiddenStory
                 var result = 0;
                 var offsetA = 0L;
                 var offsetB = 0L;
-                Component masterA = null;
-                Component masterB = null;
+                Component ownerA = null;
+                Component ownerB = null;
                 switch (this.sortMode)
                 {
                     case SortMode.Order:
@@ -286,15 +299,15 @@ namespace Omochaya.HiddenStory
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
                         result = offsetA.CompareTo(offsetB);
                         break;
-                    case SortMode.MasterName:
+                    case SortMode.OwnerName:
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetA, a);
                         DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref masterA, a);
-                        DevForEditor.TaskMonitorAPI.ExtractMaster(ref masterB, b);
-                        string ma = masterA?.name ?? string.Empty;
-                        string mb = masterB?.name ?? string.Empty;
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerA, a);
+                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerB, b);
+                        string ma = ownerA?.name ?? string.Empty;
+                        string mb = ownerB?.name ?? string.Empty;
                         result = string.CompareOrdinal(ma, mb);
-                        // Master名が同じならOffsetでサブソート
+                        // Owner名が同じならOffsetでサブソート
                         if (result == 0) { result = offsetA.CompareTo(offsetB); }
                         break;
                     case SortMode.TaskId:

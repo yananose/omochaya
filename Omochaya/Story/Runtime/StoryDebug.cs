@@ -10,7 +10,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 // #define SIMPLE_CHECK
-// ↑コメントアウトを外すとエディタ上でもある程度は製品版のロジックで動作させることができます
+// ↑コメントアウトを外すと簡易的にエディタ上でもある程度の製品版のロジックで動作させることができます
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
@@ -27,54 +27,62 @@ namespace Omochaya.HiddenStory
 
 // --------------------------------------------------------------------------------------------------------------------
 // エディタ向け機能
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
-    public interface IPoolMonitorForDebug
+    /// <summary>Don't touch! Only for system.</summary>
+    internal interface IPoolMonitorForDebug
     {
-        /// <summary>Gets the unique text identifier formatted for this state machine pool instance.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         string PoolName { get; }
 
-        /// <summary>Gets the total number of actively allocated elements inside the state machine core.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         int ActiveCount { get; }
 
-        /// <summary>Gets or sets the historical maximum peak of concurrently active elements observed during runtime.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         int WorstCount { get; set; }
 
-        /// <summary>Gets the remaining unallocated element capacity within the state machine pool.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         int FreeCount { get; }
 
-        /// <summary>Gets the total physical memory footprint of this state machine pool in bytes.</summary>
+        /// <summary>Don't touch! Only for system.</summary>
         int TotalBytes { get; }
 
-        public static readonly List<IPoolMonitorForDebug> Monitors = new();
-        public static void Register(IPoolMonitorForDebug monitor) => Monitors.Add(monitor);
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static readonly List<IPoolMonitorForDebug> Monitors = new();
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static void Register(IPoolMonitorForDebug monitor) => Monitors.Add(monitor);
     }
 
-    public static class DevForEditor
+    /// <summary>Don't touch! Only for system.</summary>
+    internal static class DevForEditor
     {
-        public static string FormatMemorySize(int bytes) => Dev.FormatMemorySize(bytes);
-        public static class TaskMonitorAPI
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static string FormatMemorySize(int bytes) => Dev.FormatMemorySize(bytes);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class TaskMonitorAPI
         {
-            /// <summary>Fetches the current offset count of automated tasks from the shared task manager engine.</summary>
-            public static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoTopCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoTopCount;
 
-            /// <summary>Fetches the active offset count of manually driven tasks within the active execution window.</summary>
-            public static void FetchManualCount(ref int count) => count = TaskManager.Shared.ManualTopCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void FetchManualCount(ref int count) => count = TaskManager.Shared.ManualTopCount;
 
-            /// <summary></summary>
-            public static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
 
-            /// <summary></summary>
-            public static void FetchFixedCount(ref int count) => count = TaskManager.Shared.FixedTopCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void FetchFixedCount(ref int count) => count = TaskManager.Shared.FixedTopCount;
 
-            /// <summary>Extracts the binding lifecycle master component from the target task info block.</summary>
-            public static void ExtractMaster(ref Component master, Story.Task task) => master = task.Info().Master;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void ExtractOwner(ref Component owner, Story.Task task) => owner = task.Info().Owner;
 
-            /// <summary>Retrieves the unique sorting layout key assigned to the specified debug task handle.</summary>
-            public static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
 
-            /// <summary>Traverses the entire linear execution tree of the task manager to compile a flat snapshot list of active tasks.</summary>
-            public static void GetTaskList(List<Story.Task> outTasks)
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void GetTaskList(List<Story.Task> outTasks)
             {
                 var self = TaskManager.Shared;
                 outTasks.Clear();
@@ -115,7 +123,7 @@ Dev.LoopBreak.Check(index.ToString());
                     outTasks.Add(Story.Task.UnsafeCreate(index));
                     index = info2.Next;
                     info = ref pool.UnsafeGet(index);
-                } while (!info.HasOffset);
+                } while (!info.IsTop);
             }
         }
     }
@@ -125,42 +133,43 @@ Dev.LoopBreak.Check(index.ToString());
 // --------------------------------------------------------------------------------------------------------------------
 // 開発向け機能
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST && !SIMPLE_CHECK
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK
 
-    class Dev : UnityEngine.Debug
+    internal class Dev : UnityEngine.Debug
     {
         /// <summary>Forcibly stores a temporary integer value used for pool tracking diagnostics.</summary>
-        public static void SetInt(int prm) => storedInt = prm;
+        internal static void SetInt(int prm) => storedInt = prm;
 
         /// <summary>Retrieves the temporarily stored integer value used for pool tracking diagnostics.</summary>
-        public static int GetInt() => storedInt;
+        internal static int GetInt() => storedInt;
 
         /// <summary>Registers a diagnostic pool monitor instance to the global debug registry.</summary>
-        public static void PoolMonitorRegister(IPoolMonitorForDebug monitor)
+        internal static void PoolMonitorRegister(IPoolMonitorForDebug monitor)
             => IPoolMonitorForDebug.Register(monitor);
 
         /// <summary>Validates whether the awaited task type is supported natively inside the story task loop.</summary>
-        public static void ValidateAwaiter<T>()
+        internal static void ValidateAwaiter<T>()
         {
             if (!AwaiterValidator<T>.IsValid) { throw new NotSupportedException(string.Format(Messages.Exceptions.NotSupportedAwait, Type<T>.Name)); }
         }
 
-        public static class LoopBreak
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class LoopBreak
         {
             static int count;
 
-            /// <summary>Initializes the infinite loop detection counter for the current frame branch.</summary>
-            public static void Init() => count = 0;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void Init() => count = 0;
 
-            /// <summary>Increments and verifies the loop counter to abort and throw upon detecting an infinite execution loop.</summary>
-            public static void Check(string str = "")
+            /// <summary>Don't touch! Only for system.</summary>
+            internal static void Check(string str = "")
             {
                 if (255 < ++count) { throw new InvalidOperationException(string.Format(Messages.Exceptions.InfiniteLoop, str, TaskManager.Shared.GetRunningInfo().GetMethodName())); }
             }
         }
 
         /// <summary>Extracts the formatted bracketed name prefix of the specified state machine pool monitor.</summary>
-        public static string ToString(StateMachine.IStateMachinePool pool)
+        internal static string ToString(StateMachine.IStateMachinePool pool)
         {
             if (pool is IPoolMonitorForDebug monitor)
             {
@@ -173,32 +182,41 @@ Dev.LoopBreak.Check(index.ToString());
         }
 
         /// <summary>Formats the entire active or historical state configuration of a task handle into a comprehensive debug string.</summary>
-        public static string ToString(Story.Task self)
+        internal static string ToString(Story.Task self)
         {
             ref var info = ref self.Info();
             ref var info2 = ref self.Info2();
 
             var stateStr = info2.StateForDebug;
             var methodName = info.IsValid ? info.GetMethodName() : string.Format(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age);
-            if (info.HasException) { methodName += " -EXCEPTION"; }
-            var masterName = GetMasterName(ref info);
+            var ownerName = GetOwnerName(ref info);
 
-            var offset = info.HasOffset ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
-            var prevIndex = info.HasOffset ? -1 : info2.Prev;
+            var offset = info.IsTop ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
+            var prevIndex = info.IsTop ? -1 : info2.Prev;
             var nextIndex = info2.Next;
             if (0 <= nextIndex &&
-                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).HasOffset) { nextIndex = -1; }
+                Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).IsTop) { nextIndex = -1; }
 
-            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {masterName}";
+            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {ownerName}";
         }
-        public static class Type<T> { public static string Name = GetTypeName(typeof(T)); }
-        public static class Pool<T> { public static string Name = "[Pool] " + Type<T>.Name; }
-        public static class Pool<HOT, COOL> { public static string Name = $"[Pool2] {Type<HOT>.Name} / {Type<COOL>.Name}"; }
-        public static class HiddenPool<T> { public static string Name = "[Hidden] " + Type<T>.Name; }
-        public static class StateMachinePool<S> { public static string Name = "[StateMachine] " + Type<S>.Name; }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class Type<T> { internal static string Name = GetTypeName(typeof(T)); }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class Pool<T> { internal static string Name = "[Pool] " + Type<T>.Name; }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class Pool<HOT, COOL> { internal static string Name = $"[Pool2] {Type<HOT>.Name} / {Type<COOL>.Name}"; }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class HiddenPool<T> { internal static string Name = "[Hidden] " + Type<T>.Name; }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class StateMachinePool<S> { internal static string Name = "[StateMachine] " + Type<S>.Name; }
 
         /// <summary>Formats a raw byte count into a human-readable string representation with appropriate binary units.</summary>
-        public static string FormatMemorySize(int bytes)
+        internal static string FormatMemorySize(int bytes)
         {
             string[] units = { "B", "KB", "MB", "GB", "TB" };
             var i = 0;
@@ -211,20 +229,11 @@ Dev.LoopBreak.Check(index.ToString());
             return $"{ret:F2} {units[i]}";
         }
 
-        /// <summary>Validates that a manually driven task is not currently being awaited by another active state machine.</summary>
-        public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
         {
-            Assert(topInfo.HasOffset, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
+            Assert(topInfo.IsTop, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
-        }
-
-        /// <summary>Captures the current Unity PlayerLoop architecture layout and dumps its hierarchy to the log output.</summary>
-        public static void DumpPlayerLoop()
-        {
-            var rootLoop = PlayerLoop.GetCurrentPlayerLoop();
-            var sb = new StringBuilder();
-            DumpPlayerLoop(rootLoop, sb, 0);
-            Dev.Log(sb.ToString());
         }
 
         // for debug only
@@ -232,7 +241,7 @@ Dev.LoopBreak.Check(index.ToString());
         static int storedInt;
         static class AwaiterValidator<T>
         {
-            public static readonly bool IsValid;
+            internal static readonly bool IsValid;
             static AwaiterValidator()
             {
                 var type = typeof(T);
@@ -252,99 +261,83 @@ Dev.LoopBreak.Check(index.ToString());
             if (0 < end) { return name.Substring(0, end); }
             return name;
         }
-        static string GetMasterName(ref TaskInfo info)
+        static string GetOwnerName(ref TaskInfo info)
         {
             if (info.IsPinned) { return Messages.DebugInfo.StatePinned; }
-            if (info.Master is null) { return Messages.DebugInfo.MasterNull; }
-            if (info.IsOrphaned) { return Messages.DebugInfo.StateDead; }
-            return info.Master.name;
+            if (info.Owner is null) { return Messages.DebugInfo.OwnerNull; }
+            if (info.ShouldCancel) { return Messages.DebugInfo.StateDead; }
+            return info.Owner.name;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
-        static void DumpPlayerLoop(PlayerLoopSystem system, StringBuilder sb, int indent)
-        {
-            if (system.type != null)
-            {
-                sb.AppendLine($"{new string(' ', indent * 2)}- {system.type.Name}");
-            }
+    }
 
-            if (system.subSystemList != null)
-            {
-                foreach (var sub in system.subSystemList)
-                {
-                    DumpPlayerLoop(sub, sb, indent + 1);
-                }
-            }
+#else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK == false
+
+    /// <summary>Don't touch! Only for system.</summary>
+    internal class Dev : Debug
+    {
+        [Conditional("DUMMY")] internal static void SetInt(int prm) {}
+        internal static int GetInt() => 0;
+        [Conditional("DUMMY")] internal static void PoolMonitorRegister(object monitor) {}
+        [Conditional("DUMMY")] internal static void ValidateAwaiter<T>() {}
+
+        internal static class LoopBreak
+        {
+            [Conditional("DUMMY")] internal static void Init() {}
+            [Conditional("DUMMY")] internal static void Check(string str) {}
+        }
+
+        internal static string ToString(StateMachine.IStateMachinePool pool) => string.Empty;
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+        internal static string ToString(Story.Task self) => string.Empty;
+        internal static class Type<T> { internal static string Name = string.Empty; }
+        internal static class Pool<T> { internal static string Name = string.Empty; }
+        internal static class Pool<HOT, COOL> { internal static string Name = string.Empty; }
+        internal static class HiddenPool<T> { internal static string Name = string.Empty; }
+        internal static class StateMachinePool<S> { internal static string Name = string.Empty; }
+#endif
+        internal static string FormatMemorySize(int bytes) => string.Empty;
+
+        [Conditional("DUMMY")] internal static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message) {}
+
+        internal static class TaskMonitorAPI
+        {
+            [Conditional("DUMMY")] internal static void FetchAutoCount(ref int count) {}
+            [Conditional("DUMMY")] internal static void FetchManualCount(ref int count) {}
+            [Conditional("DUMMY")] internal static void FetchLateCount(ref int count) {}
+            [Conditional("DUMMY")] internal static void FetchFixedCount(ref int count) {}
+            [Conditional("DUMMY")] internal static void ExtractOwner(ref Component owner, Story.Task task) {}
+            [Conditional("DUMMY")] internal static void GetOrder(ref long offset, Story.Task task) {}
+            [Conditional("DUMMY")] internal static void GetTaskList(List<Story.Task> outTasks) {}
         }
     }
 
-#else
-
-    class Dev : Debug
-    {
-        [Conditional("DUMMY")] public static void SetInt(int prm) {}
-        public static int GetInt() => 0;
-        [Conditional("DUMMY")] public static void PoolMonitorRegister(object monitor) {}
-        [Conditional("DUMMY")] public static void ValidateAwaiter<T>() {}
-
-        public static class LoopBreak
-        {
-            [Conditional("DUMMY")] public static void Init() {}
-            [Conditional("DUMMY")] public static void Check(string str) {}
-        }
-
-        public static string ToString(StateMachine.IStateMachinePool pool) => string.Empty;
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
-        public static string ToString(Story.Task self) => string.Empty;
-        public static class Type<T> { public static string Name = string.Empty; }
-        public static class Pool<T> { public static string Name = string.Empty; }
-        public static class Pool<HOT, COOL> { public static string Name = string.Empty; }
-        public static class HiddenPool<T> { public static string Name = string.Empty; }
-        public static class StateMachinePool<S> { public static string Name = string.Empty; }
-#endif
-        public static string FormatMemorySize(int bytes) => string.Empty;
-
-        [Conditional("DUMMY")] public static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message) {}
-
-        public static class TaskMonitorAPI
-        {
-            [Conditional("DUMMY")] public static void FetchAutoCount(ref int count) {}
-            [Conditional("DUMMY")] public static void FetchManualCount(ref int count) {}
-            [Conditional("DUMMY")] public static void FetchLateCount(ref int count) {}
-            [Conditional("DUMMY")] public static void FetchFixedCount(ref int count) {}
-            [Conditional("DUMMY")] public static void ExtractMaster(ref Component master, Story.Task task) {}
-            [Conditional("DUMMY")] public static void GetOrder(ref long offset, Story.Task task) {}
-            [Conditional("DUMMY")] public static void GetTaskList(List<Story.Task> outTasks) {}
-        }
-
-        [Conditional("DUMMY")] public static void DumpPlayerLoop() {}
-    }
-
-    class Debug
+    internal class Debug
     {
 
-#if false   // 製品版でパフォーマンスを重視したいとき
+#if STORY_FAST || SIMPLE_CHECK // 製品版でパフォーマンスを重視したいとき
 
-        [Conditional("DUMMY")] public static void Assert(bool condition, string message) {}
-        [Conditional("DUMMY")] public static void Assert(bool condition) {}
-        [Conditional("DUMMY")] public static void LogException(System.Exception exception) {}
-        [Conditional("DUMMY")] public static void LogError(object message) {}
+        [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
+        [Conditional("DUMMY")] internal static void Assert(bool condition) {}
+        [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
+        [Conditional("DUMMY")] internal static void LogError(object message) {}
 
-#else       // 製品版でリスクヘッジしたいとき
+#else // 製品版でリスクヘッジしたいとき
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Assert(bool condition, string message) { if (!condition) { throw new Exception(message); } }
+        internal static void Assert(bool condition, string message) { if (!condition) { throw new Exception(message); } }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Assert(bool condition) { if (!condition) { throw new Exception(); } }
+        internal static void Assert(bool condition) { if (!condition) { throw new Exception(); } }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException(System.Exception exception) { throw exception; }
+        internal static void LogException(System.Exception exception) { throw exception; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogError(string message) { throw new Exception(message); }
+        internal static void LogError(string message) { throw new Exception(message); }
 
 #endif
 
-        [Conditional("DUMMY")] public static void Log(object message) {}
-        [Conditional("DUMMY")] public static void LogWarning(object message) {}
+        [Conditional("DUMMY")] internal static void Log(object message) {}
+        [Conditional("DUMMY")] internal static void LogWarning(object message) {}
     }
 
 #endif

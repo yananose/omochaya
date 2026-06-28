@@ -1,0 +1,26 @@
+{
+  "name": "com.omochaya.story",
+  "version": "1.0.0",
+  "displayName": "Omochaya Story",
+  "description": "A high-performance, zero-allocation async/await task system designed to completely replace Unity's default coroutine (IEnumerator).",
+  "unity": "2021.3",
+  "author": {
+    "name": "yananose",
+    "url": "https://github.com/yananose"
+  },
+  "keywords": [
+    "async",
+    "await",
+    "task",
+    "coroutine",
+    "performance"
+  ],
+  "license": "MIT",
+  "samples": [
+    {
+      "displayName": "Framework Validation & Allocation Tests",
+      "description": "A suite of Unity Test Framework (UTF) scripts covering task lifecycles, parallel execution logic, and strict zero-allocation validation.",
+      "path": "Samples~/Tests"
+    }
+  ]
+}

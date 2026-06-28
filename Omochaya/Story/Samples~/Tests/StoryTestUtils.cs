@@ -1,0 +1,82 @@
+namespace OmochayaTests
+{
+    using System.Collections.Generic;
+    using UnityEngine;
+    using NUnit.Framework;
+
+    static class Utils
+    {
+        // inner classes
+        class Recorder
+        {
+            public static Recorder Shared = new();
+
+            // fields
+            UnityEngine.Profiling.Recorder gcRecorder;
+            int lastSampleCount;
+            bool isRecording;
+
+            // properties
+            public int TotalAllocatedFrames { get; set; }
+
+            // methods
+            Recorder()
+            {
+                this.gcRecorder = UnityEngine.Profiling.Recorder.Get("GC.Alloc");
+            }
+
+            public void Start()
+            {
+                this.isRecording = this.gcRecorder != null && this.gcRecorder.isValid;
+                if (this.isRecording)
+                {
+                    this.gcRecorder.enabled = true;
+                    this.lastSampleCount = this.gcRecorder.sampleBlockCount;
+                }
+            }
+
+            public void End()
+            {
+                if (this.isRecording)
+                {
+                    this.gcRecorder.enabled = false;
+                    TotalAllocatedFrames = Mathf.Max(TotalAllocatedFrames, this.gcRecorder.sampleBlockCount - this.lastSampleCount);
+                }
+            }
+        }
+
+        internal static void StartRecord() => Recorder.Shared.Start();
+
+        internal static void EndRecord() => Recorder.Shared.End();
+
+        internal static void LogRecord()
+        {
+            var count = Recorder.Shared.TotalAllocatedFrames;
+            Recorder.Shared.TotalAllocatedFrames = 0;
+#if STORY_NO_DEBUG
+            Assert.IsTrue(count == 0, $"[アロケーションが発生していないこと] {count}");
+#endif
+        }
+
+        internal static void Take(List<int> note) =>  note.Add(Time.frameCount);
+        internal static void Result(List<int> noteA, List<int> noteB)
+        {
+            Assert.IsTrue(noteA.Count == noteB.Count, $"[記録数が同じこと] {noteA.Count} == {noteB.Count}");
+            for (var i=0; i<noteA.Count; ++i)
+            {
+                Assert.IsTrue(noteA[i] == noteB[i], $"[タイミングが同じこと] {i} ({noteA[i]}, {noteB[i]})");
+            }
+        }
+
+        internal static void Take(List<double> note) =>  note.Add(Time.realtimeSinceStartupAsDouble);
+        internal static void Result(List<double> noteA, List<double> noteB)
+        {
+            Assert.IsTrue(noteA.Count == noteB.Count, $"[記録数が同じこと] {noteA.Count} == {noteB.Count}");
+            for (var i=0; i<noteA.Count; ++i)
+            {
+                var delta = noteA[i] - noteB[i];
+                Assert.IsTrue(Mathf.Abs((float)delta) < 0.005f, $"[タイミングが同じこと] {i} ({delta})");
+            }
+        }
+    }
+}

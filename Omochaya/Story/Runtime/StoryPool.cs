@@ -95,7 +95,7 @@ namespace Omochaya
             public static void ExpandBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = 1024 * 128)
             {
                 var newLength = array.Length;
-                newLength += Mathf.Clamp(newLength, 1, limit / itemSize);
+                newLength += Mathf.Min(newLength, Mathf.Max(4, limit / itemSize));
                 Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded_BasedOn, array.Length, newLength, Dev.FormatMemorySize(Unsafe.SizeOf<T>() * newLength), typeof(T).Name));
                 System.Array.Resize(ref array, newLength);
             }
@@ -109,7 +109,7 @@ namespace Omochaya
             public static readonly Pool<T> Shared = new();
             Pool() { }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             public override string PoolName => Dev.Pool<T>.Name;
             /// <summary>Don't touch! Only for system.</summary>
@@ -124,7 +124,7 @@ namespace Omochaya
             public static readonly Pool<HOT, COOL> Shared = new();
             Pool() { }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             public override string PoolName => Dev.Pool<HOT, COOL>.Name;
             /// <summary>Don't touch! Only for system.</summary>
@@ -214,15 +214,16 @@ namespace Omochaya
                 return ref UnsafePool<T>.Shared.Get(this.index);
             }
 
-            /// <summary></summary>
+            /// <summary>Determines whether the allocated memory type does not match the specified type.</summary>
+            // 型が一致しない
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool IsFailed<T>() => UnsafePool<T>.Shared != this.pool;
+            public bool IsMissType<T>() => UnsafePool<T>.Shared != this.pool;
 
             /// <summary>Disposes of the unmanaged memory handle, safely recycling its index slot.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Dispose() => Free();
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public override string ToString() => this.pool != null ? this.pool.Name : "(empty)";
 #endif
         }
@@ -231,7 +232,7 @@ namespace Omochaya
         // プールの基底クラス。IDによる要素へのアクセスを実現する。
         // IdにAgeをもちIdの最終的な有効性を IsValid により判定する。
         public abstract class PoolBase<T>
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             : IPoolMonitorForDebug
 #endif
         {
@@ -337,7 +338,7 @@ namespace Omochaya
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public void UnsafeReborn(int index) => this.array[index].Reborn();
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 public int ArraySize => Unsafe.SizeOf<PoolSlot<T>>() * (this.array?.Length ?? 0);
 #endif
             }
@@ -505,7 +506,7 @@ namespace Omochaya
                 else { Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, Length, length)); }
             }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             public int ActiveCount => this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
@@ -672,7 +673,7 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public new void Expand(int length) => ExpandCore(ref this.hotArray, length);
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             protected new int ArraySize => base.ArraySize + Unsafe.SizeOf<COOL>() * (ActiveCount + FreeCount);
 #endif
@@ -774,7 +775,7 @@ namespace Omochaya
                 this.useCount--;
             }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public readonly int ActiveCount => this.useCount;
             public readonly int TotalCount => this.nextFree?.Length ?? 0;
             public readonly int ArraySize => Unsafe.SizeOf<int>() * TotalCount;
@@ -826,7 +827,7 @@ namespace Omochaya
         // 世代管理しないプール。indexの有効性を検証するためのオーバーヘッドがないぶん高速。
         // 何らかの手段でindexの有効性が保証されている場合に使用できるが、使用には細心の注意を払うこと！
         class UnsafePool<T> : IUnsafePool
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             , IPoolMonitorForDebug
 #endif
         {
@@ -876,7 +877,7 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref T Get(int index) => ref this.array[index];
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public string Name => Dev.Type<T>.Name;
             public int ActiveCount => this.core.ActiveCount;
             public int WorstCount { get; set; }
@@ -889,7 +890,7 @@ namespace Omochaya
         interface IUnsafePool // 型消去用
         {
             void Free(int index);
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             string Name { get; }
 #endif
         }

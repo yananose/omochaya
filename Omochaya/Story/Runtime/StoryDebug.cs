@@ -27,7 +27,7 @@ namespace Omochaya.HiddenStory
 
 // --------------------------------------------------------------------------------------------------------------------
 // エディタ向け機能
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
     /// <summary>Don't touch! Only for system.</summary>
     internal interface IPoolMonitorForDebug
@@ -133,7 +133,7 @@ Dev.LoopBreak.Check(index.ToString());
 // --------------------------------------------------------------------------------------------------------------------
 // 開発向け機能
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST && !SIMPLE_CHECK
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK
 
     internal class Dev : UnityEngine.Debug
     {
@@ -289,7 +289,7 @@ Dev.LoopBreak.Check(index.ToString());
         }
 
         internal static string ToString(StateMachine.IStateMachinePool pool) => string.Empty;
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         internal static string ToString(Story.Task self) => string.Empty;
         internal static class Type<T> { internal static string Name = string.Empty; }
         internal static class Pool<T> { internal static string Name = string.Empty; }

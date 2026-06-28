@@ -15,6 +15,7 @@
 namespace Omochaya.HiddenStory
 {
     using System;
+    using System.Reflection;
     using System.Runtime.CompilerServices;
 
     // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
@@ -114,7 +115,7 @@ namespace Omochaya.HiddenStory
     internal readonly struct StateMachine
     {
         // fields
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
         internal
 #endif
@@ -164,13 +165,25 @@ namespace Omochaya.HiddenStory
         // inner classes
 
         class StateMachinePool<S> : IStateMachinePool
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             , IPoolMonitorForDebug
 #endif
             where S : struct, IAsyncStateMachine
         {
             /// <summary>Don't touch! Only for system.</summary>
-            internal static readonly StateMachinePool<S> Shared = new();
+            internal static readonly StateMachinePool<S> Shared;
+
+            static StateMachinePool()
+            {
+                Shared = new StateMachinePool<S>();
+#if !STORY_NO_PRE_CAPACITY
+                var capacity = GetCapacity(typeof(S));
+                if (0 < capacity) { Shared.Expand(capacity); }
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                else if (capacity < 0) { Dev.LogWarning($"Pool capacity initialization failed for {typeof(S).Name}"); }
+#endif
+#endif
+            }
 
             // fields
             Core core;
@@ -222,10 +235,14 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             public void Expand(int length)
             {
-                if (this.core.Expand(length)) { System.Array.Resize(ref this.array, length); }
+                if (this.core.Expand(length))
+                {
+                    if (this.array == null) { this.array = new S[length]; }
+                    else { System.Array.Resize(ref this.array, length); }
+                }
             }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             public string PoolName => Dev.StateMachinePool<S>.Name;
             /// <summary>Don't touch! Only for system.</summary>
@@ -249,7 +266,7 @@ namespace Omochaya.HiddenStory
             int[] nextFree;
             int freeHead;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             int useCount;
 #endif
 
@@ -262,7 +279,7 @@ namespace Omochaya.HiddenStory
                 get => this.nextFree == null || this.freeHead == -1;
             }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             internal int ActiveCount => this.useCount;
             /// <summary>Don't touch! Only for system.</summary>
@@ -280,7 +297,7 @@ namespace Omochaya.HiddenStory
                 var index = this.freeHead;
                 this.freeHead = this.nextFree[index];
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 this.useCount++;
 #endif
 
@@ -294,7 +311,7 @@ namespace Omochaya.HiddenStory
                 this.nextFree[index] = this.freeHead;
                 this.freeHead = index;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 this.useCount--;
 #endif
 
@@ -328,7 +345,13 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
             internal bool Expand(int length)
             {
-                Dev.Assert(this.nextFree != null);
+                if (this.nextFree == null)
+                {
+                    this.freeHead = -1;
+                    this.nextFree = new int[length];
+                    MakeLink(0);
+                    return true;
+                }
 
                 var oldLength = this.nextFree.Length;
                 if (length <= oldLength)
@@ -350,6 +373,40 @@ namespace Omochaya.HiddenStory
                 for (var i = oldLength; i < newLength-1; ++i) { this.nextFree[i] = i + 1; }
                 this.nextFree[newLength - 1] = this.freeHead;
                 this.freeHead = oldLength;
+            }
+        }
+
+        static int GetCapacity(Type stateMachineType)
+        {
+            try
+            {
+                var declaringType = stateMachineType.DeclaringType;
+                if (declaringType == null) { return -1; }
+
+
+                var smName = stateMachineType.Name;
+                if (!smName.StartsWith("<")) { return -1; }
+                var index = smName.IndexOf('>');
+                if (index < 3) { return -1; }
+                var targetMethodName = smName.Substring(1, index - 1);
+                var methods = declaringType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+                foreach (var method in methods)
+                {
+                    if (method.Name != targetMethodName) continue;
+                    var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
+                    if (asyncAttr == null) { continue; }
+                    if (asyncAttr.StateMachineType != stateMachineType) { continue; }
+                    var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
+                    return capacityAttr != null ? capacityAttr.Capacity : 0;
+                }
+
+                return 0;
+            }
+            catch (System.Exception e)
+            {
+                Dev.LogWarning(e.Message);
+
+                return -1;
             }
         }
     }

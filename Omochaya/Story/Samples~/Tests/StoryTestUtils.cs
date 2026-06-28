@@ -74,7 +74,7 @@ namespace OmochayaTests
 
         internal static void Result(StoryTestRunner runner)
         {
-#if STORY_FAST
+#if STORY_NO_DEBUG
             if (runner != null)
             {
                 Assert.IsTrue(runner.TotalAllocatedFrames == 0, $"[アロケーションが発生していないこと] {runner.TotalAllocatedFrames}");

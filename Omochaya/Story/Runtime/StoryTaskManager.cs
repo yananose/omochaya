@@ -24,7 +24,7 @@ namespace Omochaya.HiddenStory
         // static
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static TaskManager Shared { get; } = new TaskManager(3);
+        internal static TaskManager Shared { get; } = new();
 
         /// <summary>Don't touch! Only for system.</summary>
         class CanceledException : Exception
@@ -83,13 +83,9 @@ namespace Omochaya.HiddenStory
         }
 
         // constructors
-        TaskManager(int bandCount)
+        TaskManager()
         {
-            Dev.Assert(0 < bandCount);
             this.frameCount = Time.frameCount;
-            this.manualBand = new (BAND_TYPE_MANUAL);
-            this.bandArray = new TaskBand<TaskTop>[bandCount];
-            for (int i=0; i<bandCount; ++i) { this.bandArray[i] = new (GetBandType(i)); }
             this.updateOffset = -2;
         }
 
@@ -99,7 +95,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
         internal Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
-            // if (GetRunningInfo().WillCancel) { return default; } // 削除要求されたタスク内では作成できない
+            TryCustom();
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var id = pool.Alloc();
             var offset = this.manualBand.Add(id.Index);
@@ -120,9 +116,21 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Custom(int bandCount, int taskCount)
+        internal void TryCustom() => Custom(Story.DEFAULT_BAND_COUNT, Story.DEFAULT_TASK_COUNT, false);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void Custom(int bandCount, int taskCount , bool warning = true)
         {
+            if (TaskManager.Shared.HasValues)
+            {
+                if (warning) { Dev.LogWarning("使用を開始した後はカスタムできません"); }
+                return;
+            }
+
             Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
+
+            // band
             this.manualBand.Expand(taskCount);
             this.bandArray = new TaskBand<TaskTop>[bandCount];
             for (int i=0; i<bandCount; ++i)
@@ -130,6 +138,9 @@ namespace Omochaya.HiddenStory
                 this.bandArray[i] = new (GetBandType(i));
                 this.bandArray[i].Expand(taskCount);
             }
+
+            // info
+            Story.Pool<TaskInfo, TaskInfo2>.Shared.Expand(taskCount);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -754,7 +765,7 @@ Dev.LoopBreak.Check(task.ToString());
             CaptureException();
         }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
         internal int ManualTopCount => this.manualBand.Count;
         /// <summary>Don't touch! Only for system.</summary>

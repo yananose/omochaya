@@ -47,6 +47,16 @@ namespace Omochaya
     */
     public static partial class Story
     {
+        /// <summary></summary>
+        public const int DEFAULT_BAND_COUNT = 3;
+
+        /// <summary></summary>
+        public const int DEFAULT_TASK_COUNT = 1024;
+
+        /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Custom(int bandCount = DEFAULT_BAND_COUNT, int taskCount = DEFAULT_TASK_COUNT) => TaskManager.Shared.Custom(bandCount, taskCount);
+
         /// <summary>Drives the global task manager loop forward, executing all registered automated tasks for the current frame.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Update() => TaskManager.Shared.Update();
@@ -82,6 +92,18 @@ namespace Omochaya
         /// <summary>Determines whether the result of the last awaited task was invalidated by a cancellation.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+        [UnityEngine.Scripting.Preserve]
+        public class CapacityAttribute : Attribute
+        {
+            public int Capacity { get; }
+            public CapacityAttribute(int capacity)
+            {
+                Capacity = capacity;
+            }
+        }
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // タスク（ハンドラ）
@@ -205,7 +227,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public TaskEnumerator GetEnumerator() => new TaskEnumerator(this);
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => Dev.ToString(this);
 #endif
@@ -313,7 +335,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public TaskEnumerator GetEnumerator() => this.rawTask.GetEnumerator();
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => this.rawTask.ToString();
 #endif
@@ -592,7 +614,7 @@ namespace Omochaya.HiddenStory
         public void Expand(int length) => this.stateMachine.Expand(length);
 
         /// <summary>Don't touch! Only for system.</summary>
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         public string GetMethodName() => Dev.ToString(this.stateMachine.pool);
 #else
         public string GetMethodName() => string.Empty;
@@ -625,7 +647,7 @@ namespace Omochaya.HiddenStory
         public int Next; // 親タスクの方向
         Flags flags;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
         public long SortKeyForDebug;
         /// <summary>Don't touch! Only for system.</summary>

@@ -19,20 +19,6 @@ namespace Omochaya
     // タスク制御
     public static partial class Story
     {
-        /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Custom(int bandCount = 3, int taskCount = 1024)
-        {
-            if (TaskManager.Shared.HasValues)
-            {
-                Dev.LogWarning("使用を開始した後はカスタムできません");
-                return;
-            }
-
-            Pool<TaskInfo, TaskInfo2>.Shared.Expand(taskCount);
-            TaskManager.Shared.Custom(bandCount, taskCount);
-        }
-
         /// <summary>Replaces the current task with a new one, anchoring it to a owner component and starting it.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Start(ref this Task self, Component owner, Task task)

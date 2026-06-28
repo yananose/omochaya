@@ -38,7 +38,7 @@ async Story.Task Sequence()
 }
 ```
 
-Storyの目的は「`async/await` を使うこと」ではなく、**「Coroutineをより軽量・高速に実行すること」**です。結果として `async/await` の構文を採用していますが、内部的にはCoroutineと同じようにステートマシンを段階的に進行させる実行モデルを継承しています。
+Storyの目的は「`async/await` を使うこと」ではなく、**「Coroutineをより軽量・高速に実行すること」** です。結果として `async/await` の構文を採用していますが、内部的にはCoroutineと同じようにステートマシンを段階的に進行させる実行モデルを継承しています。
 
 ---
 
@@ -60,7 +60,7 @@ Storyは「Coroutineを置き換えること」だけに特化しています。
 RPGイベント / 会話システム / 演出制御 / ターン制バトル / カットシーン / UIシーケンス など、メインスレッドで完結するゲームロジック。
 
 ### ❌ Storyが向いていないケース
-HTTP通信 / ファイルI/O / マルチスレッド処理 など、スレッドを跨ぐ汎用的な非同期処理。（これらはUniTaskや標準Taskをご利用ください）
+HTTP通信 / ファイルI/O / マルチスレッド処理 など、スレッドを跨ぐ汎用的な非同期処理。（これらをStoryで実現するにはコルーチンと同様にポーリングが必要です）
 
 ---
 
@@ -77,8 +77,12 @@ HTTP通信 / ファイルI/O / マルチスレッド処理 など、スレッド
 
 ## ⚙️ 動作要件 (Requirements)
 
-* **Unity 2021.3 LTS 以上**
-* **C# 8.0 以上**
+* **Tested on:** Unity 6.3
+* **Language:** C# 8.0 以上
+
+> **Note:**
+> 本フレームワークは C# 8.0 の機能や `System.Runtime.CompilerServices.Unsafe` などを利用しているため、理論上は **Unity 2021.3 LTS 以降** であれば動作するはずです。
+> 作者の環境（Unity 6.3）でのみ動作確認を行っているため、もし古いバージョンで正常に動作した、あるいはエラーが出たという方がいらっしゃいましたら、ぜひ Issue や PR でご報告ください。
 
 ---
 
@@ -91,9 +95,8 @@ Unity Package Manager (UPM) を使用してインストールします。
 3. 以下のURLを入力して `Add` をクリックします。
 
 ```text
-https://github.com/yananose/OmochayaStory.git
+https://github.com/yananose/omochaya?path=Omochaya/Story
 ```
-*(※リポジトリのURLに合わせて適宜変更してください)*
 
 > **💡 テストコードの導入**
 > インストール後、Package Managerの Story のページから `Samples` にある「フレームワーク動作検証・アロケーションテスト」をプロジェクトにインポートできます。動作確認や仕様のリファレンスとしてご活用ください。
@@ -104,12 +107,14 @@ https://github.com/yananose/OmochayaStory.git
 
 ### 1. マネージャーの更新設定
 タスクを処理するため、プロジェクトの任意の場所（シングルトンやメインループを管理するクラスなど）で、各実行タイミングの Update を呼び出してください。
+また、同時に扱うタスク数が多い環境化でアロケーションが発生してしまう場合は、Story.Custom(taskCount: ) で使用するタスク数を宣言しておくことで回避できます。
 
 ```csharp
 using Omochaya;
 
 public class StoryManager : MonoBehaviour
 {
+    void Awake() { Story.Custom(taskCount: 2048); }
     void Update() { Story.Update(); }
     void LateUpdate() { Story.LateUpdate(); }
     void FixedUpdate() { Story.FixedUpdate(); }
@@ -190,9 +195,6 @@ public class HeavyActor : Story.TaskBehaviour
     }
 }
 ```
-
-> **🔥 さらなる最速化設定**
-> Project Settings の Scripting Define Symbols に `STORY_FAST` を追加すると、システム内部の全てのアサート（安全性チェック）とデバッグオーバーヘッドが除去され、最速で動作するようになります。本番ビルド時の利用を推奨します。
 
 ---
 

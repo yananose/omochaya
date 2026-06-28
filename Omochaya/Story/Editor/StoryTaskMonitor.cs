@@ -8,7 +8,7 @@
 //   the live status and execution order of automated and manual tasks during runtime.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_FAST
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません

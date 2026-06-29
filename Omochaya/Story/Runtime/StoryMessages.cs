@@ -47,7 +47,7 @@ namespace Omochaya.HiddenStory
             internal const string CancelAbortedFinishedTask = "タスクが終点まで実行されたので、予定していたキャンセルの実行は中止します：{0}";
             internal const string CancelPendingWhileRunning = "キャンセルを指示されましたがタスクが動作中なので、終わり次第キャンセルを実行します：{0}";
             internal const string CancelFailedTaskRunning = "キャンセルしたのに終了しませんでした。続きは自動タスクで処理します。以降はownerを無視するので責任を持って終了させてください：{0}";
-            internal const string ExpandOnly = "Expandはプールの拡張のみ可能です({0} -> {1})";
+            internal const string WarmupOnly = "Warmupはプールの拡張のみ可能です({0} -> {1})";
             internal const string ArrayExpanded = "配列が拡張されました: {0} -> {1}({2}) [{3}]";
             internal const string ArrayExpanded_StateMachine = "配列が拡張されました: {0} -> {1}({2}) [{3}] (StateMachine)";
             internal const string ArrayExpanded_BasedOn = "配列が拡張されました: {0} -> {1}({2}) [{3}] (by based on)";
@@ -124,7 +124,7 @@ namespace Omochaya.HiddenStory
             internal const string CancelAbortedFinishedTask = "Task has executed to the end, aborting the scheduled cancellation: {0}";
             internal const string CancelPendingWhileRunning = "Cancellation requested while the task is running; it will be canceled upon completion: {0}";
             internal const string CancelFailedTaskRunning = "Task did not finish despite being canceled. The remainder will be processed as an auto-task. The owner will be ignored from now on, so please ensure it is terminated properly: {0}";
-            internal const string ExpandOnly = "Expand can only expand the pool. ({0} -> {1})";
+            internal const string WarmupOnly = "Warmup can only expand the pool. ({0} -> {1})";
             internal const string ArrayExpanded = "Array is expanded: {0} -> {1}({2}) [{3}]";
             internal const string ArrayExpanded_StateMachine = "Array is expanded: {0} -> {1}({2}) [{3}] (StateMachine)";
             internal const string ArrayExpanded_BasedOn = "Array is expanded: {0} -> {1}({2}) [{3}] (by based on)";

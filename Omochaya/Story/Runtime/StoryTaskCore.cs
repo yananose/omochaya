@@ -129,7 +129,7 @@ namespace Omochaya.HiddenStory
         {
             void Free(int index);
             void MoveNext(int index);
-            void Expand(int length);
+            void Warmup(int length);
         }
 
         // constructors
@@ -148,7 +148,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Expand(int length) => this.pool.Expand(length);
+        internal void Warmup(int length) => this.pool.Warmup(length);
 
         // ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
 
@@ -178,7 +178,7 @@ namespace Omochaya.HiddenStory
                 Shared = new StateMachinePool<S>();
 #if !STORY_NO_PRE_CAPACITY
                 var capacity = GetCapacity(typeof(S));
-                if (0 < capacity) { Shared.Expand(capacity); }
+                if (0 < capacity) { Shared.Warmup(capacity); }
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 else if (capacity < 0) { Dev.LogWarning(string.Format("Pool capacity initialization failed for {0}", typeof(S).Name)); }
 #endif
@@ -233,9 +233,9 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
-            public void Expand(int length)
+            public void Warmup(int length)
             {
-                if (this.core.Expand(length))
+                if (this.core.Warmup(length))
                 {
                     if (this.array == null) { this.array = new S[length]; }
                     else { System.Array.Resize(ref this.array, length); }
@@ -343,7 +343,7 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            internal bool Expand(int length)
+            internal bool Warmup(int length)
             {
                 if (this.nextFree == null)
                 {
@@ -356,7 +356,7 @@ namespace Omochaya.HiddenStory
                 var oldLength = this.nextFree.Length;
                 if (length <= oldLength)
                 {
-                    Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, oldLength, length));
+                    Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, oldLength, length));
                     return false;
                 }
 

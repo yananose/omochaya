@@ -194,13 +194,13 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task a) => this.Id.Matches(a.Id);
 
-            /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
+            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Expand(int length)
+            public void Warmup(int length = 0)
             {
                 ref var info = ref this.Info();
                 Dev.Assert(info.IsValid);
-                info.Expand(length);
+                if (0 < length) { info.Warmup(length); }
             }
 
             /// <summary>Creates a task handle directly from a raw pool index without validation.</summary>
@@ -311,9 +311,9 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task<R> a) => this.rawTask.Matches(a.rawTask);
 
-            /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
+            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Expand(int length) => this.rawTask.Expand(length);
+            public void Warmup(int length) => this.rawTask.Warmup(length);
 
             // for awaiter（利用者による呼び出し禁止）
 
@@ -612,7 +612,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int length) => this.stateMachine.Expand(length);
+        public void Warmup(int length) => this.stateMachine.Warmup(length);
 
         /// <summary>Don't touch! Only for system.</summary>
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

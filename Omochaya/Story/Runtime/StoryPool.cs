@@ -491,7 +491,7 @@ namespace Omochaya
                     this.core.ExpandArray(length);
                     this.array.Expand(length);
                 }
-                else { Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, Length, length)); }
+                else { Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, Length, length)); }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -503,7 +503,7 @@ namespace Omochaya
                     this.array.Expand(length);
                     Pool.Expand(ref hotArray, length);
                 }
-                else { Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, Length, length)); }
+                else { Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, Length, length)); }
             }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

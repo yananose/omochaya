@@ -19,6 +19,7 @@ namespace OmochayaTests
             void Awake()
             {
                 Story.Custom(3, 1024);
+                Story.WaitTime(0f).Warmup(); // プールの事前確保
             }
 
             void Update() 
@@ -82,36 +83,36 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_コルーチンとの比較()
         {
-            // 【Story専用】各タスクの使用するプールを事前確保できます（任意）
-            StoryMain(null).Expand(8);
-            StorySub(null).Expand(8);
+            // 【Story専用】各タスクを Warmup することでプールを事前確保できます（任意）
+            StoryMain(null).Warmup();
+            StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
 
             // 記録帳
             var coroutineNote = new List<int>(1024);
             var storyNote = new List<int>(1024);
 
-            Debug.Log("〜 各タスク生成 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク生成 〜");
             var coroutineTask = CoroutineMain(coroutineNote); // コルーチンの場合
             var storyTask = StoryMain(storyNote); // Story の場合
 
             // 【Story専用】フレームをまたいだ時にオーナーがいないと解放されてしまうのでKeepしておく（直接Bootするなら不要）。
             storyTask.Keep(this.owner);
 
-            Debug.Log("〜 0.1秒待つ 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 0.1秒待つ 〜");
             yield return new WaitForSeconds(0.1f);
 
-            Debug.Log("〜 各タスク起動 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク起動 〜");
             this.owner.StartCoroutine(coroutineTask); // コルーチンの場合
             storyTask.Start(this.owner); // Story の場合
 
             // 各タスクが最後のループに到達するくらいまで待つ
             yield return new WaitForSeconds(0.5f);
 
-            Debug.Log("〜 各タスク終了 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク終了 〜");
             this.owner.StopCoroutine(coroutineTask); // コルーチンの場合
             storyTask.Stop(); // Story の場合
 
-            Debug.Log("〜 0.1秒待つ 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 0.1秒待つ 〜");
             yield return new WaitForSeconds(0.1f);
 
             // 結果
@@ -203,7 +204,6 @@ namespace OmochayaTests
 
             // タスクが終わるまで十分に待機する
             yield return null; 
-            yield return null;
 
             Assert.IsFalse(task.IsValid, "実行が完了したタスクはプールに返却され、自動的に無効になるべき");
 
@@ -346,7 +346,6 @@ namespace OmochayaTests
 
             // システムがオーナーの死を検知し、タスクをキャンセルしてfinallyを実行するまで待機
             yield return null;
-            yield return null;
 
             Assert.IsTrue(hasReachedFinally, "オーナーが破棄された場合、システムはそれを検知してfinallyブロックを実行させるべき");
 
@@ -466,9 +465,6 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilコンビネータで1つが完了すると敗者のタスクは自動的にキャンセルされること()
         {
-            // 事前確保
-            Story.WaitTime(0f).Expand(8);
-
             bool loserFinallyExecuted = false;
 
             var winner = WinnerTask();
@@ -479,7 +475,7 @@ namespace OmochayaTests
             untilTask.Start(this.owner);
 
             // 勝者タスクが完了し、システムが敗者タスクをクリーンアップするまで待つ
-            yield return new WaitForSeconds(0.1f);
+            while (winner.IsValid) { yield return null; }
             yield return null;
 
             Assert.IsTrue(loserFinallyExecuted, "Untilで勝者が決まった瞬間、敗者タスクは自動的にStopが呼ばれfinallyが実行されるべき");
@@ -511,29 +507,26 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilの結果受け取りが正しく行われること()
         {
-            // 事前確保
-            Story.WaitTime(0f).Expand(8);
+            // テスト実施
+            var testTask = ExecuteTest();
+            testTask.Start(this.owner);
 
-            var taskA = DelayedResultTask(0.1f, "Loser");
-            var taskB = DelayedResultTask(0.05f, "Winner"); // こちらが先に終わる
-
-            // 実行と結果取得
-            var resultTask = ExecuteAndGetResult();
-            resultTask.Start(this.owner);
-            
-            yield return new WaitForSeconds(0.15f);
+            // テスト完了待ち
+            while (testTask.IsValid) { yield return null; }
 
             Utils.LogRecord();
 
             [Story.Capacity(8)]
-            async Story.Task ExecuteAndGetResult()
+            static async Story.Task ExecuteTest()
             {
-                var result = await taskA.Until(taskB);
+                var result = await Story.Until(
+                    DelayedResultTask(0.5f, "Loser"), // WaitTime はフレーム単位で時間を見るため処理落ちで同着にならないよう delay は大きめに。
+                    DelayedResultTask(0.05f, "Winner"));
                 Assert.AreEqual("Winner", result, "先に完了したタスクの結果が返却されるべき");
             }
 
             [Story.Capacity(8)]
-            async Story.Task<string> DelayedResultTask(float delay, string result)
+            static async Story.Task<string> DelayedResultTask(float delay, string result)
             {
                 await Story.WaitTime(delay);
                 return result;

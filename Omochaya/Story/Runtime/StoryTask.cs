@@ -43,7 +43,7 @@ namespace Omochaya
     ・Story.Task がキャンセル（Task.Stop 実行 / foreach 中の beak / owner 等消失による削除）された場合は finally ブロックを実行する。
     ・finally ブロックで owner に指定したコンポーネントを参照してはならない。
     ・キャンセル発生以降は owner を無視するので await する場合は使用者が責任を持って解放すること。
-    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.IsResultInvalid でキャンセルされたことを検知できる。
+    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.HasValidResult でキャンセルされたかどうか検知できる。
 
     */
     public static partial class Story
@@ -90,13 +90,13 @@ namespace Omochaya
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
         public static VoidCore Void => default;
 
-        /// <summary>Determines whether the result of the last awaited task was invalidated by a cancellation.</summary>
+        /// <summary>Determines whether the last awaited task completed successfully and returned a valid result.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
+        public static bool HasValidResult() => TaskManager.Shared.HasValidResult;
 
-        /// <summary></summary>
+        /// <summary>Determines whether the specified exception indicates a task cancellation.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ThrowIfCancel(Exception e) => TaskManager.Shared.ThrowIfCancel(e);
+        public static bool IsCanceledException(Exception e) => TaskManager.Shared.IsCanceledException(e);
 
         /// <summary>Specifies the initial pool capacity to be allocated for the state machine associated with an asynchronous task method.</summary>
         [AttributeUsage(AttributeTargets.Method, Inherited = false)]

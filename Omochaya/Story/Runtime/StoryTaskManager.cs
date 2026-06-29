@@ -64,7 +64,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
         /// <summary>Don't touch! Only for system.</summary>
-        internal bool IsResultInvalid;
+        internal bool HasValidResult;
 
         // properties
 
@@ -359,7 +359,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void ThrowIfCancel(Exception e) { if (e == CanceledException.Shared) { throw e; } }
+        internal bool IsCanceledException(Exception e)  => e == CanceledException.Shared;
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -735,8 +735,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         internal R GetResult<R>()
         {
             R result = default;
-            IsResultInvalid = this.runningResult.IsMissType<R>();
-            if (!IsResultInvalid)
+            HasValidResult = !this.runningResult.IsMissType<R>();
+            if (HasValidResult)
             {
                 result = this.runningResult.Get<R>();
                 this.runningResult.Free();

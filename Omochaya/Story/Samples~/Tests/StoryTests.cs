@@ -779,7 +779,7 @@ namespace OmochayaTests
             async Story.Task ParentTask(Story.Task<string> child)
             {
                 receivedResult = await child;
-                isResultInvalid = Story.IsResultInvalid();
+                isResultInvalid = !Story.HasValidResult();
             }
 
             [Story.Capacity(8)]
@@ -986,7 +986,7 @@ namespace OmochayaTests
                 {
                     hasCaughtException = true; // 例外発生
                     // キャンセルだったら上に通す
-                    Story.ThrowIfCancel(e);
+                    if (Story.IsCanceledException(e)) { throw; }
                 }
 
                 hasReachedNextLine = true; // 握りつぶすとここまで到達してしまう
@@ -1181,6 +1181,92 @@ namespace OmochayaTests
                     // 子タスクのfinally内で時間を稼ぐ
                     await Story.WaitFrame(5);
                     childFinallyCompleted = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_多重キャンセル時にfinally内のawaitが例外をスローし_正しくcatchすれば後続処理が実行されること()
+        {
+            var unprotectedReachedEnd = false;
+            var protectedReachedEnd = false;
+            var exceptionCaught = false;
+
+            // --------------------------------------------------------
+            // 1. 保護されていないタスク（多重キャンセルで途中で死ぬはず）
+            // --------------------------------------------------------
+            var unprotectedTask = UnprotectedTask();
+            unprotectedTask.Start(this.owner);
+            yield return null;
+
+            unprotectedTask.Stop(); // 1回目のキャンセル（finallyへ突入）
+            yield return null;
+
+            unprotectedTask.Stop(); // 2回目のキャンセル（多重キャンセル！）。例外がスローされ、タスクが強制終了
+
+            Assert.IsFalse(unprotectedReachedEnd, "多重キャンセルされたため、finally内のawait以降の同期処理は実行されないべき");
+            Assert.IsFalse(unprotectedTask.IsValid, "例外で強制脱出したため、タスク自体は完全に終了（解放）しているべき");
+
+            // --------------------------------------------------------
+            // 2. 保護されているタスク（例外を消化し、最後まで完走するはず）
+            // --------------------------------------------------------
+            var protectedTask = ProtectedTask();
+            protectedTask.Start(this.owner);
+            yield return null;
+
+            protectedTask.Stop(); // 1回目のキャンセル（finallyへ突入）
+            yield return null;
+
+            protectedTask.Stop(); // 2回目のキャンセル（多重キャンセル！）。例外がスローされ、catchで握り潰される
+
+            Assert.IsTrue(exceptionCaught, "多重キャンセルによるCanceledExceptionが、when句のフィルターを通って正しくcatchされているべき");
+            Assert.IsTrue(protectedReachedEnd, "例外を安全に消化したため、finally内の後続処理（絶対実行したい同期処理）が完走しているべき");
+            Assert.IsFalse(protectedTask.IsValid, "完走後、タスクは正常に終了（解放）しているべき");
+
+            // Utils.LogGCAlloc(); // 例外スローに伴うアロケーションが発生するためチェックは外す
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task UnprotectedTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここで1回目のStopを受ける
+                }
+                finally
+                {
+                    // 保護せずにawaitする（ここで2回目のStopを受ける）
+                    await Story.WaitFrame(10);
+                    
+                    unprotectedReachedEnd = true; // 多重キャンセル時はここに到達しない
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task ProtectedTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここで1回目のStopを受ける
+                }
+                finally
+                {
+                    try
+                    {
+                        // 保護された状態でawaitする（ここで2回目のStopを受ける）
+                        await Story.WaitFrame(10);
+                    }
+                    catch (System.Exception e) when (Story.IsCanceledException(e))
+                    {
+                        // キャンセル例外のみを安全に消化する
+                        exceptionCaught = true;
+                    }
+                    
+                    protectedReachedEnd = true; // 多重キャンセルされても必ずここに到達する！
                 }
             }
         }

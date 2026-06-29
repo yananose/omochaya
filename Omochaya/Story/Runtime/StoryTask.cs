@@ -48,10 +48,10 @@ namespace Omochaya
     */
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>The default number of execution bands (Auto, Late, and Fixed) allocated for the task manager.</summary>
         public const int DEFAULT_BAND_COUNT = 3;
 
-        /// <summary></summary>
+        /// <summary>The default initial capacity allocated for task pools and execution band arrays.</summary>
         public const int DEFAULT_TASK_COUNT = 1024;
 
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
@@ -94,7 +94,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
 
-        /// <summary>Don't touch! Only for system.</summary>
+        /// <summary>Specifies the initial pool capacity to be allocated for the state machine associated with an asynchronous task method.</summary>
         [AttributeUsage(AttributeTargets.Method, Inherited = false)]
         [UnityEngine.Scripting.Preserve]
         public class CapacityAttribute : Attribute
@@ -587,7 +587,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Keep(Component owner)
         {
-            if (!IsValid) { throw new Exception("無効な（あるいは終了した）タスクは操作できません"); }
+            if (!IsValid) { throw new Exception(Messages.Exceptions.CannotOperateInvalidTask); }
             Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;

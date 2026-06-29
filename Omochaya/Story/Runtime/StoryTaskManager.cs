@@ -124,11 +124,11 @@ namespace Omochaya.HiddenStory
         {
             if (TaskManager.Shared.HasValues)
             {
-                if (warning) { Dev.LogWarning("使用を開始した後はカスタムできません"); }
+                if (warning) { Dev.LogWarning(Messages.Warnings.CannotCustomizeAfterStart); }
                 return;
             }
 
-            Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
+            Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format(Messages.Exceptions.InvalidBandCount, bandCount));
 
             // band
             this.manualBand.Expand(taskCount);
@@ -320,7 +320,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 受け皿のない結果があれば解放する
             if (this.runningResult.IsValid)
             {
-                Dev.Log(string.Format("結果が受け取られませんでした：{0}", this.runningResult));
+                Dev.Log(string.Format(Messages.Warnings.UnhandledResult, this.runningResult));
                 this.runningResult.Free();
                 this.runningResult = default;
             }
@@ -551,7 +551,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         /// <summary>Don't touch! Only for system.</summary>
         internal bool Boot(Story.Task task)
         {
-            if (!task.IsValid) { throw new Exception(string.Format("無効な（あるいは終了した）タスクは操作できません：{0}", this.runningResult)); }
+            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -636,7 +636,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         {
             Dev.Assert(IsRunningValid);
 
-            if (!task.IsValid) { throw new Exception(string.Format("無効な（あるいは終了した）タスクは操作できません：{0}", task)); }
+            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;

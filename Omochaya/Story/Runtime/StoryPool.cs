@@ -19,6 +19,7 @@ namespace Omochaya
     {
         public static class Pool
         {
+            /// <summary>Represents a unique identifier for a pooled resource, combining an array index and a generation age to ensure safe access.</summary>
             // プール（構造体配列）のId。
             // IndexとAgeを組み合わせて、IDの有効性を検証する。
             // Idの割り当てと解放はPool.Coreを使用して行われる。
@@ -132,6 +133,7 @@ namespace Omochaya
 #endif
         }
 
+        /// <summary>Represents a lightweight, generation-free memory handle for safely accessing unmanaged pooled resources.</summary>
         // 世代管理しないプールで比較的安全に要素にアクセスするための構造体。
         // コンストラクタで指定されたプールから要素を確保し index を隠蔽してアクセスする。
         // Dispose（あるいは Free）を怠ると容易にリークするので注意。

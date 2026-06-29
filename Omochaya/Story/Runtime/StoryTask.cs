@@ -466,7 +466,7 @@ namespace Omochaya.HiddenStory
         static TaskInfo()
         {
             Dev.Assert(Unsafe.SizeOf<TaskInfo>() == 32);
-            Invalid.Offset = -1;
+            Invalid.Offset = TaskManager.INVALID_OFFSET;
         }
 
         // inner classes
@@ -521,7 +521,17 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             readonly get => (this.flags & Flags.IsPinned) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsPinned; } else { this.flags &= ~Flags.IsPinned; } }
+            set
+            {
+                if (value)
+                {
+                    this.flags |= Flags.IsPinned;
+                    // オーナーからも解放（※無用な参照を残さないためだが問題が出たらやめる）
+                    IsFastOwner = false;
+                    this.owner = null;
+                }
+                else { this.flags &= ~Flags.IsPinned; }
+            }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -549,7 +559,7 @@ namespace Omochaya.HiddenStory
         public readonly bool IsTop
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => 0 <= this.Offset;
+            get => this.Offset != TaskManager.INVALID_OFFSET;
         }
 
         /// <summary>Don't touch! Only for system.</summary>

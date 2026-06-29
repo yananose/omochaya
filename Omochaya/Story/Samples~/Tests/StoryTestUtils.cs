@@ -18,7 +18,8 @@ namespace OmochayaTests
             public void Dispose()
             {
                 var delta = (int)(Utils.LastValue - this.lastValue);
-                if (0 < delta) { Utils.GCAlloc++; }
+                if (0 < delta) { Utils.GCAlloc += delta; }
+                // if (0 < delta) { Utils.GCAlloc++; }
                 // Utils.GCAlloc = Mathf.Max(Utils.GCAlloc, delta);
             }
         }

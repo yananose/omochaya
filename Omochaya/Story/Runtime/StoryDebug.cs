@@ -236,6 +236,9 @@ Dev.LoopBreak.Check(index.ToString());
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
+        [Conditional("DUMMY")] internal static void AssertIsTrue(bool condition, string message) {}
+
         // for debug only
 
         static int storedInt;
@@ -322,6 +325,7 @@ Dev.LoopBreak.Check(index.ToString());
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
         [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
         [Conditional("DUMMY")] internal static void LogError(object message) {}
+        internal static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
 
 #else // 製品版でリスクヘッジしたいとき
 

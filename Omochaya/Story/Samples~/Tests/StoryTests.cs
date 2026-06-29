@@ -23,23 +23,26 @@ namespace OmochayaTests
 
             void Update() 
             { 
-                Utils.StartRecord();
-                Story.Update(); 
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.Update();
+                }
             }
 
             void LateUpdate()
             {
-                Utils.StartRecord();
-                Story.LateUpdate();
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.LateUpdate();
+                }
             }
 
             void FixedUpdate()
             {
-                Utils.StartRecord();
-                Story.FixedUpdate();
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.FixedUpdate();
+                }
             }
         }
 
@@ -73,15 +76,19 @@ namespace OmochayaTests
         }
 
         // ------------------------------------------------------------------------
-        // ライフサイクルのコルーチンとの比較
+        // コルーチンとの比較
         // ------------------------------------------------------------------------
 
         [UnityTest]
-        public IEnumerator LifeCycle_コルーチンとの比較()
+        public IEnumerator Task_コルーチンとの比較()
         {
+            // 【Story専用】各タスクの使用するプールを事前確保できます（任意）
+            StoryMain(null).Expand(8);
+            StorySub(null).Expand(8);
+
             // 記録帳
-            var coroutineNote = new List<int>();
-            var storyNote = new List<int>();
+            var coroutineNote = new List<int>(1024);
+            var storyNote = new List<int>(1024);
 
             Debug.Log("〜 各タスク生成 〜");
             var coroutineTask = CoroutineMain(coroutineNote); // コルーチンの場合
@@ -116,20 +123,20 @@ namespace OmochayaTests
             // メインタスク（コルーチン）
             IEnumerator CoroutineMain(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始した（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始した（コルーチン：メイン）");
                 yield return null;
 
-                Utils.Take(note); Debug.Log("サブタスクの呼び出し（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクの呼び出し（コルーチン：メイン）");
                 yield return CoroutineSub(note).GetEnumerator();
 
-                Utils.Take(note); Debug.Log("サブタスクを手動で回す（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクを手動で回す（コルーチン：メイン）");
                 foreach (var _ in CoroutineSub(note))
                 {
                     yield return null;
                     Utils.Take(note);
                 }
 
-                Utils.Take(note); Debug.Log("最後のループに到達（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("最後のループに到達（コルーチン：メイン）");
                 while (true)
                 {
                     yield return null;
@@ -140,20 +147,20 @@ namespace OmochayaTests
             // メインタスク（Story）
             async Story.Task StoryMain(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始した（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始した（Story：メイン）");
                 await Story.Yield;
 
-                Utils.Take(note); Debug.Log("サブタスクの呼び出し（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクの呼び出し（Story：メイン）");
                 await StorySub(note);
 
-                Utils.Take(note); Debug.Log("サブタスクを手動で回す（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクを手動で回す（Story：メイン）");
                 foreach (var _ in StorySub(note))
                 {
                     await Story.Yield;
                     Utils.Take(note);
                 }
 
-                Utils.Take(note); Debug.Log("最後のループに到達（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("最後のループに到達（Story：メイン）");
                 while (true)
                 {
                     await Story.Yield;
@@ -164,21 +171,21 @@ namespace OmochayaTests
             // サブタスク（コルーチン）
             IEnumerable CoroutineSub(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始（コルーチン：サブ）");
                 yield return null;
-                Utils.Take(note); Debug.Log("システムから戻る（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("システムから戻る（コルーチン：サブ）");
                 yield return null;
-                Utils.Take(note); Debug.Log("終了（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("終了（コルーチン：サブ）");
             }
 
             // サブタスク（Story）
             async Story.Task StorySub(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始（Story：サブ）");
                 await Story.Yield;
-                Utils.Take(note); Debug.Log("システムから戻る（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("システムから戻る（Story：サブ）");
                 await Story.Yield;
-                Utils.Take(note); Debug.Log("終了（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("終了（Story：サブ）");
             }
         }
 
@@ -229,7 +236,7 @@ namespace OmochayaTests
 
             Utils.LogRecord();
 
-            [Story.Capacity(8)]            
+            [Story.Capacity(8)] // これで最初に使用する時に確保するプールのサイズを指定できます
             async Story.Task EmptyTask() { await Story.Void; }
         }
 
@@ -459,6 +466,9 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilコンビネータで1つが完了すると敗者のタスクは自動的にキャンセルされること()
         {
+            // 事前確保
+            Story.WaitTime(0f).Expand(8);
+
             bool loserFinallyExecuted = false;
 
             var winner = WinnerTask();
@@ -501,6 +511,9 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilの結果受け取りが正しく行われること()
         {
+            // 事前確保
+            Story.WaitTime(0f).Expand(8);
+
             var taskA = DelayedResultTask(0.1f, "Loser");
             var taskB = DelayedResultTask(0.05f, "Winner"); // こちらが先に終わる
 

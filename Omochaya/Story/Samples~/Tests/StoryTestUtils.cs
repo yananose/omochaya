@@ -3,79 +3,56 @@ namespace OmochayaTests
     using System.Collections.Generic;
     using UnityEngine;
     using NUnit.Framework;
+    using System;
 
     static class Utils
     {
         // inner classes
-        class Recorder
+        public struct Checker : IDisposable
         {
-            public static Recorder Shared = new();
-
-            // fields
-            UnityEngine.Profiling.Recorder gcRecorder;
-            int lastSampleCount;
-            bool isRecording;
-
-            // properties
-            public int TotalAllocatedFrames { get; set; }
-
-            // methods
-            Recorder()
+            long lastValue;
+            public Checker(int dummy)
             {
-                this.gcRecorder = UnityEngine.Profiling.Recorder.Get("GC.Alloc");
+                this.lastValue = Utils.LastValue;
             }
-
-            public void Start()
+            public void Dispose()
             {
-                this.isRecording = this.gcRecorder != null && this.gcRecorder.isValid;
-                if (this.isRecording)
-                {
-                    this.gcRecorder.enabled = true;
-                    this.lastSampleCount = this.gcRecorder.sampleBlockCount;
-                }
-            }
-
-            public void End()
-            {
-                if (this.isRecording)
-                {
-                    this.gcRecorder.enabled = false;
-                    TotalAllocatedFrames = Mathf.Max(TotalAllocatedFrames, this.gcRecorder.sampleBlockCount - this.lastSampleCount);
-                }
+                var delta = (int)(Utils.LastValue - this.lastValue);
+                if (0 < delta) { Utils.GCAlloc++; }
+                // Utils.GCAlloc = Mathf.Max(Utils.GCAlloc, delta);
             }
         }
 
-        internal static void StartRecord() => Recorder.Shared.Start();
+        internal static int GCAlloc { get; set; }
+        internal static long LastValue => GC.GetTotalMemory(false);
 
-        internal static void EndRecord() => Recorder.Shared.End();
+        internal static Checker Check() => new Checker(0);
 
         internal static void LogRecord()
         {
-            var count = Recorder.Shared.TotalAllocatedFrames;
-            Recorder.Shared.TotalAllocatedFrames = 0;
-#if STORY_NO_DEBUG
-            Assert.IsTrue(count == 0, $"[アロケーションが発生していないこと] {count}");
-#endif
+            var count = Utils.GCAlloc;
+            Utils.GCAlloc = 0;
+            Omochaya.HiddenStory.Dev.AssertIsTrue(count == 0, string.Format("[アロケーションが発生していないこと] {0}", count));
         }
 
         internal static void Take(List<int> note) =>  note.Add(Time.frameCount);
         internal static void Result(List<int> noteA, List<int> noteB)
         {
-            Assert.IsTrue(noteA.Count == noteB.Count, $"[記録数が同じこと] {noteA.Count} == {noteB.Count}");
+            Assert.IsTrue(noteA.Count == noteB.Count, string.Format("[記録数が同じこと] {0} == {1}", noteA.Count, noteB.Count));
             for (var i=0; i<noteA.Count; ++i)
             {
-                Assert.IsTrue(noteA[i] == noteB[i], $"[タイミングが同じこと] {i} ({noteA[i]}, {noteB[i]})");
+                Assert.IsTrue(noteA[i] == noteB[i], string.Format("[タイミングが同じこと] {0} ({1}, {2})", i, noteA[i], noteB[i]));
             }
         }
 
         internal static void Take(List<double> note) =>  note.Add(Time.realtimeSinceStartupAsDouble);
         internal static void Result(List<double> noteA, List<double> noteB)
         {
-            Assert.IsTrue(noteA.Count == noteB.Count, $"[記録数が同じこと] {noteA.Count} == {noteB.Count}");
+            Assert.IsTrue(noteA.Count == noteB.Count, string.Format("[記録数が同じこと] {0} == {1}", noteA.Count, noteB.Count));
             for (var i=0; i<noteA.Count; ++i)
             {
                 var delta = noteA[i] - noteB[i];
-                Assert.IsTrue(Mathf.Abs((float)delta) < 0.005f, $"[タイミングが同じこと] {i} ({delta})");
+                Assert.IsTrue(Mathf.Abs((float)delta) < 0.005f, string.Format("[タイミングが同じこと] {0} ({1})", i, delta));
             }
         }
     }

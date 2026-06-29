@@ -10,6 +10,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("com.omochaya.story.Editor")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("com.omochaya.story.Tests")]
 
 namespace Omochaya
 {

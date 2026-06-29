@@ -351,6 +351,10 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void ThrowIfCancel(Exception e) { if (e == CanceledException.Shared) { throw e; } }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TryKeep(ref TaskInfo info)
         {
             if (info.Owner is null)

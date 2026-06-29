@@ -323,9 +323,18 @@ Dev.LoopBreak.Check(index.ToString());
 
         [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
-        [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
-        [Conditional("DUMMY")] internal static void LogError(object message) {}
+
+#if SIMPLE_CHECK // 簡易テスト時
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
         internal static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
+
+#else
+
+        [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
+
+#endif
 
 #else // 製品版でリスクヘッジしたいとき
 
@@ -334,9 +343,7 @@ Dev.LoopBreak.Check(index.ToString());
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Assert(bool condition) { if (!condition) { throw new Exception(); } }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(System.Exception exception) { throw exception; }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogError(string message) { throw new Exception(message); }
+        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
 
 #endif
 

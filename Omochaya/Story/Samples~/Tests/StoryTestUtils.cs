@@ -28,7 +28,7 @@ namespace OmochayaTests
 
         internal static Checker Check() => new Checker(0);
 
-        internal static void LogRecord()
+        internal static void LogGCAlloc()
         {
             var count = Utils.GCAlloc;
             Utils.GCAlloc = 0;

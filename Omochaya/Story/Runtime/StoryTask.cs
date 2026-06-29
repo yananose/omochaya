@@ -94,6 +94,10 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
 
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThrowIfCancel(Exception e) => TaskManager.Shared.ThrowIfCancel(e);
+
         /// <summary>Specifies the initial pool capacity to be allocated for the state machine associated with an asynchronous task method.</summary>
         [AttributeUsage(AttributeTargets.Method, Inherited = false)]
         [UnityEngine.Scripting.Preserve]

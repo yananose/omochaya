@@ -180,7 +180,7 @@ namespace Omochaya.HiddenStory
                 var capacity = GetCapacity(typeof(S));
                 if (0 < capacity) { Shared.Expand(capacity); }
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-                else if (capacity < 0) { Dev.LogWarning($"Pool capacity initialization failed for {typeof(S).Name}"); }
+                else if (capacity < 0) { Dev.LogWarning(string.Format("Pool capacity initialization failed for {0}", typeof(S).Name)); }
 #endif
 #endif
             }

@@ -210,7 +210,7 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref T Get<T>()
             {
-                Dev.Assert(UnsafePool<T>.Shared == this.pool, $"{UnsafePool<T>.Shared} != {this.pool}. type is {typeof(T)}");
+                Dev.Assert(UnsafePool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", UnsafePool<T>.Shared, this.pool, typeof(T)));
                 return ref UnsafePool<T>.Shared.Get(this.index);
             }
 

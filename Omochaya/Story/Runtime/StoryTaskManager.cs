@@ -320,7 +320,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 受け皿のない結果があれば解放する
             if (this.runningResult.IsValid)
             {
-                Dev.Log($"結果が受け取られませんでした：{this.runningResult}");
+                Dev.Log(string.Format("結果が受け取られませんでした：{0}", this.runningResult));
                 this.runningResult.Free();
                 this.runningResult = default;
             }
@@ -551,7 +551,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         /// <summary>Don't touch! Only for system.</summary>
         internal bool Boot(Story.Task task)
         {
-            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
+            if (!task.IsValid) { throw new Exception(string.Format("無効な（あるいは終了した）タスクは操作できません：{0}", this.runningResult)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -636,7 +636,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         {
             Dev.Assert(IsRunningValid);
 
-            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
+            if (!task.IsValid) { throw new Exception(string.Format("無効な（あるいは終了した）タスクは操作できません：{0}", task)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;

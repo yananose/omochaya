@@ -204,16 +204,16 @@ Dev.LoopBreak.Check(index.ToString());
         internal static class Type<T> { internal static string Name = GetTypeName(typeof(T)); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class Pool<T> { internal static string Name = "[Pool] " + Type<T>.Name; }
+        internal static class Pool<T> { internal static string Name = string.Format("[Pool] {0}", Type<T>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class Pool<HOT, COOL> { internal static string Name = $"[Pool2] {Type<HOT>.Name} / {Type<COOL>.Name}"; }
+        internal static class Pool<HOT, COOL> { internal static string Name = string.Format("[Pool2] {0} / {1}", Type<HOT>.Name, Type<COOL>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class HiddenPool<T> { internal static string Name = "[Hidden] " + Type<T>.Name; }
+        internal static class HiddenPool<T> { internal static string Name = string.Format("[Hidden] {0}", Type<T>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class StateMachinePool<S> { internal static string Name = "[StateMachine] " + Type<S>.Name; }
+        internal static class StateMachinePool<S> { internal static string Name = string.Format("[StateMachine] {0}", Type<S>.Name); }
 
         /// <summary>Formats a raw byte count into a human-readable string representation with appropriate binary units.</summary>
         internal static string FormatMemorySize(int bytes)

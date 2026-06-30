@@ -54,6 +54,10 @@ namespace Omochaya
         /// <summary>The default initial capacity allocated for task pools and execution band arrays.</summary>
         public const int DEFAULT_TASK_COUNT = 1024;
 
+        /// <summary>Configures and expands the capacity of the global task pools.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Warmup(int taskCount) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, taskCount);
+
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Custom(int bandCount = DEFAULT_BAND_COUNT, int taskCount = DEFAULT_TASK_COUNT) => TaskManager.Shared.Custom(bandCount, taskCount);
@@ -82,6 +86,9 @@ namespace Omochaya
 
         /// <summary>A globally accessible token to await a fixed-frame yield.</summary>
         public static YieldCore YieldFixed => new(2);
+
+        /// <summary>A globally accessible token to await a same-frame yield.</summary>
+        public static YieldCore YieldSame => new(TaskManager.SAME_BAND);
 
         /// <summary>Creates a custom yield token bound to a specific execution band index.</summary>
         public static YieldCore YieldNo(int bandNo) => new(bandNo);

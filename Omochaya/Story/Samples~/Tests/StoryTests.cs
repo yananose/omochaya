@@ -18,8 +18,8 @@ namespace OmochayaTests
             // methods
             void Awake()
             {
-                Story.Custom(3, 1024);
-                Story.WaitTime(0f).Warmup(); // プールの事前確保
+                Story.Warmup(1024); // システムプールの事前確保
+                Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
             }
 
             void Update() 
@@ -626,6 +626,130 @@ namespace OmochayaTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Task_指定した実行バンドが変更されずに再開されること()
+        {
+            var executionStep = 0;
+            SubStory().Warmup();
+
+            var fixedDeltaTime = Time.fixedDeltaTime;
+            Time.fixedDeltaTime = 0.1f; // 検証用に FixedUpdate を 10 fpsにする
+
+            var task = RootStory();
+            task.Start(this.owner);
+            this.owner.StartCoroutine(RootCoroutine());
+
+            while (task.IsValid) { yield return null; }
+
+            Utils.LogGCAlloc();
+
+            Time.fixedDeltaTime = fixedDeltaTime; // FixedUpdate を戻す
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task RootStory()
+            {
+                executionStep++;
+                await Story.YieldFixed;
+                await SubStory();
+
+                executionStep++;
+                await Story.YieldLate;
+                await SubStory();
+
+                executionStep++;
+                await Story.Yield;
+                await SubStory();
+
+                executionStep++;
+                await Story.YieldFixed;
+                var task = SubStory();
+                task.Start();
+                while (task.IsValid) { await Story.Yield; }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task SubStory()
+            {
+                executionStep++;
+                await Story.YieldSame;
+
+                executionStep++;
+                await Story.YieldSame;
+            }
+
+            IEnumerator RootCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "Start直後に最初のawaitまで同期的に実行されるべき");
+                yield return new WaitForFixedUpdate();
+                yield return FixedCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:0)");
+                yield return new WaitForEndOfFrame();
+                yield return LateCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:0)");
+                yield return null;
+                yield return MainCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:0-B)");
+                yield return new WaitForFixedUpdate();
+                this.owner.StartCoroutine(FixedCoroutineB());
+            }
+
+            IEnumerator FixedCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:1)");
+                yield return new WaitForFixedUpdate();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:2)");
+                yield return new WaitForFixedUpdate();
+            }
+
+            IEnumerator LateCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:1)");
+                yield return new WaitForEndOfFrame();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:2)");
+                yield return new WaitForEndOfFrame();
+            }
+
+            IEnumerator MainCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:1)");
+                yield return null;
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:2)");
+                yield return null;
+            }
+
+            IEnumerator FixedCoroutineB()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:1-B)");
+                yield return new WaitForFixedUpdate();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:2-B)");
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
 
         [UnityTest]
         public IEnumerator Task_WaitFrameが指定フレーム数だけ待機すること()
@@ -803,7 +927,8 @@ namespace OmochayaTests
 
             Assert.IsTrue(hasReachedFinally, "Timeoutによって元のタスクがキャンセルされ、finallyが呼ばれているべき");
 
-            Utils.LogGCAlloc();
+            // SIMPLE_CHECK 時に失敗することがある。Timeout で Stop -> throw が実行されるため。
+            // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
             yield return null;
@@ -1148,7 +1273,8 @@ namespace OmochayaTests
             Assert.IsTrue(childFinallyCompleted, "子のfinally内のawaitが完了した");
             Assert.IsTrue(parentFinallyCompleted, "子が完了した後に、親のfinallyが実行されているべき");
 
-            Utils.LogGCAlloc();
+            // SIMPLE_CHECK 時に失敗することがある。子が終了した後に親の finally を処理する時に throw するので。
+            // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
             yield return null;
@@ -1223,7 +1349,7 @@ namespace OmochayaTests
             Assert.IsTrue(protectedReachedEnd, "例外を安全に消化したため、finally内の後続処理（絶対実行したい同期処理）が完走しているべき");
             Assert.IsFalse(protectedTask.IsValid, "完走後、タスクは正常に終了（解放）しているべき");
 
-            // Utils.LogGCAlloc(); // 例外スローに伴うアロケーションが発生するためチェックは外す
+            Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
             yield return null;

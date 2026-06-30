@@ -51,7 +51,8 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal const int INVALID_OFFSET = -1;
         const int PENDING_OFFSET = -2;
-        const int PENDING_BAND = -2;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int SAME_BAND = -2;
 
         // fields
         TaskBand<ManualTaskTop> manualBand;
@@ -257,7 +258,7 @@ namespace Omochaya.HiddenStory
                     // switch する（ SwitchBand と同じだが最速で回すためにベタ書き）
                     var toBandNo = LastAwaitBandNo;
                     if (toBandNo == bandNo) { continue; }
-                    if (toBandNo == PENDING_BAND) { continue; } // 一時停止中なら更新しない
+                    if (toBandNo == SAME_BAND) { continue; } // 一時停止中なら更新しない
                     topIndex = band[rawOffset].Index; // 同じとは限らない
                     band[rawOffset].Index = INVALID_INDEX;
                     AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, toBandNo);
@@ -288,7 +289,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             {
                 // 残ったら switch する（元が手動タスクなので必ず他所へ行く）
                 var toBandNo = LastAwaitBandNo;
-                if (toBandNo == PENDING_BAND) { toBandNo = 0; } // 一時停止中なら Update 層へ。
+                if (toBandNo == SAME_BAND) { toBandNo = 0; } // 一時停止中なら Update 層へ。
                 SwitchBand(offset, toBandNo);
             }
         }
@@ -431,7 +432,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                 // 一時停止中（直前に終わった子が例外を吐いていたら止めない）
                 else if (this.runningException == null && topInfo.IsPaused)
                 {
-                    LastAwaitBandNo = PENDING_BAND; // 移動先は UnsafeInvokeChain の呼び出し元で決める
+                    LastAwaitBandNo = SAME_BAND; // 移動先は UnsafeInvokeChain の呼び出し元で決める
                     return true; // 継続
                 }
                 else
@@ -587,7 +588,11 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             {
                 // switch する
                 var toBandNo = LastAwaitBandNo;
-                if (toBandNo == PENDING_BAND) { toBandNo = 0; } // 一時停止中なら Update 層へ。
+                if (toBandNo == SAME_BAND)
+                {
+                    toBandNo = GetBandNo(offset); // 現状維持 or 一時停止中なら起動したバンドへ。
+                    if (toBandNo < 0) { toBandNo = 0; } // タスク外で起動したら Update 層へ。
+                }
                 SwitchBand(offset, toBandNo);
 
                 return true;

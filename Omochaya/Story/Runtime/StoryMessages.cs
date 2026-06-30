@@ -29,14 +29,15 @@ namespace Omochaya.HiddenStory
             internal const string AlreadyAwaited = "{0}:他のタスクに await されている";
             internal const string InvalidExtraOperation = "不正なタスクの Extra を操作しようとした";
             internal const string OwnerCannotBeNull = "owner を null にすることはできません。タスク外で Start するときは owner を指定してください";
-            internal const string InvalidTaskOnBoot = "無効なタスクです。タスクを作成してから Start するまでにフレームをまたぐ場合は Keep してください。";
             internal const string AlreadyBooted = "{0}:既に起動されているので Start できない";
             internal const string CannotMoveNextAutoTask = "{0}:自動タスクなので MoveNext できない";
             internal const string CannotAwaitAutoTask = "{0}:自動タスクは await できません。 while (task.IsValid) {{ await Story.Yield; }} してください";
             internal const string DoubleAwait = "await されているのに await された：[{0}] - [{1}]";
             internal const string AwaitingWhileAwaited = "await しているのに await した：[{0}] - [{1}]";
-            internal const string LockCapacityExceeded = "EnterLock で宣言した数を超えた割り当てが発生";
             internal const string TaskCanceled = "タスクがキャンセルされました。";
+            internal const string CannotOperateInvalidTask = "無効な（あるいは終了した）タスクは操作できません";
+            internal const string CannotOperateInvalidTaskFormat = "無効な（あるいは終了した）タスクは操作できません：{0}";
+            internal const string InvalidBandCount = "bandCountは1〜7を指定してください。標準は3です：{0}";
         }
 
         // ------------------------------------------------------------------------
@@ -44,13 +45,12 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         internal static class Warnings
         {
-            internal const string CancelAbortedFinishedTask = "タスクが終点まで実行されたので、予定していたキャンセルの実行は中止します：{0}";
-            internal const string CancelPendingWhileRunning = "キャンセルを指示されましたがタスクが動作中なので、終わり次第キャンセルを実行します：{0}";
-            internal const string CancelFailedTaskRunning = "キャンセルしたのに終了しませんでした。続きは自動タスクで処理します。以降はownerを無視するので責任を持って終了させてください：{0}";
-            internal const string ExpandOnly = "Expandはプールの拡張のみ可能です({0} -> {1})";
+            internal const string WarmupOnly = "Warmupはプールの拡張のみ可能です({0} -> {1})";
             internal const string ArrayExpanded = "配列が拡張されました: {0} -> {1}({2}) [{3}]";
             internal const string ArrayExpanded_StateMachine = "配列が拡張されました: {0} -> {1}({2}) [{3}] (StateMachine)";
             internal const string ArrayExpanded_BasedOn = "配列が拡張されました: {0} -> {1}({2}) [{3}] (by based on)";
+            internal const string CannotCustomizeAfterStart = "使用を開始した後はカスタムできません";
+            internal const string UnhandledResult = "結果が受け取られませんでした：{0}";
         }
 
         // ------------------------------------------------------------------------
@@ -106,14 +106,15 @@ namespace Omochaya.HiddenStory
             internal const string AlreadyAwaited = "{0}: Already being awaited by another task.";
             internal const string InvalidExtraOperation = "Attempted to manipulate Extra on an invalid task.";
             internal const string OwnerCannotBeNull = "Owner cannot be null. When starting outside a task, a owner must be specified.";
-            internal const string InvalidTaskOnBoot = "Invalid task. If spanning frames between task creation and Start, please call Keep().";
             internal const string AlreadyBooted = "{0}: Cannot Start because it is already running.";
             internal const string CannotMoveNextAutoTask = "{0}: Cannot call MoveNext on an auto-task.";
             internal const string CannotAwaitAutoTask = "{0}: Auto-tasks cannot be awaited. Please use 'while (task.IsValid) {{ await Story.Yield; }}'.";
             internal const string DoubleAwait = "Awaited while already being awaited: [{0}] - [{1}]";
             internal const string AwaitingWhileAwaited = "Attempted to await while currently awaiting: [{0}] - [{1}]";
-            internal const string LockCapacityExceeded = "Allocation exceeded the reserve count declared in EnterLock.";
             internal const string TaskCanceled = "Task was canceled.";
+            internal const string CannotOperateInvalidTask = "Cannot operate on an invalid or already finished task.";
+            internal const string CannotOperateInvalidTaskFormat = "Cannot operate on an invalid or already finished task: {0}";
+            internal const string InvalidBandCount = "bandCount must be between 1 and 7. The default is 3: {0}";
         }
 
         // ------------------------------------------------------------------------
@@ -121,13 +122,12 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         internal static class Warnings
         {
-            internal const string CancelAbortedFinishedTask = "Task has executed to the end, aborting the scheduled cancellation: {0}";
-            internal const string CancelPendingWhileRunning = "Cancellation requested while the task is running; it will be canceled upon completion: {0}";
-            internal const string CancelFailedTaskRunning = "Task did not finish despite being canceled. The remainder will be processed as an auto-task. The owner will be ignored from now on, so please ensure it is terminated properly: {0}";
-            internal const string ExpandOnly = "Expand can only expand the pool. ({0} -> {1})";
+            internal const string WarmupOnly = "Warmup can only expand the pool. ({0} -> {1})";
             internal const string ArrayExpanded = "Array is expanded: {0} -> {1}({2}) [{3}]";
             internal const string ArrayExpanded_StateMachine = "Array is expanded: {0} -> {1}({2}) [{3}] (StateMachine)";
             internal const string ArrayExpanded_BasedOn = "Array is expanded: {0} -> {1}({2}) [{3}] (by based on)";
+            internal const string CannotCustomizeAfterStart = "Cannot customize after execution has started.";
+            internal const string UnhandledResult = "Result was not received (unhandled): {0}";
         }
 
         // ------------------------------------------------------------------------

@@ -18,28 +18,32 @@ namespace OmochayaTests
             // methods
             void Awake()
             {
-                Story.Custom(3, 1024);
+                Story.Warmup(1024); // システムプールの事前確保
+                Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
             }
 
             void Update() 
             { 
-                Utils.StartRecord();
-                Story.Update(); 
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.Update();
+                }
             }
 
             void LateUpdate()
             {
-                Utils.StartRecord();
-                Story.LateUpdate();
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.LateUpdate();
+                }
             }
 
             void FixedUpdate()
             {
-                Utils.StartRecord();
-                Story.FixedUpdate();
-                Utils.EndRecord();
+                using (Utils.Check())
+                {
+                    Story.FixedUpdate();
+                }
             }
         }
 
@@ -73,63 +77,70 @@ namespace OmochayaTests
         }
 
         // ------------------------------------------------------------------------
-        // ライフサイクルのコルーチンとの比較
+        // コルーチンとの比較
         // ------------------------------------------------------------------------
 
         [UnityTest]
-        public IEnumerator LifeCycle_コルーチンとの比較()
+        public IEnumerator Task_コルーチンとの比較()
         {
-            // 記録帳
-            var coroutineNote = new List<int>();
-            var storyNote = new List<int>();
+            // 【Story専用】各タスクを Warmup することでプールを事前確保できます（任意）
+            StoryMain(null).Warmup();
+            StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
 
-            Debug.Log("〜 各タスク生成 〜");
+            // 記録帳
+            var coroutineNote = new List<int>(1024);
+            var storyNote = new List<int>(1024);
+
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク生成 〜");
             var coroutineTask = CoroutineMain(coroutineNote); // コルーチンの場合
             var storyTask = StoryMain(storyNote); // Story の場合
 
             // 【Story専用】フレームをまたいだ時にオーナーがいないと解放されてしまうのでKeepしておく（直接Bootするなら不要）。
             storyTask.Keep(this.owner);
 
-            Debug.Log("〜 0.1秒待つ 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 0.1秒待つ 〜");
             yield return new WaitForSeconds(0.1f);
 
-            Debug.Log("〜 各タスク起動 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク起動 〜");
             this.owner.StartCoroutine(coroutineTask); // コルーチンの場合
             storyTask.Start(this.owner); // Story の場合
 
             // 各タスクが最後のループに到達するくらいまで待つ
             yield return new WaitForSeconds(0.5f);
 
-            Debug.Log("〜 各タスク終了 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 各タスク終了 〜");
             this.owner.StopCoroutine(coroutineTask); // コルーチンの場合
             storyTask.Stop(); // Story の場合
 
-            Debug.Log("〜 0.1秒待つ 〜");
+            Omochaya.HiddenStory.Dev.Log("〜 0.1秒待つ 〜");
             yield return new WaitForSeconds(0.1f);
 
             // 結果
-            Utils.LogRecord();
             Utils.Result(coroutineNote, storyNote);
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
 
             // 〜〜 ここからタスク定義 〜〜
 
             // メインタスク（コルーチン）
             IEnumerator CoroutineMain(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始した（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始した（コルーチン：メイン）");
                 yield return null;
 
-                Utils.Take(note); Debug.Log("サブタスクの呼び出し（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクの呼び出し（コルーチン：メイン）");
                 yield return CoroutineSub(note).GetEnumerator();
 
-                Utils.Take(note); Debug.Log("サブタスクを手動で回す（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクを手動で回す（コルーチン：メイン）");
                 foreach (var _ in CoroutineSub(note))
                 {
                     yield return null;
                     Utils.Take(note);
                 }
 
-                Utils.Take(note); Debug.Log("最後のループに到達（コルーチン：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("最後のループに到達（コルーチン：メイン）");
                 while (true)
                 {
                     yield return null;
@@ -140,20 +151,20 @@ namespace OmochayaTests
             // メインタスク（Story）
             async Story.Task StoryMain(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始した（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始した（Story：メイン）");
                 await Story.Yield;
 
-                Utils.Take(note); Debug.Log("サブタスクの呼び出し（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクの呼び出し（Story：メイン）");
                 await StorySub(note);
 
-                Utils.Take(note); Debug.Log("サブタスクを手動で回す（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("サブタスクを手動で回す（Story：メイン）");
                 foreach (var _ in StorySub(note))
                 {
                     await Story.Yield;
                     Utils.Take(note);
                 }
 
-                Utils.Take(note); Debug.Log("最後のループに到達（Story：メイン）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("最後のループに到達（Story：メイン）");
                 while (true)
                 {
                     await Story.Yield;
@@ -164,21 +175,21 @@ namespace OmochayaTests
             // サブタスク（コルーチン）
             IEnumerable CoroutineSub(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始（コルーチン：サブ）");
                 yield return null;
-                Utils.Take(note); Debug.Log("システムから戻る（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("システムから戻る（コルーチン：サブ）");
                 yield return null;
-                Utils.Take(note); Debug.Log("終了（コルーチン：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("終了（コルーチン：サブ）");
             }
 
             // サブタスク（Story）
             async Story.Task StorySub(List<int> note)
             {
-                Utils.Take(note); Debug.Log("開始（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("開始（Story：サブ）");
                 await Story.Yield;
-                Utils.Take(note); Debug.Log("システムから戻る（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("システムから戻る（Story：サブ）");
                 await Story.Yield;
-                Utils.Take(note); Debug.Log("終了（Story：サブ）");
+                Utils.Take(note); Omochaya.HiddenStory.Dev.Log("終了（Story：サブ）");
             }
         }
 
@@ -196,11 +207,15 @@ namespace OmochayaTests
 
             // タスクが終わるまで十分に待機する
             yield return null; 
-            yield return null;
 
             Assert.IsFalse(task.IsValid, "実行が完了したタスクはプールに返却され、自動的に無効になるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task SimpleTask()
@@ -209,8 +224,8 @@ namespace OmochayaTests
             }
         }
 
-        [Test]
-        public void Task_解放済みタスクに対する操作のフェイルセーフが仕様通り機能すること()
+        [UnityTest]
+        public IEnumerator Task_解放済みタスクに対する操作のフェイルセーフが仕様通り機能すること()
         {
             var task = EmptyTask();
             task.Stop(); // 手動で即座に解放
@@ -227,15 +242,20 @@ namespace OmochayaTests
             Assert.Throws<System.Exception>(() => task.Start(this.owner), "解放済みタスクのStartは例外(Assert)を出して弾かれるべき");
             Assert.Throws<System.Exception>(() => task.Keep(this.owner), "解放済みタスクのKeepは例外(Assert)を出して弾かれるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
 
-            [Story.Capacity(8)]            
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)] // これで最初に使用する時に確保するプールのサイズを指定できます
             async Story.Task EmptyTask() { await Story.Void; }
         }
 
 
-        [Test]
-        public void Task_大量生成と解放で世代管理_Age_が正しく機能すること()
+        [UnityTest]
+        public IEnumerator Task_大量生成と解放で世代管理_Age_が正しく機能すること()
         {
             var oldTasks = new List<Story.Task>();
             
@@ -275,7 +295,12 @@ namespace OmochayaTests
                 t.Stop();
             }
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(1024)]
             async Story.Task EmptyTask() { await Story.Void; }
@@ -288,8 +313,8 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Stopを呼ぶとキャンセルされfinallyブロックが実行されること()
         {
-            bool hasReachedFinally = false;
-            bool hasExecutedAfterYield = false;
+            var hasReachedFinally = false;
+            var hasExecutedAfterYield = false;
 
             var task = CancelTestTask();
             task.Start(this.owner);
@@ -303,7 +328,12 @@ namespace OmochayaTests
             Assert.IsFalse(hasExecutedAfterYield, "キャンセルされたため、Yield以降の通常処理は実行されないべき");
             Assert.IsTrue(hasReachedFinally, "キャンセルされた場合でも、finallyブロックは確実に実行されるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task CancelTestTask()
@@ -323,7 +353,7 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_オーナーが破棄されると自動的にキャンセルされfinallyブロックが実行されること()
         {
-            bool hasReachedFinally = false;
+            var hasReachedFinally = false;
 
             // テスト用の一時的なオーナーを作成
             var tempObj = new GameObject("TempOwner");
@@ -339,11 +369,16 @@ namespace OmochayaTests
 
             // システムがオーナーの死を検知し、タスクをキャンセルしてfinallyを実行するまで待機
             yield return null;
-            yield return null;
 
             Assert.IsTrue(hasReachedFinally, "オーナーが破棄された場合、システムはそれを検知してfinallyブロックを実行させるべき");
 
-            Utils.LogRecord();
+            // SIMPLE_CHECK 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task OwnerDestroyTestTask()
@@ -365,8 +400,10 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_子タスクをawait中にキャンセルされた場合_親子両方のfinallyが実行されること()
         {
-            bool parentFinally = false;
-            bool childFinally = false;
+            ChildTask().Warmup();
+
+            var parentFinally = false;
+            var childFinally = false;
 
             var parentTask = ParentTask();
             parentTask.Start(this.owner);
@@ -376,12 +413,15 @@ namespace OmochayaTests
             // 子タスクをawaitしている最中の親をキャンセル
             parentTask.Stop();
 
-            yield return null;
-
             Assert.IsTrue(childFinally, "親がキャンセルされた際、実行中の子タスクにもキャンセルが伝播してfinallyが実行されるべき");
             Assert.IsTrue(parentFinally, "子タスクのキャンセル処理（finally）が終わった後、親タスクのfinallyも実行されるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task ParentTask()
@@ -417,7 +457,7 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Withコンビネータで一部がキャンセルされても他のタスクは道連れにされないこと()
         {
-            bool taskBCompleted = false;
+            var taskBCompleted = false;
 
             var taskA = TaskA();
             var taskB = TaskB();
@@ -438,7 +478,12 @@ namespace OmochayaTests
 
             Assert.IsTrue(taskBCompleted, "Withで束ねられたTaskAがキャンセルされても、TaskBは道連れにされず最後まで実行されるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task TaskA()
@@ -459,7 +504,7 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilコンビネータで1つが完了すると敗者のタスクは自動的にキャンセルされること()
         {
-            bool loserFinallyExecuted = false;
+            var loserFinallyExecuted = false;
 
             var winner = WinnerTask();
             var loser = LoserTask();
@@ -469,12 +514,17 @@ namespace OmochayaTests
             untilTask.Start(this.owner);
 
             // 勝者タスクが完了し、システムが敗者タスクをクリーンアップするまで待つ
-            yield return new WaitForSeconds(0.1f);
+            while (winner.IsValid) { yield return null; }
             yield return null;
 
             Assert.IsTrue(loserFinallyExecuted, "Untilで勝者が決まった瞬間、敗者タスクは自動的にStopが呼ばれfinallyが実行されるべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task WinnerTask()
@@ -501,26 +551,31 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_Untilの結果受け取りが正しく行われること()
         {
-            var taskA = DelayedResultTask(0.1f, "Loser");
-            var taskB = DelayedResultTask(0.05f, "Winner"); // こちらが先に終わる
+            // テスト実施
+            var testTask = ExecuteTest();
+            testTask.Start(this.owner);
 
-            // 実行と結果取得
-            var resultTask = ExecuteAndGetResult();
-            resultTask.Start(this.owner);
-            
-            yield return new WaitForSeconds(0.15f);
+            // テスト完了待ち
+            while (testTask.IsValid) { yield return null; }
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
-            async Story.Task ExecuteAndGetResult()
+            static async Story.Task ExecuteTest()
             {
-                var result = await taskA.Until(taskB);
+                var result = await Story.Until(
+                    DelayedResultTask(0.5f, "Loser"), // WaitTime はフレーム単位で時間を見るため処理落ちで同着にならないよう delay は大きめに。
+                    DelayedResultTask(0.05f, "Winner"));
                 Assert.AreEqual("Winner", result, "先に完了したタスクの結果が返却されるべき");
             }
 
             [Story.Capacity(8)]
-            async Story.Task<string> DelayedResultTask(float delay, string result)
+            static async Story.Task<string> DelayedResultTask(float delay, string result)
             {
                 await Story.WaitTime(delay);
                 return result;
@@ -534,7 +589,7 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_指定した実行バンド_Late_Fixed_で正確に再開されること()
         {
-            int executionStep = 0;
+            var executionStep = 0;
             var task = BandTestTask();
             
             // Startを呼んだ直後に最初のawait(YieldLate)まで同期的に進む
@@ -551,7 +606,12 @@ namespace OmochayaTests
             yield return new WaitForFixedUpdate();
             Assert.AreEqual(3, executionStep, "FixedUpdateが経過したので、最後まで完了しているべき");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task BandTestTask()
@@ -566,12 +626,136 @@ namespace OmochayaTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Task_指定した実行バンドが変更されずに再開されること()
+        {
+            var executionStep = 0;
+            SubStory().Warmup();
+
+            var fixedDeltaTime = Time.fixedDeltaTime;
+            Time.fixedDeltaTime = 0.1f; // 検証用に FixedUpdate を 10 fpsにする
+
+            var task = RootStory();
+            task.Start(this.owner);
+            this.owner.StartCoroutine(RootCoroutine());
+
+            while (task.IsValid) { yield return null; }
+
+            Utils.LogGCAlloc();
+
+            Time.fixedDeltaTime = fixedDeltaTime; // FixedUpdate を戻す
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task RootStory()
+            {
+                executionStep++;
+                await Story.YieldFixed;
+                await SubStory();
+
+                executionStep++;
+                await Story.YieldLate;
+                await SubStory();
+
+                executionStep++;
+                await Story.Yield;
+                await SubStory();
+
+                executionStep++;
+                await Story.YieldFixed;
+                var task = SubStory();
+                task.Start();
+                while (task.IsValid) { await Story.Yield; }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task SubStory()
+            {
+                executionStep++;
+                await Story.YieldSame;
+
+                executionStep++;
+                await Story.YieldSame;
+            }
+
+            IEnumerator RootCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "Start直後に最初のawaitまで同期的に実行されるべき");
+                yield return new WaitForFixedUpdate();
+                yield return FixedCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:0)");
+                yield return new WaitForEndOfFrame();
+                yield return LateCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:0)");
+                yield return null;
+                yield return MainCoroutine();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:0-B)");
+                yield return new WaitForFixedUpdate();
+                this.owner.StartCoroutine(FixedCoroutineB());
+            }
+
+            IEnumerator FixedCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:1)");
+                yield return new WaitForFixedUpdate();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:2)");
+                yield return new WaitForFixedUpdate();
+            }
+
+            IEnumerator LateCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:1)");
+                yield return new WaitForEndOfFrame();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Late:2)");
+                yield return new WaitForEndOfFrame();
+            }
+
+            IEnumerator MainCoroutine()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:1)");
+                yield return null;
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Main:2)");
+                yield return null;
+            }
+
+            IEnumerator FixedCoroutineB()
+            {
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:1-B)");
+                yield return new WaitForFixedUpdate();
+
+                executionStep--;
+                Assert.AreEqual(0, executionStep, "同じタイミングで実行されるべき(Fixed:2-B)");
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
 
         [UnityTest]
         public IEnumerator Task_WaitFrameが指定フレーム数だけ待機すること()
         {
-            int startFrame = Time.frameCount;
-            int endFrame = 0;
+            var startFrame = Time.frameCount;
+            var endFrame = 0;
 
             var task = FrameTask();
             task.Start(this.owner);
@@ -584,10 +768,15 @@ namespace OmochayaTests
             }
 
             // Unityのコルーチン呼び出しタイミングの都合上、厳密な一致または+1フレームの許容を考慮
-            int waitedFrames = endFrame - startFrame;
+            var waitedFrames = endFrame - startFrame;
             Assert.IsTrue(waitedFrames == 5 || waitedFrames == 6, $"WaitFrame(5)は指定フレーム数経過後に再開されるべき（実測: {waitedFrames}フレーム）");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task FrameTask()
@@ -600,9 +789,9 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_WaitTimeが指定時間だけ待機すること()
         {
-            float targetWaitTime = 0.1f;
-            float startTime = Time.time;
-            float endTime = 0f;
+            var targetWaitTime = 0.1f;
+            var startTime = Time.time;
+            var endTime = 0f;
 
             var task = TimeTask();
             task.Start(this.owner);
@@ -614,12 +803,17 @@ namespace OmochayaTests
                 if (Time.time - startTime > 1.0f) break; // 無限ループ防止
             }
 
-            float duration = endTime - startTime;
+            var duration = endTime - startTime;
             // フレームレート（Time.deltaTime）による誤差を考慮してアサート
             Assert.IsTrue(duration >= targetWaitTime && duration < targetWaitTime + 0.05f, 
                 $"WaitTime({targetWaitTime}f)は指定時間経過後に再開されるべき（実測: {duration}秒）");
 
-            Utils.LogRecord();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
 
             [Story.Capacity(8)]
             async Story.Task TimeTask()
@@ -628,5 +822,580 @@ namespace OmochayaTests
                 endTime = Time.time;
             }
         }
+
+        // ------------------------------------------------------------------------
+        // 一時停止（Pause）のテスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_オーナーが非アクティブになるとタスクが一時停止し_アクティブで再開されること()
+        {
+            var step = 0;
+            var task = PauseTestTask();
+            task.Start(this.owner);
+
+            Assert.AreEqual(1, step, "最初のYieldまでは進むべき");
+            yield return null;
+            Assert.AreEqual(2, step, "次のYieldまで進むべき");
+
+            // オーナーを無効化（一時停止）
+            this.owner.enabled = false;
+            
+            // 数フレーム待機しても進まないことを確認
+            for (var i = 0; i < 5; i++) { yield return null; }
+            Assert.AreEqual(2, step, "オーナーが非アクティブの間はタスクが進行しないべき");
+
+            // オーナーを有効化（再開）
+            this.owner.enabled = true;
+            yield return null;
+            Assert.AreEqual(3, step, "オーナーがアクティブに戻るとタスクが再開されるべき");
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task PauseTestTask()
+            {
+                step = 1;
+                await Story.Yield;
+                step = 2;
+                await Story.Yield;
+                step = 3;
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // キャンセル時の戻り値無効検知テスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_子タスクがキャンセルされた際_IsResultInvalidで検知できること()
+        {
+            var isResultInvalid = false;
+            var receivedResult = "Not Set";
+
+            var child = ChildTaskWithResult();
+            var parent = ParentTask(child);
+            parent.Start(this.owner);
+
+            yield return null;
+
+            // 結果を返す子タスクをキャンセル
+            child.Stop();
+
+            yield return null;
+
+            Assert.IsTrue(isResultInvalid, "結果の取得に失敗しているべき");
+            Assert.AreEqual(receivedResult, default(string), "失敗した時の結果はデフォルト値であるべき");
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ParentTask(Story.Task<string> child)
+            {
+                receivedResult = await child;
+                isResultInvalid = !Story.HasValidResult();
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task<string> ChildTaskWithResult()
+            {
+                await Story.WaitTime(10f);
+                return "Success";
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_Timeoutコンビネータが指定時間でタスクをキャンセルすること()
+        {
+            var hasReachedFinally = false;
+
+            var task = InfiniteTask().Timeout(0.1f);
+            task.Start(this.owner);
+
+            // Timeout時間より少し長く待つ
+            yield return new WaitForSeconds(0.5f);
+
+            Assert.IsTrue(hasReachedFinally, "Timeoutによって元のタスクがキャンセルされ、finallyが呼ばれているべき");
+
+            // SIMPLE_CHECK 時に失敗することがある。Timeout で Stop -> throw が実行されるため。
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task InfiniteTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; }
+                }
+                finally
+                {
+                    hasReachedFinally = true;
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // Void と Extra のテスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_Voidをawaitしてもフレームを消費しないこと()
+        {
+            var startFrame = Time.frameCount;
+            var endFrame = 0;
+
+            var task = VoidTask();
+            task.Start(this.owner);
+
+            // 1フレーム進める
+            yield return null;
+
+            Assert.AreEqual(startFrame, endFrame, "Story.Voidのawaitは同フレーム内で即座に完了するべき");
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task VoidTask()
+            {
+                await Story.Void;
+                endFrame = Time.frameCount;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_Extra領域にデータを保存し取得できること()
+        {
+            var task = ExtraTestTask();
+            // StartしていなくてもTaskハンドルが有効であればExtraは使える
+            task.SetExtra(new TestExtraData { Value = 42 });
+
+            var extra = task.GetExtra<TestExtraData>();
+            Assert.AreEqual(42, extra.Value, "SetExtraで設定した値がGetExtraで正確に取得できるべき");
+
+            task.Stop();
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ExtraTestTask() { await Story.Void; }
+        }
+
+        struct TestExtraData
+        {
+            public int Value;
+        }
+
+
+        // ------------------------------------------------------------------------
+        // 例外伝播とキャンセル（例外握りつぶし）の挙動テスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_子タスクで発生した例外を親タスクのtry_catchで正常に捕捉できること()
+        {
+            var hasCaughtException = false;
+            var testException = new System.Exception("ExpectedTestException");
+
+            ThrowChildTask().Warmup(); // testException を参照するのでこの位置
+
+            var task = ParentTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            Assert.IsTrue(hasCaughtException, "子タスクでスローされた例外が、親タスクのcatchブロックで正しく捕捉されるべき");
+
+            // SIMPLE_CHECK 時に失敗することがある。キャッシュしてるとは言え例外を投げる以上仕方ない。あとAssert.AreEqual()も怪しい
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ParentTask()
+            {
+                try
+                {
+                    await ThrowChildTask();
+                }
+                catch (System.Exception e)
+                {
+                    hasCaughtException = true;
+                    Assert.AreEqual("ExpectedTestException", e.Message);
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task ThrowChildTask()
+            {
+                await Story.Yield;
+                throw testException;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_警告_すべてのExceptionをcatchするとキャンセル処理も握りつぶしてしまうことの確認()
+        {
+            var hasCaughtException = false;
+            var hasReachedNextLine = false;
+
+            // 良い例
+            var task = GoodCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部からキャンセルを要求
+            task.Stop();
+
+            Assert.IsTrue(hasCaughtException, "キャンセルすると例外が発生しているはず");
+            Assert.IsFalse(hasReachedNextLine, "適切にキャンセルされていれば到達していないはず");
+
+            // 悪い例
+            task = BadCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部からキャンセルを要求
+            task.Stop();
+
+            Assert.IsTrue(hasCaughtException, "キャンセルすると例外が発生しているはず");
+            Assert.IsTrue(hasReachedNextLine, "キャンセルを握り潰すと到達しているはず");
+
+            // SIMPLE_CHECK 時に失敗することがある。Story.ThrowIfCancel(e) 内で例外を投げるので。
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task GoodCancelTask()
+            {
+                hasCaughtException = false;
+                hasReachedNextLine = false;
+                try
+                {
+                    await Story.WaitTime(1f);
+                }
+                catch (System.Exception e)
+                {
+                    hasCaughtException = true; // 例外発生
+                    // キャンセルだったら上に通す
+                    if (Story.IsCanceledException(e)) { throw; }
+                }
+
+                hasReachedNextLine = true; // 握りつぶすとここまで到達してしまう
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task BadCancelTask()
+            {
+                hasCaughtException = false;
+                hasReachedNextLine = false;
+                try
+                {
+                    await Story.WaitTime(1f);
+                }
+                catch (System.Exception)
+                {
+                    hasCaughtException = true; // 例外発生
+                    // 握りつぶす
+                    // // キャンセルだったら上に通す
+                    // Story.ThrowIfCancel(e);
+                }
+
+                hasReachedNextLine = true; // 握りつぶすとここまで到達してしまう
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_誰もawaitしていないタスクの例外が発生しても_マネージャーの更新ループがクラッシュしないこと()
+        {
+            // Unityコンソールに例外が出力されること自体は許容（期待）する
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex(".*UnhandledException.*"));
+
+            var isSurvivorExecuted = false;
+            var unhandledException = new System.Exception("UnhandledException");
+
+            var throwTask = ThrowTask();
+            var survivorTask = SurvivorTask();
+
+            // 意図的に同じフレームで実行されるように並べてStart
+            throwTask.Start(this.owner);
+            survivorTask.Start(this.owner);
+
+            // 1フレーム進めて、TaskManagerに両方のタスクを処理させる
+            yield return null;
+            yield return null;
+
+            // もし内部で「throw;」されてループがクラッシュしていると、
+            // 後続の survivorTask が処理されず、ここは false のままになりテストが失敗する
+            Assert.IsTrue(isSurvivorExecuted, "例外が発生したタスクがあってもマネージャーのループがクラッシュせず、他のタスクが正常に処理されるべき");
+
+            UnityEngine.Debug.Log("ここまできてますか？");
+
+            // SIMPLE_CHECK 時はここで必ず失敗する（LogException()が呼ばれるためアロケートする）
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ThrowTask()
+            {
+                await Story.Yield;
+                throw unhandledException;
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task SurvivorTask()
+            {
+                await Story.Yield;
+                await Story.Yield;
+                isSurvivorExecuted = true;
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // キャンセル時の finally 内 await 挙動テスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_キャンセル時にfinally内でawaitするとowner消失後もタスクが生き残り処理されること()
+        {
+            var finallyAwaitCompleted = false;
+
+            // テスト用の一時的なオーナーを作成
+            var tempObj = new GameObject("TempOwner");
+            var tempOwner = tempObj.AddComponent<Story.TaskBehaviour>();
+
+            var task = FinallyAwaitTask();
+            task.Start(tempOwner);
+
+            yield return null; // タスクを開始させる
+
+            // オーナーを破棄してキャンセル（ownerの死）をトリガー
+            Object.Destroy(tempObj);
+
+            // 破棄直後（キャンセル検知＆finally突入）のフレームへ進める
+            yield return null; 
+
+            // finally内で await Story.WaitFrame(5) している間はまだ終わっていないはず
+            Assert.IsTrue(task.IsValid, "finally内でawait中のため、ownerが消失していてもタスクは生き残っているべき");
+            Assert.IsFalse(finallyAwaitCompleted, "finally内のawaitはまだ完了していないべき");
+
+            // WaitFrame(5) の完了を待つ
+            for (int i = 0; i < 6; i++) { yield return null; }
+
+            Assert.IsTrue(finallyAwaitCompleted, "finally内のawaitが完了し、後続処理が実行されるべき");
+            Assert.IsFalse(task.IsValid, "finallyの処理が全て終わるとタスクは完全に解放されるべき");
+
+            // SIMPLE_CHECK 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task FinallyAwaitTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここでownerの死を検知
+                }
+                finally
+                {
+                    // 【Storyの仕様】キャンセル発生以降はownerの生存チェックを無視する
+                    await Story.WaitFrame(5);
+                    finallyAwaitCompleted = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_親子のキャンセル時に子がfinally内でawaitすると_親の解放は子の完了を待つこと()
+        {
+            ChildTask().Warmup();
+
+            var childFinallyCompleted = false;
+            var parentFinallyCompleted = false;
+
+            var parentTask = ParentTask();
+            parentTask.Start(this.owner);
+
+            yield return null; // 子タスクの開始まで進める
+
+            // 親を強制キャンセル（子にもキャンセルが伝播する）
+            parentTask.Stop();
+
+            yield return null; // キャンセル処理の開始フレームへ進める
+
+            Assert.IsFalse(childFinallyCompleted, "子のfinally内のawaitがまだ終わっていないためfalseであるべき");
+            Assert.IsFalse(parentFinallyCompleted, "子が完了していないため、親のfinallyブロックは保留されているべき");
+
+            // 子の WaitFrame(5) が終わるまで待機
+            for (int i = 0; i < 6; i++) { yield return null; }
+
+            Assert.IsTrue(childFinallyCompleted, "子のfinally内のawaitが完了した");
+            Assert.IsTrue(parentFinallyCompleted, "子が完了した後に、親のfinallyが実行されているべき");
+
+            // SIMPLE_CHECK 時に失敗することがある。子が終了した後に親の finally を処理する時に throw するので。
+            // Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ParentTask()
+            {
+                try
+                {
+                    await ChildTask();
+                }
+                finally
+                {
+                    // 子が完全に終わるまで、ここの実行はTaskManagerによって保留される
+                    parentFinallyCompleted = true;
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task ChildTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここで親からのStopによるキャンセルを検知
+                }
+                finally
+                {
+                    // 子タスクのfinally内で時間を稼ぐ
+                    await Story.WaitFrame(5);
+                    childFinallyCompleted = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_多重キャンセル時にfinally内のawaitが例外をスローし_正しくcatchすれば後続処理が実行されること()
+        {
+            var unprotectedReachedEnd = false;
+            var protectedReachedEnd = false;
+            var exceptionCaught = false;
+
+            // --------------------------------------------------------
+            // 1. 保護されていないタスク（多重キャンセルで途中で死ぬはず）
+            // --------------------------------------------------------
+            var unprotectedTask = UnprotectedTask();
+            unprotectedTask.Start(this.owner);
+            yield return null;
+
+            unprotectedTask.Stop(); // 1回目のキャンセル（finallyへ突入）
+            yield return null;
+
+            unprotectedTask.Stop(); // 2回目のキャンセル（多重キャンセル！）。例外がスローされ、タスクが強制終了
+
+            Assert.IsFalse(unprotectedReachedEnd, "多重キャンセルされたため、finally内のawait以降の同期処理は実行されないべき");
+            Assert.IsFalse(unprotectedTask.IsValid, "例外で強制脱出したため、タスク自体は完全に終了（解放）しているべき");
+
+            // --------------------------------------------------------
+            // 2. 保護されているタスク（例外を消化し、最後まで完走するはず）
+            // --------------------------------------------------------
+            var protectedTask = ProtectedTask();
+            protectedTask.Start(this.owner);
+            yield return null;
+
+            protectedTask.Stop(); // 1回目のキャンセル（finallyへ突入）
+            yield return null;
+
+            protectedTask.Stop(); // 2回目のキャンセル（多重キャンセル！）。例外がスローされ、catchで握り潰される
+
+            Assert.IsTrue(exceptionCaught, "多重キャンセルによるCanceledExceptionが、when句のフィルターを通って正しくcatchされているべき");
+            Assert.IsTrue(protectedReachedEnd, "例外を安全に消化したため、finally内の後続処理（絶対実行したい同期処理）が完走しているべき");
+            Assert.IsFalse(protectedTask.IsValid, "完走後、タスクは正常に終了（解放）しているべき");
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task UnprotectedTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここで1回目のStopを受ける
+                }
+                finally
+                {
+                    // 保護せずにawaitする（ここで2回目のStopを受ける）
+                    await Story.WaitFrame(10);
+                    
+                    unprotectedReachedEnd = true; // 多重キャンセル時はここに到達しない
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task ProtectedTask()
+            {
+                try
+                {
+                    while (true) { await Story.Yield; } // ここで1回目のStopを受ける
+                }
+                finally
+                {
+                    try
+                    {
+                        // 保護された状態でawaitする（ここで2回目のStopを受ける）
+                        await Story.WaitFrame(10);
+                    }
+                    catch (System.Exception e) when (Story.IsCanceledException(e))
+                    {
+                        // キャンセル例外のみを安全に消化する
+                        exceptionCaught = true;
+                    }
+                    
+                    protectedReachedEnd = true; // 多重キャンセルされても必ずここに到達する！
+                }
+            }
+        }
+
     }
 }

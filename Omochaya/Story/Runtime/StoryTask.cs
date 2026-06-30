@@ -10,6 +10,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("com.omochaya.story.Editor")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("com.omochaya.story.Tests")]
 
 namespace Omochaya
 {
@@ -42,16 +43,20 @@ namespace Omochaya
     ・Story.Task がキャンセル（Task.Stop 実行 / foreach 中の beak / owner 等消失による削除）された場合は finally ブロックを実行する。
     ・finally ブロックで owner に指定したコンポーネントを参照してはならない。
     ・キャンセル発生以降は owner を無視するので await する場合は使用者が責任を持って解放すること。
-    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.IsResultInvalid でキャンセルされたことを検知できる。
+    ・子がキャンセルされても親はキャンセルされずに続きの処理を再開する。その際、親が受け取る結果は default となる。await の直後であれば Story.HasValidResult でキャンセルされたかどうか検知できる。
 
     */
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>The default number of execution bands (Auto, Late, and Fixed) allocated for the task manager.</summary>
         public const int DEFAULT_BAND_COUNT = 3;
 
-        /// <summary></summary>
+        /// <summary>The default initial capacity allocated for task pools and execution band arrays.</summary>
         public const int DEFAULT_TASK_COUNT = 1024;
+
+        /// <summary>Configures and expands the capacity of the global task pools.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Warmup(int taskCount) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, taskCount);
 
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -82,6 +87,9 @@ namespace Omochaya
         /// <summary>A globally accessible token to await a fixed-frame yield.</summary>
         public static YieldCore YieldFixed => new(2);
 
+        /// <summary>A globally accessible token to await a same-frame yield.</summary>
+        public static YieldCore YieldSame => new(TaskManager.SAME_BAND);
+
         /// <summary>Creates a custom yield token bound to a specific execution band index.</summary>
         public static YieldCore YieldNo(int bandNo) => new(bandNo);
 
@@ -89,11 +97,15 @@ namespace Omochaya
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
         public static VoidCore Void => default;
 
-        /// <summary>Determines whether the result of the last awaited task was invalidated by a cancellation.</summary>
+        /// <summary>Determines whether the last awaited task completed successfully and returned a valid result.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsResultInvalid() => TaskManager.Shared.IsResultInvalid;
+        public static bool HasValidResult() => TaskManager.Shared.HasValidResult;
 
-        /// <summary>Don't touch! Only for system.</summary>
+        /// <summary>Determines whether the specified exception indicates a task cancellation.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsCanceledException(Exception e) => TaskManager.Shared.IsCanceledException(e);
+
+        /// <summary>Specifies the initial pool capacity to be allocated for the state machine associated with an asynchronous task method.</summary>
         [AttributeUsage(AttributeTargets.Method, Inherited = false)]
         [UnityEngine.Scripting.Preserve]
         public class CapacityAttribute : Attribute
@@ -193,13 +205,13 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task a) => this.Id.Matches(a.Id);
 
-            /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
+            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Expand(int length)
+            public void Warmup(int length = 0)
             {
                 ref var info = ref this.Info();
                 Dev.Assert(info.IsValid);
-                info.Expand(length);
+                if (0 < length) { info.Warmup(length); }
             }
 
             /// <summary>Creates a task handle directly from a raw pool index without validation.</summary>
@@ -310,9 +322,9 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task<R> a) => this.rawTask.Matches(a.rawTask);
 
-            /// <summary>Expands the global pool capacity for the underlying state machine type associated with this task.</summary>
+            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Expand(int length) => this.rawTask.Expand(length);
+            public void Warmup(int length) => this.rawTask.Warmup(length);
 
             // for awaiter（利用者による呼び出し禁止）
 
@@ -461,7 +473,7 @@ namespace Omochaya.HiddenStory
         static TaskInfo()
         {
             Dev.Assert(Unsafe.SizeOf<TaskInfo>() == 32);
-            Invalid.Offset = -1;
+            Invalid.Offset = TaskManager.INVALID_OFFSET;
         }
 
         // inner classes
@@ -516,7 +528,17 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             readonly get => (this.flags & Flags.IsPinned) != 0;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsPinned; } else { this.flags &= ~Flags.IsPinned; } }
+            set
+            {
+                if (value)
+                {
+                    this.flags |= Flags.IsPinned;
+                    // オーナーからも解放（※無用な参照を残さないためだが問題が出たらやめる）
+                    IsFastOwner = false;
+                    this.owner = null;
+                }
+                else { this.flags &= ~Flags.IsPinned; }
+            }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -544,7 +566,7 @@ namespace Omochaya.HiddenStory
         public readonly bool IsTop
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => 0 <= this.Offset;
+            get => this.Offset != TaskManager.INVALID_OFFSET;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -586,7 +608,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Keep(Component owner)
         {
-            if (!IsValid) { throw new Exception("無効な（あるいは終了した）タスクは操作できません"); }
+            if (!IsValid) { throw new Exception(Messages.Exceptions.CannotOperateInvalidTask); }
             Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;
@@ -611,7 +633,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Expand(int length) => this.stateMachine.Expand(length);
+        public void Warmup(int length) => this.stateMachine.Warmup(length);
 
         /// <summary>Don't touch! Only for system.</summary>
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

@@ -47,18 +47,25 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal const int BAND_TYPE_AUTO = 1 << BAND_TYPE_SHIFT; // Update更新 & 削除位置
 
+        const int INVALID_INDEX = -1;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int INVALID_OFFSET = -1;
+        const int PENDING_OFFSET = -2;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int SAME_BAND = -2;
+
         // fields
         TaskBand<ManualTaskTop> manualBand;
         TaskBand<TaskTop>[] bandArray;
         int frameCount;
         int updateOffset;
-        int runningIndex = -1;
+        int runningIndex = INVALID_INDEX;
         Exception runningException = null;
         Story.PoolMemory runningResult;
         /// <summary>Don't touch! Only for system.</summary>
         internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
         /// <summary>Don't touch! Only for system.</summary>
-        internal bool IsResultInvalid;
+        internal bool HasValidResult;
 
         // properties
 
@@ -73,7 +80,7 @@ namespace Omochaya.HiddenStory
         internal bool IsRunningValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => 0 <= runningIndex;
+            get => runningIndex != INVALID_INDEX;
         }
 
         ref TaskBand<TaskTop> AutoBand
@@ -86,7 +93,7 @@ namespace Omochaya.HiddenStory
         TaskManager()
         {
             this.frameCount = Time.frameCount;
-            this.updateOffset = -2;
+            this.updateOffset = PENDING_OFFSET;
         }
 
         // methods
@@ -124,11 +131,11 @@ namespace Omochaya.HiddenStory
         {
             if (TaskManager.Shared.HasValues)
             {
-                if (warning) { Dev.LogWarning("使用を開始した後はカスタムできません"); }
+                if (warning) { Dev.LogWarning(Messages.Warnings.CannotCustomizeAfterStart); }
                 return;
             }
 
-            Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format("bandCountは1〜7を指定してください。標準は3です：{0}", bandCount));
+            Dev.Assert(1 <= bandCount && bandCount <= 7, string.Format(Messages.Exceptions.InvalidBandCount, bandCount));
 
             // band
             this.manualBand.Expand(taskCount);
@@ -151,7 +158,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ref TaskInfo GetRunningInfo()
         {
-            if (runningIndex < 0) { return ref TaskInfo.Invalid; }
+            if (runningIndex == INVALID_INDEX) { return ref TaskInfo.Invalid; }
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(runningIndex); }
         }
 
@@ -159,7 +166,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ref TaskInfo2 GetRunningInfo2()
         {
-            if (runningIndex < 0) { return ref TaskInfo2.Invalid; }
+            if (runningIndex == INVALID_INDEX) { return ref TaskInfo2.Invalid; }
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet2(runningIndex); }
         }
 
@@ -168,7 +175,7 @@ namespace Omochaya.HiddenStory
         {
             // Time.frameCount が重いらしいので更新済みかもチェック
             // （Time.frameCount 参照はフレーム開始〜 Update or BandUpdate開始までは1回のみ。それ以外は Update と BandUpdate 外での起動のたび）
-            if (-1 <= this.updateOffset) { return; }
+            if (INVALID_OFFSET <= this.updateOffset) { return; }
 
             var frameCount = Time.frameCount;
             if (this.frameCount == frameCount) { return; }
@@ -178,11 +185,11 @@ namespace Omochaya.HiddenStory
         void FrameCheckDisable()
         {
             FrameCheck();
-            if (this.updateOffset == -2) { this.updateOffset = -1; }
+            if (this.updateOffset == PENDING_OFFSET) { this.updateOffset = INVALID_OFFSET; }
         }
         void FrameCheckEnable()
         {
-            if (this.updateOffset == -1) { this.updateOffset = -2; }
+            if (this.updateOffset == INVALID_OFFSET) { this.updateOffset = PENDING_OFFSET; }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -192,7 +199,7 @@ namespace Omochaya.HiddenStory
             FrameCheckDisable();
 
             BandInvoke(0, this.updateOffset);
-            this.updateOffset = -1;
+            this.updateOffset = INVALID_OFFSET;
 
             AutoBand.Compact();
 
@@ -245,16 +252,16 @@ namespace Omochaya.HiddenStory
             while (0 < rawOffset)
             {
                 var topIndex = band[--rawOffset].Index; // タスクの実行順を後着優先にしたいので逆順
-                if (topIndex < 0) { continue; } // ほぼ false
+                if (topIndex == INVALID_INDEX) { continue; } // ほぼ false
                 if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
                 {
                     // switch する（ SwitchBand と同じだが最速で回すためにベタ書き）
-                    if (LastAwaitBandNo != bandNo)
-                    {
-                        topIndex = band[rawOffset].Index; // 同じとは限らない
-                        band[rawOffset].Index = -1;
-                        AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, LastAwaitBandNo);
-                    }
+                    var toBandNo = LastAwaitBandNo;
+                    if (toBandNo == bandNo) { continue; }
+                    if (toBandNo == SAME_BAND) { continue; } // 一時停止中なら更新しない
+                    topIndex = band[rawOffset].Index; // 同じとは限らない
+                    band[rawOffset].Index = INVALID_INDEX;
+                    AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, toBandNo);
                 }
             }
         }
@@ -278,10 +285,12 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
             // チェインで解放
             var offset = topInfo.Offset;
-            if (UnsafeInvokeChain(topIndex))
+            if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
             {
                 // 残ったら switch する（元が手動タスクなので必ず他所へ行く）
-                SwitchBand(offset, LastAwaitBandNo);
+                var toBandNo = LastAwaitBandNo;
+                if (toBandNo == SAME_BAND) { toBandNo = 0; } // 一時停止中なら Update 層へ。
+                SwitchBand(offset, toBandNo);
             }
         }
 
@@ -292,7 +301,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             var topIndex = GetIndexOnBand(fromOffset);
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             AddTopOnBand(ref pool.UnsafeGet(topIndex), topIndex, toBandNo);
-            SetIndexOnBand(fromOffset, -1);
+            SetIndexOnBand(fromOffset, INVALID_INDEX);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -320,7 +329,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 受け皿のない結果があれば解放する
             if (this.runningResult.IsValid)
             {
-                Dev.Log($"結果が受け取られませんでした：{this.runningResult}");
+                Dev.Log(string.Format(Messages.Warnings.UnhandledResult, this.runningResult));
                 this.runningResult.Free();
                 this.runningResult = default;
             }
@@ -351,15 +360,17 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool IsCanceledException(Exception e)  => e == CanceledException.Shared;
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TryKeep(ref TaskInfo info)
         {
-            if (info.Owner is null)
-            {
-                ref var runningInfo = ref GetRunningInfo();
-                var owner = runningInfo.Owner;
-                info.Keep(owner);
-                info.IsPinned = runningInfo.IsPinned; // ピン留めされてるタスクから起動されたピン留めする
-            }
+            if (info.Owner is not null) { return; }
+            if (info.IsPinned) { return; }
+            ref var runningInfo = ref GetRunningInfo();
+            if (runningInfo.IsPinned) { info.IsPinned = true; } // ピン留めされてるタスクから起動されたらピン留めする
+            else { info.Keep(runningInfo.Owner); }
         }
 
         // ここから出ると
@@ -367,7 +378,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         // 可能性がある。また、解放されてなくても topIndex が指すタスクは
         // 「await Story.Task して top ではなくなっている」
         // 可能性がある
-        bool UnsafeInvokeChain(int topIndex)
+        bool UnsafeInvokeChain(int topIndex, int stopIndex = INVALID_INDEX)
         {
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             ref var topInfo = ref pool.UnsafeGet(topIndex);
@@ -421,7 +432,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                 // 一時停止中（直前に終わった子が例外を吐いていたら止めない）
                 else if (this.runningException == null && topInfo.IsPaused)
                 {
-                    LastAwaitBandNo = GetBandNo(topInfo.Offset); // 呼び出し元で間違って swith しないように
+                    LastAwaitBandNo = SAME_BAND; // 移動先は UnsafeInvokeChain の呼び出し元で決める
                     return true; // 継続
                 }
                 else
@@ -447,7 +458,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
                 // 次
                 topIndex = GetIndexOnBand(offset);
-                if (topIndex < 0) { return false; }
+                if (topIndex == stopIndex) { return false; }
                 topInfo = ref pool.UnsafeGet(topIndex);
             }
         }
@@ -499,10 +510,10 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             var nextOffset = nextTopInfo.Offset;
 
             // band の繋ぎ変え：実行
-            SetIndexOnBand(prevOffset, -1);
+            SetIndexOnBand(prevOffset, INVALID_INDEX);
             SetIndexOnBand(nextOffset, prevTopIndex);
             prevTopInfo.Offset = nextOffset;
-            nextTopInfo.Offset = -1;
+            nextTopInfo.Offset = INVALID_OFFSET;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeFreeCore を呼ぶので
@@ -527,7 +538,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // 単体なら band から外すだけ
             if (info2.Next == index)
             {
-                SetIndexOnBand(offset, -1);
+                SetIndexOnBand(offset, INVALID_INDEX);
                 return;
             }
 
@@ -540,7 +551,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             nextInfo2.Prev = prevIndex;
 
             // 先頭じゃないならここまで
-            if (offset < 0) { return; }
+            if (offset == INVALID_OFFSET) { return; }
 
             // 次を topArtray に設定する
             SetIndexOnBand(offset, nextIndex);
@@ -551,7 +562,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         /// <summary>Don't touch! Only for system.</summary>
         internal bool Boot(Story.Task task)
         {
-            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
+            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -576,7 +587,13 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
             {
                 // switch する
-                SwitchBand(offset, LastAwaitBandNo);
+                var toBandNo = LastAwaitBandNo;
+                if (toBandNo == SAME_BAND)
+                {
+                    toBandNo = GetBandNo(offset); // 現状維持 or 一時停止中なら起動したバンドへ。
+                    if (toBandNo < 0) { toBandNo = 0; } // タスク外で起動したら Update 層へ。
+                }
+                SwitchBand(offset, toBandNo);
 
                 return true;
             }
@@ -636,7 +653,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         {
             Dev.Assert(IsRunningValid);
 
-            if (!task.IsValid) { throw new Exception($"無効な（あるいは終了した）タスクは操作できません：{task}"); }
+            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -661,7 +678,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
                 // ここでは switch しない（呼び出し元で switch させる）
                 // SwitchBand(offset, LastAwaitBandNo);
 
-                // 前へ積む
+                // 前へ積む（無駄になってもいいなら、先に積んで stopIndex で止めてもよい）
                 UnsafePushChain(rootIndex, this.runningIndex);
 
                 return true;
@@ -723,8 +740,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         internal R GetResult<R>()
         {
             R result = default;
-            IsResultInvalid = this.runningResult.IsMissType<R>();
-            if (!IsResultInvalid)
+            HasValidResult = !this.runningResult.IsMissType<R>();
+            if (HasValidResult)
             {
                 result = this.runningResult.Get<R>();
                 this.runningResult.Free();
@@ -744,6 +761,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
             // 先頭までキャンセル指示
             var index = task.Id.Index;
+            var stopIndex = INVALID_INDEX;
             ref var info = ref pool.UnsafeGet(index);
 Dev.LoopBreak.Init();
             while (true)
@@ -751,14 +769,18 @@ Dev.LoopBreak.Init();
 Dev.LoopBreak.Check(task.ToString());
                 info.WillCancel = true;
                 if (info.IsTop) { break; }
-                index = pool.UnsafeGet2(index).Prev;
+                ref var info2 = ref pool.UnsafeGet2(index);
+                if (stopIndex == INVALID_INDEX) { stopIndex = info2.Next; }
+                index = info2.Prev;
                 info = ref pool.UnsafeGet(index);
             }
 
             if (info.IsRunning) { return; }
 
+            if (stopIndex == index) { stopIndex = INVALID_INDEX; }
+
             // キャンセル実行（即処理するため。実行中タスクなら終わった後に処理される）
-            UnsafeInvokeChain(index); // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
+            UnsafeInvokeChain(index, stopIndex); // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
 
             // 結果とキャンセルは渡さない
             CaptureResult();

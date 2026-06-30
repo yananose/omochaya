@@ -204,16 +204,16 @@ Dev.LoopBreak.Check(index.ToString());
         internal static class Type<T> { internal static string Name = GetTypeName(typeof(T)); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class Pool<T> { internal static string Name = "[Pool] " + Type<T>.Name; }
+        internal static class Pool<T> { internal static string Name = string.Format("[Pool] {0}", Type<T>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class Pool<HOT, COOL> { internal static string Name = $"[Pool2] {Type<HOT>.Name} / {Type<COOL>.Name}"; }
+        internal static class Pool<HOT, COOL> { internal static string Name = string.Format("[Pool2] {0} / {1}", Type<HOT>.Name, Type<COOL>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class HiddenPool<T> { internal static string Name = "[Hidden] " + Type<T>.Name; }
+        internal static class HiddenPool<T> { internal static string Name = string.Format("[Hidden] {0}", Type<T>.Name); }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class StateMachinePool<S> { internal static string Name = "[StateMachine] " + Type<S>.Name; }
+        internal static class StateMachinePool<S> { internal static string Name = string.Format("[StateMachine] {0}", Type<S>.Name); }
 
         /// <summary>Formats a raw byte count into a human-readable string representation with appropriate binary units.</summary>
         internal static string FormatMemorySize(int bytes)
@@ -235,6 +235,9 @@ Dev.LoopBreak.Check(index.ToString());
             Assert(topInfo.IsTop, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [Conditional("DUMMY")] internal static void AssertIsTrue(bool condition, string message) {}
 
         // for debug only
 
@@ -320,8 +323,18 @@ Dev.LoopBreak.Check(index.ToString());
 
         [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
+
+#if SIMPLE_CHECK // 簡易テスト時
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
+        internal static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
+
+#else
+
         [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
-        [Conditional("DUMMY")] internal static void LogError(object message) {}
+
+#endif
 
 #else // 製品版でリスクヘッジしたいとき
 
@@ -330,9 +343,7 @@ Dev.LoopBreak.Check(index.ToString());
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Assert(bool condition) { if (!condition) { throw new Exception(); } }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(System.Exception exception) { throw exception; }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogError(string message) { throw new Exception(message); }
+        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
 
 #endif
 

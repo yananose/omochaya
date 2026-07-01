@@ -1,77 +1,58 @@
 # Omochaya Story
 
-Coroutineは好きだ。
+「Coroutineは好きだ。でもGCは嫌いだ。」
 
-でもGCは嫌いだ。
-
-**Omochaya Story** はそんな人のためのライブラリです。
-
+**Omochaya Story** は、そんなUnityエンジニアのためのライブラリです。
 Unityの標準コルーチン（`IEnumerator`）を完全に置き換えるために設計された、**ゲームロジック・シーケンス制御特化型**のゼロアロケーション非同期タスクエンジンです。
 
 ---
 
-## 📖 Storyとは
+## 📖 開発の背景とコンセプト (Why Story?)
 
-Storyは Unity の Coroutine を軽量化・モダン化するためのライブラリです。
+Coroutineはゲームシーケンスを自然に記述できる非常に優れた仕組みですが、実行のたびにヒープにゴミ（GCアロケーション）をまき散らす問題がありました。
+一方、モダンな非同期処理のデファクトスタンダードである **UniTask** は非常に強力ですが、「手動で `MoveNext()` をゴリゴリ回す」「タスクを変数として保持して細かく進行をコントロールする」といった、コルーチン特有の泥臭いシーケンス制御には少しハードルがありました。
 
-```csharp
-// 従来のCoroutine
-IEnumerator Sequence()
-{
-    yield return new WaitForSeconds(1);
-    yield return FadeIn();
-    yield return Battle();
-}
-```
-
-Coroutineはゲームシーケンスを自然に記述できる非常に優れた仕組みですが、`IEnumerator` を利用する以上、ステートマシンはヒープ上に生成されGCアロケーションが発生してしまいます。
-
-Storyは、**「Coroutineの実行モデルを維持したまま、アロケーションを完全に排除できないか」** という発想から生まれました。
-
-```csharp
-// Storyを使用した記述
-async Story.Task Sequence()
-{
-    await Story.WaitTime(1f);
-    await FadeIn();
-    await Battle();
-}
-```
-
-Storyの目的は「`async/await` を使うこと」ではなく、**「Coroutineをより軽量・高速に実行すること」** です。結果として `async/await` の構文を採用していますが、内部的にはCoroutineと同じようにステートマシンを段階的に進行させる実行モデルを継承しています。
+Storyは、**「Coroutineの実行モデルを維持したまま、ステートマシンを『構造体の配列』として扱い、アロケーションを完全に排除する」** というアプローチで開発されました。
+目的は「`async/await` を使うこと」ではなく、**「Coroutineをより軽量・高速・安全に実行すること」** です。
 
 ---
 
-## 🆚 UniTaskとの違い
+## 🆚 UniTaskやCoroutineとの違い
 
-Storyは、汎用非同期処理ライブラリである **UniTask の代替ではありません。**
-Storyは「Coroutineを置き換えること」だけに特化しています。
+Storyは、汎用非同期処理ライブラリである **UniTask の代替ではありません。** あくまで **Coroutine(Unity)の代替** に特化しています。
 
-| 項目 | Story | UniTask |
-|------|:---:|:---:|
-| Coroutineの置換 | ◎ | ○ |
-| シーケンス記述 | ◎ | ○ |
-| ネットワーク通信 (HTTP等) | × | ◎ |
-| マルチスレッド / ファイルI/O | × | ◎ |
-| ゼロアロケーションへの特化 | ◎ | ○ |
-| Coroutine実行モデルの継承 | ◎ | △ |
+| 項目 | Omochaya Story | UniTask | Coroutine(Unity) |
+|------|:---:|:---:|:---:|
+| Coroutine(Unity)の置換 | **◎ 最適** | ○ | - |
+| 手動の進行制御 (`MoveNext`等) | **◎ 最適** | △ | ○ |
+| ネットワーク通信 / ファイルI/O | **△ (要ポーリング)** | ◎ | △ (要ポーリング) |
+| マルチスレッド | **×** | ◎ | × |
+| ゼロアロケーションへの特化 | **◎** | ○ | × |
 
-### ⭕ Storyが向いているケース
-RPGイベント / 会話システム / 演出制御 / ターン制バトル / カットシーン / UIシーケンス など、メインスレッドで完結するゲームロジック。
-
-### ❌ Storyが向いていないケース
-HTTP通信 / ファイルI/O / マルチスレッド処理 など、スレッドを跨ぐ汎用的な非同期処理。（これらをStoryで実現するにはコルーチンと同様にポーリングが必要です）
+**⭕ 向いているケース**
+RPGイベント / 会話システム / ターン制バトル / カットシーン / UIシーケンス など、**メインスレッドで完結するフレームベースのゲームロジック**において最高のパフォーマンスを発揮します。
 
 ---
 
 ## ✨ 特徴 (Features)
 
-* **ゼロアロケーション & 高速実行**: 独自のステートマシンプールと世代管理付きIDにより、実行中のGCアロケートを排除。
-* **キャッシュ効率の最大化 (DOD)**: Hot/Coolデータ分割により、CPUキャッシュヒット率を高めた高速な反復処理。
-* **直感的なコンテキストスイッチ**: `await Story.YieldFixed` や `await Story.YieldLate` を呼ぶだけで、標準コルーチンと同様に実行タイミング（Update層）をシームレスに移動可能。
-* **柔軟なコンビネータ**: 複数タスクの並行待機（`With`）や競争待機（`Until`）において、ゲーム制御に最適化された独自のキャンセル挙動（道連れキャンセルの制御）を実装。
-* **安全なライフサイクル管理**: `MonoBehaviour` などのコンポーネントをオーナーとして紐付け、オブジェクト破棄時の安全なタスクキャンセルと `finally` の実行を保証。ただし `throw` するのでここでのアロケーションは避けられません。
-* **デバッグツール標準搭載**: リアルタイムにタスクの実行状態を可視化する「Task Monitor」、メモリ使用量を追跡する「Pool Monitor」を完備。
+### 1. 究極のゼロアロケーション & 高速実行
+独自のステートマシンプールと世代管理付きIDにより、実行中のGCアロケートを排除（※キャンセル実行時とデバッグ時を除く）。Hot/Coolデータ分割によりCPUキャッシュヒット率を高め、高速な反復処理を実現しています。
+
+### 2. コルーチンの機能を超えてできること
+* **戻り値が受け取れる:** `async/await` ベースなので、サブタスクからの戻り値を自然に受け取れます。
+* **安全な `finally`:** オブジェクト破棄や外部からのキャンセル（Stop）が発生しても、`finally` ブロックが確実に実行され、安全に後始末（Cleanup）が可能です。
+* **脱・トークンバケツリレー:** `CancellationToken` はあえて採用していません。`StopCoroutine` と同じメンタルモデルで、タスクハンドルや紐づけたオーナーの破棄によって直感的にキャンセルを制御します。
+
+### 3. 直感的なコンテキストスイッチ
+`await Story.YieldFixed` や `await Story.YieldLate` を呼ぶだけで、実行タイミング（Update層）をシームレスに移動可能。現在の実行タイミングを維持して待機する `Story.YieldSame` も搭載しています。
+
+### 4. ゲーム特化のコンビネータ (`With` / `Until`)
+* **`With` (並行実行):** 実行中のいずれかのタスクがキャンセルされても、残りのタスクを道連れにしません。
+* **`Until` (競争実行):** いずれかのタスクが完了（勝負がついた）瞬間、敗者のタスクは自動的に安全なキャンセル処理へ移行します。
+
+### 5. デバッグツール標準搭載
+リアルタイムにタスクの実行状態を可視化する「Task Monitor」、プールの使用状況・メモリを追跡する「Pool Monitor」の2つの専用EditorWindowを完備しています。
 
 ---
 
@@ -82,7 +63,6 @@ HTTP通信 / ファイルI/O / マルチスレッド処理 など、スレッド
 
 > **Note:**
 > 本フレームワークは C# 8.0 の機能や `System.Runtime.CompilerServices.Unsafe` などを利用しているため、理論上は **Unity 2021.3 LTS 以降** であれば動作するはずです。
-> 作者の環境（Unity 6.3）でのみ動作確認を行っているため、もし古いバージョンで正常に動作した、あるいはエラーが出たという方がいらっしゃいましたら、ぜひ Issue や PR でご報告ください。
 
 ---
 
@@ -99,29 +79,29 @@ https://github.com/yananose/omochaya.git?path=/Omochaya/Story
 ```
 
 > **💡 テストコードの導入**
-> インストール後、Package Managerの Story のページから `Samples` にある「フレームワーク動作検証・アロケーションテスト」をプロジェクトにインポートできます。動作確認や仕様のリファレンスとしてご活用ください。
+> インストール後、Package Managerの Story のページから `Samples` にある `Framework Validation & Allocation Tests` をプロジェクトにインポートできます。生きたリファレンスとしてご活用ください。
 
 ---
 
 ## 🚀 基本的な使い方 (Getting Started)
 
 ### 1. マネージャーの更新設定
-タスクを処理するため、プロジェクトの任意の場所（シングルトンやメインループを管理するクラスなど）で、各実行タイミングの Update を呼び出してください。
-また、同時に扱うタスク数が多い環境化でアロケーションが発生してしまう場合は、`Story.Custom(taskCount: )` で使用するタスク数を宣言しておくことで回避できます。
+タスクを処理するため、プロジェクトのメインループなどで、各実行タイミングの Update を呼び出してください。
+また、同時に扱うタスク数が多い環境化でアロケーションが発生してしまう場合は、`Story.Warmup()` で使用するタスク数を宣言しておくことで回避できます。
 
 ```csharp
 using Omochaya;
 
 public class StoryManager : MonoBehaviour
 {
-    void Awake() { Story.Custom(taskCount: 2048); }
+    void Awake() { Story.Warmup(2048); }
     void Update() { Story.Update(); }
     void LateUpdate() { Story.LateUpdate(); }
     void FixedUpdate() { Story.FixedUpdate(); }
 }
 ```
 
-### 2. タスクの定義とコンテキストの移動
+### 2. タスクの定義と実行
 `Story.Task` を戻り値とする `async` メソッドを定義し、標準の `MonoBehaviour` に紐づけて `Start` します。
 
 ```csharp
@@ -139,60 +119,46 @@ public class Actor : MonoBehaviour
 
     async Story.Task ActionSequence()
     {
-        Debug.Log("シーケンス開始");
-
-        // 1. 条件を満たすまで毎フレーム待機（スペースキーの入力を待つ）
-        while (!Input.GetKeyDown(KeyCode.Space)) 
-        { 
-            await Story.Yield; 
-        }
+        // 1. 条件を満たすまで毎フレーム待機
+        while (!Input.GetKeyDown(KeyCode.Space)) { await Story.Yield; }
 
         // 2. 指定した時間（秒）だけ待機
-        Debug.Log("スペースキーが押されました。1秒待機します。");
         await Story.WaitTime(1.0f);
 
         // 3. 別のサブタスクを呼び出して完了を待つ
-        await SubSequence();
-
-        Debug.Log("全シーケンス完了");
+        var result = await SubSequence();
+        if (Story.HasValidResult())
+        {
+            Debug.Log($"サブタスク完了: {result}");
+        }
     }
 
-    // [Story.Capacity] をつけることで、
-    // 初回実行時に確保されるこのタスク専用のプールのサイズを指定できます（オプション）
+    // 初回実行時に確保されるこのタスク専用プールのサイズを指定（オプション）
     [Story.Capacity(128)]
-    async Story.Task SubSequence()
+    async Story.Task<int> SubSequence()
     {
-        Debug.Log("サブタスク開始");
         await Story.Yield;
-        Debug.Log("サブタスク終了");
+        return 100;
     }
 }
 ```
 
-> **💡 より高度な使い方と仕様の確認**
-> `FixedUpdate` / `LateUpdate` タイミングへの切り替え、`With` や `Until` といった特殊な並行・競争コンビネータの挙動、および厳密なキャンセルライフサイクルの実例については、本パッケージ同梱の **Samples** に含まれるテストコード群（`StoryTests.cs`）に非常にクリーンなサンプルが網羅されています。ぜひそちらを仕様リファレンスとしてご活用ください。
-
 ---
 
-## ⚡ パフォーマンスチューニングと拡張 (ITaskOwner)
+## ⚡ パフォーマンスチューニング (ITaskOwner)
 
-Omochaya Story は標準の `MonoBehaviour` で問題なく動作しますが、毎フレーム発生する Unityオブジェクトの偽装nullチェック（C++側へのアクセス）は、数千のタスクを回す際には微小なオーバーヘッドになります。
-
-極限のパフォーマンスを求める場合や、タスクの「一時停止（ポーズ）」を実装したい場合は、用意されている `Story.TaskBehaviour` を継承してください。偽装nullチェックを回避しつつ、コンポーネントの非アクティブ時にタスクを一時停止させることが可能になります。
+標準の `MonoBehaviour` でも動作しますが、数千のタスクを回す際のUnityオブジェクト偽装nullチェックの微小なオーバーヘッドを削りたい場合や、タスクの一時停止をしたい場合は、`Story.TaskBehaviour` を継承（または `ITaskOwner` を実装）してください。
 
 ```csharp
 public class HeavyActor : Story.TaskBehaviour
 {
-    void Start()
-    {
-        HeavySequence().Start(this);
-    }
+    void Start() { HeavySequence().Start(this); }
     
     async Story.Task HeavySequence()
     {
         while (true)
         {
-            // this.gameObject が非アクティブの間は、このタスクの進行は自動的に停止します
+            // this.gameObject が非アクティブの間、進行は自動的に一時停止します
             await Story.Yield;
         }
     }
@@ -200,23 +166,24 @@ public class HeavyActor : Story.TaskBehaviour
 ```
 
 > **💡 Tips: プール事前拡張の無効化**
-> `[Story.Capacity]` 属性による初回実行時のプールサイズ指定（リフレクション走査）のCPU負荷を避けたい場合は、Scripting Define Symbols に `STORY_NO_PRE_CAPACITY` を定義することで、この機能を完全に無効化（オプトアウト）できます。
+> Scripting Define Symbols に `STORY_NO_PRE_CAPACITY` を定義することで、`[Story.Capacity]` 属性によるリフレクション走査のCPU負荷を完全に無効化（オプトアウト）できます。
 
 ---
 
-## ⚠️ 制限事項とトレードオフ (Limitations & Trade-offs)
+## ⚠️ 制約事項 (Limitations)
 
-本システムは、特化型の高速なコルーチン代替エンジンとして設計されているため、以下の設計上のトレードオフを抱えています。
+`async` 構文を採用していますが、Story特有の以下の制約があります。
 
-* **外部タスクの await 禁止**
-  `System.Threading.Tasks.Task` や `UniTask` などの外部の非同期タスクを、本タスク内で直接 `await` することはできません。
-* **複数からの同時 await の禁止**
-  1つのタスクを、別の複数のタスクから同時に `await` することはできません（C#標準の `ValueTask` と同様の制約です）。
-* **動的アロケーション回避によるメモリの疎化**
-  実行中の動的なメモリアロケーション（GC発生）を防ぐため、内部のステートマシン配列等は拡張時に大きくメモリを確保します。タスクの同時実行数が極端に少ない場面ではメモリ空間に空きができ、CPUキャッシュ効率が低下する可能性があります。用途に合わせてプールの初期サイズ（`Story.Custom()`）をチューニングしてください。
+* **メインスレッド限定:** マルチスレッドには対応していません。
+* **複数からの同時 await 禁止:** 1つのタスクを複数箇所から同時に await することはできません。
+* **終了したタスクの await 禁止:** すでに完了したタスクを await して結果を取り出すことはできません。
+* **外部非同期タスクとの混在不可:** Storyの非同期メソッド内で、標準の `Task` や `UniTask` などの外部非同期メソッドを await することはできません。逆も同様です。
+* **メモリの疎化:** 実行中の動的アロケーションを防ぐため、プール拡張時にメモリを大きく確保します。同時実行数が少ない場合はCPUキャッシュ効率が低下する可能性があるため、`Story.Warmup()` で初期サイズを調整してください。
 
 ---
 
 ## 📄 ライセンス (License)
 
 MIT License
+
+> **注意:** 本ライブラリは個人開発のため、不具合対応や機能追加に時間がかかる場合、または更新が停止する場合があります。ご利用の際は自己責任でお願いいたします。

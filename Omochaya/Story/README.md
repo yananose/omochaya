@@ -75,8 +75,11 @@ Unity Package Manager (UPM) を使用してインストールします。
 3. 以下のURLを入力して `Add` をクリックします。
 
 ```text
-https://github.com/yananose/omochaya.git?path=/Omochaya/Story
+https://github.com/yananose/omochaya.git?path=/Omochaya/Story#story/1.0.0
 ```
+
+> **💡 バージョン指定について**
+> 上記のURLはバージョン `1.0.0` で固定されています。最新版や別のバージョンを利用したい場合は、URL末尾の `#story/1.0.0` の部分を任意のバージョンタグ（例: `#story/1.1.0`）に変更するか、`#` 以降を削除して `main` ブランチの最新を取得してください。
 
 > **💡 テストコードの導入**
 > インストール後、Package Managerの Story のページから `Samples` にある `Framework Validation & Allocation Tests` をプロジェクトにインポートできます。生きたリファレンスとしてご活用ください。

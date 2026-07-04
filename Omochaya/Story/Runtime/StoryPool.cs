@@ -512,7 +512,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public int ActiveCount => this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
-            public int WorstCount { get; set; }
+            public int WorstCount => this.core.WorstCount;
             /// <summary>Don't touch! Only for system.</summary>
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
@@ -696,6 +696,9 @@ namespace Omochaya
             int[] nextFree;
             int freeHead;
             int useCount;
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            int worstCount;
+#endif
 
             // properties
 
@@ -765,6 +768,9 @@ namespace Omochaya
                 var index = this.freeHead;
                 this.freeHead = this.nextFree[index];
                 this.useCount++;
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                this.worstCount = Mathf.Max(this.worstCount, this.useCount);
+#endif
                 return index;
             }
 
@@ -779,6 +785,7 @@ namespace Omochaya
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public readonly int ActiveCount => this.useCount;
+            public readonly int WorstCount => this.worstCount;
             public readonly int TotalCount => this.nextFree?.Length ?? 0;
             public readonly int ArraySize => Unsafe.SizeOf<int>() * TotalCount;
 #endif
@@ -882,7 +889,7 @@ namespace Omochaya
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public string Name => Dev.Type<T>.Name;
             public int ActiveCount => this.core.ActiveCount;
-            public int WorstCount { get; set; }
+            public int WorstCount => this.core.WorstCount;
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
             public string PoolName => Dev.HiddenPool<T>.Name;
             public int TotalBytes => ArraySize + Unsafe.SizeOf<UnsafePool<T>>();

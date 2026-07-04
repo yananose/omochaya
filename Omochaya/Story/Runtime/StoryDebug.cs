@@ -39,7 +39,7 @@ namespace Omochaya.HiddenStory
         int ActiveCount { get; }
 
         /// <summary>Don't touch! Only for system.</summary>
-        int WorstCount { get; set; }
+        int WorstCount { get; }
 
         /// <summary>Don't touch! Only for system.</summary>
         int FreeCount { get; }
@@ -256,13 +256,44 @@ Dev.LoopBreak.Check(index.ToString());
         }
         static string GetTypeName(Type type)
         {
-            if (type == null) return Messages.DebugInfo.TypeUnknown;
-            var name = type.FullName;
-            var end = name.IndexOf(">");
-            if (0 < end) { return name.Substring(0, end+1); }
-            end = name.IndexOf("`");
-            if (0 < end) { return name.Substring(0, end); }
-            return name;
+            if (type == null) { return Messages.DebugInfo.TypeUnknown; }
+
+            var name = type.Name;
+            var className = type.DeclaringType != null ? type.DeclaringType.Name : string.Empty;
+
+            // ジェネリックの型引数カウント (`1 など) を除去
+            var backtickIndex = name.IndexOf('`');
+            if (0 < backtickIndex)
+            {
+                name = name.Substring(0, backtickIndex);
+            }
+
+            // コンパイラ生成クラス（ステートマシン）のパース
+            if (name.StartsWith("<"))
+            {
+                // ローカル関数の場合: <<Caller>g__LocalFunction|0_0>d
+                var gIndex = name.IndexOf(">g__");
+                if (0 < gIndex)
+                {
+                    var pipeIndex = name.IndexOf('|', gIndex);
+                    if (0 < pipeIndex)
+                    {
+                        name = name.Substring(gIndex + 4, pipeIndex - (gIndex + 4));
+                    }
+                }
+                // 通常の非同期メソッドの場合: <MethodName>d__0
+                else
+                {
+                    var dIndex = name.IndexOf(">d__");
+                    if (0 < dIndex)
+                    {
+                        name = name.Substring(1, dIndex - 1);
+                    }
+                }
+            }
+
+            // 親クラスがあれば "ClassName.MethodName" の形式にする
+            return string.IsNullOrEmpty(className) ? name : $"{className}.{name}";
         }
         static string GetOwnerName(ref TaskInfo info)
         {

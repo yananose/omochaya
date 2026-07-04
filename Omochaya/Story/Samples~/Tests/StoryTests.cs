@@ -1397,5 +1397,75 @@ namespace OmochayaTests
             }
         }
 
+        // ------------------------------------------------------------------------
+        // 解析・プロファイリング機能のテスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_ジェネリックタスクのCapacity属性が正しく適用されること()
+        {
+            // ジェネリックタスクを生成してプール（StateMachinePool<S>）の静的コンストラクタを走らせる
+            var task = GenericCapacityTask<int>();
+            task.Start(this.owner);
+
+            // モニターリストから対象のステートマシンプールを探す
+            // コンパイラ生成クラス名（<GenericCapacityTask>d__...）になるため Contains で判定
+            var monitor = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors
+                .Find(m => m != null && m.PoolName.Contains("GenericCapacityTask"));
+
+            Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+
+            // TotalCount = ActiveCount + FreeCount
+            var totalCapacity = monitor.ActiveCount + monitor.FreeCount;
+            Assert.IsTrue(totalCapacity >= 42, $"Capacity属性で指定したサイズ(42)以上が事前確保されているべき 実測: {totalCapacity}");
+
+            task.Stop();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(42)]
+            async Story.Task GenericCapacityTask<T>() { await Story.Yield; }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_WorstCountが1フレーム内の生成スパイクを正確に記録すること()
+        {
+            var tasks = new List<Story.Task>();
+            
+            // 1フレーム内で一気にタスクを生成・起動する（スパイク）
+            for (int i = 0; i < 50; i++)
+            {
+                var t = SpikeTask();
+                t.Start(this.owner);
+                tasks.Add(t);
+            }
+
+            // エディタウィンドウ側の Update を跨がずに、即座にモニターを確認する
+            var monitor = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors
+                .Find(m => m != null && m.PoolName.Contains("SpikeTask"));
+                
+            Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+
+            // PoolCore/StateMachine.Core 側でリアルタイムにカウントアップされていれば、即座に最大値が反映されているはず
+            Assert.IsTrue(monitor.WorstCount >= 50, $"WorstCountは瞬間的なスパイク数(50)を正確に記録しているべき 実測: {monitor.WorstCount}");
+
+            // 後始末
+            foreach (var t in tasks) { t.Stop(); }
+            
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(100)]
+            async Story.Task SpikeTask() { await Story.Yield; }
+        }
+
     }
 }

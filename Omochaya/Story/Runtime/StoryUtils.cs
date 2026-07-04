@@ -238,6 +238,56 @@ namespace Omochaya
                 d.MoveNext()) { await Yield; }
         }
 
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e)
+        {
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f)
+        {
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f, Task g)
+        {
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext() |
+                g.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f, Task g, Task h)
+        {
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext() |
+                g.MoveNext() |
+                h.MoveNext()) { await Yield; }
+        }
+
         /// <summary>Executes the current task until the specified interrupting task completes.</summary>
         /// <remarks>
         /// <b>[重要]</b> 標準の <c>Task.WhenAny</c> とは挙動が異なります。

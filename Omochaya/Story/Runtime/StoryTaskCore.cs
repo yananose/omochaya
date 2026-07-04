@@ -248,7 +248,7 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             public int ActiveCount => this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
-            public int WorstCount { get; set; }
+            public int WorstCount => this.core.WorstCount;
             /// <summary>Don't touch! Only for system.</summary>
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
@@ -268,6 +268,7 @@ namespace Omochaya.HiddenStory
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             int useCount;
+            int worstCount;
 #endif
 
             // properties
@@ -282,6 +283,8 @@ namespace Omochaya.HiddenStory
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             internal int ActiveCount => this.useCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal int WorstCount => this.worstCount;
             /// <summary>Don't touch! Only for system.</summary>
             internal int TotalCount => this.nextFree?.Length ?? 0;
             /// <summary>Don't touch! Only for system.</summary>
@@ -299,6 +302,7 @@ namespace Omochaya.HiddenStory
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 this.useCount++;
+                this.worstCount = Mathf.Max(this.worstCount, this.useCount);
 #endif
 
                 return index;
@@ -394,13 +398,18 @@ namespace Omochaya.HiddenStory
                     System.Reflection.BindingFlags.NonPublic |
                     System.Reflection.BindingFlags.Instance |
                     System.Reflection.BindingFlags.Static);
+
+                var smTypeToCompare = stateMachineType.IsGenericType && !stateMachineType.IsGenericTypeDefinition
+                                    ? stateMachineType.GetGenericTypeDefinition()
+                                    : stateMachineType;
+
                 // 通常の非同期メソッド
                 foreach (var method in methods)
                 {
                     if (method.Name != targetMethodName) continue;
                     var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
                     if (asyncAttr == null) { continue; }
-                    if (asyncAttr.StateMachineType != stateMachineType) { continue; }
+                    if (asyncAttr.StateMachineType != smTypeToCompare) { continue; }
                     var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
                     return capacityAttr != null ? capacityAttr.Capacity : 0;
                 }
@@ -410,7 +419,7 @@ namespace Omochaya.HiddenStory
                     // if (method.Name != targetMethodName) continue;
                     var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
                     if (asyncAttr == null) { continue; }
-                    if (asyncAttr.StateMachineType != stateMachineType) { continue; }
+                    if (asyncAttr.StateMachineType != smTypeToCompare) { continue; }
                     var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
                     return capacityAttr != null ? capacityAttr.Capacity : 0;
                 }

@@ -184,14 +184,6 @@ namespace Omochaya.HiddenStory
 
             // --- これ以降はプレイ中かつ動いている時のみ実行される ---
 
-            foreach (var monitor in IPoolMonitorForDebug.Monitors)
-            {
-                if (monitor != null)
-                {
-                    monitor.WorstCount = Mathf.Max(monitor.WorstCount, monitor.ActiveCount);
-                }
-            }
-
             this.displayList.Clear();
             this.displayList.AddRange(IPoolMonitorForDebug.Monitors.Where(m => m != null));
 

@@ -20,6 +20,7 @@ namespace Omochaya.HiddenStory
     using UnityEditor.UIElements;
     using UnityEngine;
     using UnityEngine.UIElements;
+    using UnityEngine.UIElements.Experimental;
 
     class TaskMonitorForDebug : EditorWindow
     {
@@ -29,13 +30,6 @@ namespace Omochaya.HiddenStory
         {
             var window = GetWindow<TaskMonitorForDebug>("Task Monitor");
             window.minSize = new Vector2(400, 300);
-        }
-
-        enum SortMode
-        {
-            Order,
-            OwnerName,
-            TaskId
         }
 
         // UI要素
@@ -57,8 +51,19 @@ namespace Omochaya.HiddenStory
         double lastRefreshTime;
         
         // ソート設定
-        SortMode sortMode = SortMode.Order;
         bool sortAscending = false; // デフォルトは降順（実行位置が新しいもの上にするため）
+
+        // エディタ保存用のキー
+        const string TRACKING_PREF_KEY = "Omochaya.Story.EnableTaskTracking";
+
+        // エディタ起動時 および プレイモード開始時（ドメインリロード後）に自動で呼ばれる
+        [InitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void RestoreTrackingState()
+        {
+            // エディタに保存された設定を読み込み、ランタイム側の高速な static bool に同期する
+            Dev.EnableTaskTracking = EditorPrefs.GetBool(TRACKING_PREF_KEY, false);
+        }
 
         void OnEnable()
         {
@@ -100,7 +105,16 @@ namespace Omochaya.HiddenStory
             toggleAuto.RegisterValueChangedCallback(evt => this.autoRefresh = evt.newValue);
             toolbar.Add(toggleAuto);
 
-            toolbar.Add(new ToolbarSpacer { style = { flexGrow = 1 } });
+            // ★ スタックトレース追跡用のトグルを追加
+            var toggleTracking = new ToolbarToggle { text = "Enable Tracking", value = Dev.EnableTaskTracking };
+            toggleTracking.RegisterValueChangedCallback(evt => 
+            {
+                // ランタイム用のフラグを更新
+                Dev.EnableTaskTracking = evt.newValue;
+                // エディタ側に状態を保存（次回以降のプレイモードや再起動で復元される）
+                EditorPrefs.SetBool(TRACKING_PREF_KEY, evt.newValue);
+            });
+            toolbar.Add(toggleTracking);
 
             // 検索フィールド
             this.searchField = new ToolbarSearchField();
@@ -118,6 +132,20 @@ namespace Omochaya.HiddenStory
             this.playModeHelpBox = new HelpBox(Messages.EditorUI.TaskMonitor_PlayModeOnly, HelpBoxMessageType.Info);
             root.Add(this.playModeHelpBox);
 
+            // ----------------------------------------------------
+            // ▼ ここからレイアウト変更：SplitViewの導入 ▼
+            // ----------------------------------------------------
+
+            // 画面を上下に分割し、境界線をドラッグ可能にするコンポーネント
+            // (インデックス1=下側 を固定枠とし、初期高さを 120 に設定)
+            var splitView = new TwoPaneSplitView(1, 120, TwoPaneSplitViewOrientation.Vertical)
+            {
+                style = { flexGrow = 1 }
+            };
+
+            // 【上部ペイン】ヘッダーとListViewを格納
+            var topPane = new VisualElement { style = { flexGrow = 1 } };
+            
             // 3. ヘッダー（ソート機能を含む）
             this.headerContainer = new VisualElement();
             this.headerContainer.style.flexDirection = FlexDirection.Row;
@@ -127,21 +155,17 @@ namespace Omochaya.HiddenStory
             this.headerContainer.style.borderBottomColor = Color.gray;
             this.headerContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.3f);
             this.headerContainer.style.alignItems = Align.Center;
-            root.Add(this.headerContainer);
 
-            var headerTitle = new Label("Task Signature") { style = { flexGrow = 1, paddingLeft = 6, unityFontStyleAndWeight = FontStyle.Bold } };
-            this.headerContainer.Add(headerTitle);
+            // カラムヘッダーを追加
+            this.headerContainer.Add(new Label("Band") { style = { width = 60, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
+            this.headerContainer.Add(new Label("Offset") { style = { width = 60, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
+            this.headerContainer.Add(new Label("ID [Age]") { style = { width = 80, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
+            this.headerContainer.Add(new Label("Link") { style = { width = 60, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
+            this.headerContainer.Add(new Label("Task Type") { style = { flexGrow = 1, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
+            this.headerContainer.Add(new Label("Owner") { style = { width = 150, paddingLeft = 4, unityFontStyleAndWeight = FontStyle.Bold } });
 
-            var sortLabel = new Label("Sort by:") { style = { paddingRight = 4 } };
-            this.headerContainer.Add(sortLabel);
-
-            var sortEnum = new EnumField(this.sortMode) { style = { width = 100 } };
-            sortEnum.RegisterValueChangedCallback(evt => 
-            {
-                this.sortMode = (SortMode)evt.newValue;
-                RefreshData();
-            });
-            this.headerContainer.Add(sortEnum);
+            var sortContainer = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center } };
+            this.headerContainer.Add(sortContainer);
 
             this.btnSortOrder = new ToolbarButton(() => 
             {
@@ -149,7 +173,9 @@ namespace Omochaya.HiddenStory
                 this.btnSortOrder.text = this.sortAscending ? "▲" : "▼";
                 RefreshData();
             }) { text = this.sortAscending ? "▲" : "▼", style = { width = 25, unityTextAlign = TextAnchor.MiddleCenter } };
-            this.headerContainer.Add(this.btnSortOrder);
+            sortContainer.Add(this.btnSortOrder);
+
+            topPane.Add(this.headerContainer);
 
             // 4. ListView の初期化と設定
             this.listView = new ListView
@@ -160,20 +186,38 @@ namespace Omochaya.HiddenStory
                 itemsSource = this.filteredTasks
             };
 
-            // 行の見た目（セル）を生成
-            this.listView.makeItem = () => new Label { style = { paddingLeft = 6, unityTextAlign = TextAnchor.MiddleLeft } };
+            this.listView.makeItem = () =>
+            {
+                var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+                row.Add(new Label { name = "Band", style = { width = 60, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                row.Add(new Label { name = "Offset", style = { width = 60, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                row.Add(new Label { name = "ID", style = { width = 80, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                row.Add(new Label { name = "Link", style = { width = 60, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                row.Add(new Label { name = "Task", style = { flexGrow = 1, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                row.Add(new Label { name = "Owner", style = { width = 175, paddingLeft = 4, unityTextAlign = TextAnchor.MiddleLeft } });
+                return row;
+            };
 
-            // セルにデータをバインド
             this.listView.bindItem = (element, index) =>
             {
-                var label = (Label)element;
                 if (index >= 0 && index < this.filteredTasks.Count)
                 {
-                    label.text = this.filteredTasks[index].ToString();
+                    var taskStr = this.filteredTasks[index].ToString();
+                    var parts = taskStr.Split('|');
+                    var offsetText = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+
+                    element.Q<Label>("Band").text = parts.Length > 0 ? parts[0].Trim() : string.Empty;
+                    element.Q<Label>("Offset").text = offsetText;
+                    element.Q<Label>("ID").text = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+                    element.Q<Label>("Link").text = parts.Length > 3 ? parts[3].Trim() : string.Empty;
+                    element.Q<Label>("Task").text = parts.Length > 4 ? parts[4].Trim() : string.Empty;
+                    element.Q<Label>("Owner").text = parts.Length > 5 ? parts[5].Trim() : string.Empty;
+
+                    var isNumeric = int.TryParse(offsetText, out _);
+                    element.style.color = new StyleColor(isNumeric ? Color.white : Color.gray5);
                 }
             };
 
-            // 右クリック（コンテキストメニュー）
             this.listView.RegisterCallback<ContextClickEvent>(evt =>
             {
                 int index = this.listView.selectedIndex;
@@ -187,6 +231,7 @@ namespace Omochaya.HiddenStory
                         DevForEditor.TaskMonitorAPI.ExtractOwner(ref owner, task);
                         if (owner != null) EditorGUIUtility.PingObject(owner);
                     });
+
                     menu.AddItem(new GUIContent(Messages.EditorUI.TaskMonitor_MenuForceFree), false, () =>
                     {
                         task.Stop();
@@ -196,7 +241,94 @@ namespace Omochaya.HiddenStory
                 }
             });
 
-            root.Add(this.listView);
+            topPane.Add(this.listView);
+            splitView.Add(topPane); // 上部ペインをSplitViewに登録
+
+
+            // 【下部ペイン】詳細情報とコピーボタンを格納
+            var bottomPane = new VisualElement { style = { flexGrow = 1 } };
+
+            var detailPane = new ScrollView
+            {
+                style = { 
+                    flexGrow = 1, // 高さを固定せずSplitViewに委ねる
+                    borderTopWidth = 1, 
+                    borderTopColor = Color.gray, 
+                    backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f),
+                    paddingLeft = 4, paddingRight = 4, paddingTop = 26, paddingBottom = 4 // コピーボタン用に上部の余白を確保
+                }
+            };
+
+            var detailLabel = new Label
+            {
+                enableRichText = true,
+                style = { whiteSpace = WhiteSpace.Normal, color = new Color(0.8f, 0.8f, 0.8f) }
+            };
+            
+            detailLabel.RegisterCallback<PointerDownLinkTagEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    var linkId = evt.linkID;
+                    var lastColon = linkId.LastIndexOf(':');
+                    if (lastColon >= 0)
+                    {
+                        var filePath = linkId.Substring(0, lastColon);
+                        var lineNumber = int.Parse(linkId.Substring(lastColon + 1));
+                        UnityEditorInternal.InternalEditorUtility.OpenFileAtLineExternal(filePath, lineNumber);
+                    }
+                }
+            });
+
+            detailPane.Add(detailLabel);
+            bottomPane.Add(detailPane);
+
+            // ★ コピー機能と現在表示中のトレース保持変数
+            string currentRawTrace = "";
+
+            var copyButton = new Button(() => 
+            {
+                if (!string.IsNullOrEmpty(currentRawTrace))
+                {
+                    // クリップボードに入れる前に <link> や <u> などのタグを正規表現で綺麗に削除する
+                    var cleanTrace = System.Text.RegularExpressions.Regex.Replace(currentRawTrace, @"<.*?>", "");
+                    EditorGUIUtility.systemCopyBuffer = cleanTrace;
+                }
+            }) 
+            { 
+                text = "Copy", 
+                style = { position = Position.Absolute, top = 4, right = 16, height = 20, width = 60 } 
+            };
+            bottomPane.Add(copyButton);
+
+            splitView.Add(bottomPane); // 下部ペインをSplitViewに登録
+            root.Add(splitView);       // SplitViewを大元に追加
+
+
+            // リストの選択が変わった時のイベント
+#if UNITY_2022_2_OR_NEWER
+            this.listView.selectionChanged += (IEnumerable<object> selection) =>
+#else
+            this.listView.onSelectionChange += (IEnumerable<object> selection) =>
+#endif
+            {
+                detailLabel.text = "";
+                currentRawTrace = "";
+                foreach (var item in selection)
+                {
+                    var task = (Story.Task)item;
+                    DevForEditor.TaskMonitorAPI.ExtractCreationTrace(ref currentRawTrace, task);
+
+                    if (string.IsNullOrEmpty(currentRawTrace))
+                    {
+                        detailLabel.text = "Creation trace is not recorded. Please enable 'Enable Tracking' in the toolbar.";
+                    }
+                    else
+                    {
+                        detailLabel.text = currentRawTrace;
+                    }
+                }
+            };
 
             // 5. フッター（ステータス情報ラベル）
             this.footer = new VisualElement();
@@ -224,9 +356,6 @@ namespace Omochaya.HiddenStory
             var isPlaying = Application.isPlaying;
             
             this.playModeHelpBox.style.display = isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
-            // this.headerContainer.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
-            // this.listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
-            // this.footer.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
 
             if (!isPlaying || EditorApplication.isPaused) return;
 
@@ -290,30 +419,9 @@ namespace Omochaya.HiddenStory
                 var result = 0;
                 var offsetA = 0L;
                 var offsetB = 0L;
-                Component ownerA = null;
-                Component ownerB = null;
-                switch (this.sortMode)
-                {
-                    case SortMode.Order:
-                        DevForEditor.TaskMonitorAPI.GetOrder(ref offsetA, a);
-                        DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
-                        result = offsetA.CompareTo(offsetB);
-                        break;
-                    case SortMode.OwnerName:
-                        DevForEditor.TaskMonitorAPI.GetOrder(ref offsetA, a);
-                        DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
-                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerA, a);
-                        DevForEditor.TaskMonitorAPI.ExtractOwner(ref ownerB, b);
-                        string ma = ownerA?.name ?? string.Empty;
-                        string mb = ownerB?.name ?? string.Empty;
-                        result = string.CompareOrdinal(ma, mb);
-                        // Owner名が同じならOffsetでサブソート
-                        if (result == 0) { result = offsetA.CompareTo(offsetB); }
-                        break;
-                    case SortMode.TaskId:
-                        result = a.Id.Index.CompareTo(b.Id.Index);
-                        break;
-                }
+                DevForEditor.TaskMonitorAPI.GetOrder(ref offsetA, a);
+                DevForEditor.TaskMonitorAPI.GetOrder(ref offsetB, b);
+                result = offsetA.CompareTo(offsetB);
                 return this.sortAscending ? result : -result;
             });
 

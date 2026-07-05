@@ -170,11 +170,11 @@ namespace Omochaya
             }
 
             /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Start() => TaskManager.Shared.Boot(this);
 
             /// <summary>Explicitly releases and cancels the task, recycling its resources.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Stop()
             {
                 if (IsEmpty) { return; }
@@ -182,7 +182,7 @@ namespace Omochaya
             }
 
             /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.Info().Keep(owner);
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
@@ -194,7 +194,7 @@ namespace Omochaya
             }
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
                 if (IsEmpty) { return false; }
@@ -637,7 +637,8 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-        public string GetMethodName() => Dev.ToString(this.stateMachine.pool);
+        public StringBuilder GetMethodName(StringBuilder sb) => Dev.ToString(sb, this.stateMachine.pool);
+        public string GetMethodName() => GetMethodName(new StringBuilder()).ToString();
 #else
         public string GetMethodName() => string.Empty;
 #endif
@@ -673,7 +674,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public long SortKeyForDebug;
         /// <summary>Don't touch! Only for system.</summary>
-        public string StateForDebug;
+        public string CreationTraceForDebug;
 #endif
 
         // properties
@@ -695,6 +696,54 @@ namespace Omochaya.HiddenStory
         {
             this.IsValid = true;
             this.Next = this.Prev = index;
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            if (Omochaya.HiddenStory.Dev.EnableTaskTracking)
+            {
+                var st = new System.Diagnostics.StackTrace(3, true);
+                var sb = new System.Text.StringBuilder(2048);
+                for (int i = 0; i < st.FrameCount; i++)
+                {
+                    var frame = st.GetFrame(i);
+                    var fileName = frame.GetFileName();
+                    
+                    if (string.IsNullOrEmpty(fileName)) continue;
+
+                    var method = frame.GetMethod();
+                    var typeName = method.DeclaringType != null ? method.DeclaringType.FullName : "Unknown";
+                    var line = frame.GetFileLineNumber();
+
+                    var displayPath = fileName.Replace('\\', '/');
+                    var assetsIndex = displayPath.IndexOf("Assets/");
+                    var packagesIndex = displayPath.IndexOf("Packages/");
+
+                    if (assetsIndex >= 0) displayPath = displayPath.Substring(assetsIndex);
+                    else if (packagesIndex >= 0) displayPath = displayPath.Substring(packagesIndex);
+
+                    // ★ UI Toolkit専用の <link> タグを使用。IDに「絶対パス:行番号」を仕込む
+                    sb.Append("<link=\"")
+                      .Append(fileName)
+                      .Append(":")
+                      .Append(line)
+                      .Append("\"><u>")
+                      .Append(typeName)
+                      .Append(":")
+                      .Append(method.Name)
+                      .Append("() (at ")
+                      .Append(displayPath)
+                      .Append(":")
+                      .Append(line)
+                      .Append(")</u></link>")
+                      .AppendLine();
+                }
+
+                CreationTraceForDebug = sb.ToString();
+            }
+            else
+            {
+                CreationTraceForDebug = null;
+            }
+
+#endif
         }
 
         /// <summary>Don't touch! Only for system.</summary>

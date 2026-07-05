@@ -23,7 +23,6 @@ namespace Omochaya.HiddenStory
     using System.Runtime.CompilerServices;
     using System.Text;
     using UnityEngine;
-    using UnityEngine.LowLevel;
 
 // --------------------------------------------------------------------------------------------------------------------
 // エディタ向け機能
@@ -64,16 +63,16 @@ namespace Omochaya.HiddenStory
         internal static class TaskMonitorAPI
         {
             /// <summary>Don't touch! Only for system.</summary>
-            internal static void FetchAutoCount(ref int count) => count = TaskManager.Shared.AutoTopCount;
+            internal static void FetchAutoCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(0);
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal static void FetchManualCount(ref int count) => count = TaskManager.Shared.ManualTopCount;
+            internal static void FetchManualCount(ref int count) => count = TaskManager.Shared.TopCountForDebug();
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal static void FetchLateCount(ref int count) => count = TaskManager.Shared.LateTopCount;
+            internal static void FetchLateCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(1);
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal static void FetchFixedCount(ref int count) => count = TaskManager.Shared.FixedTopCount;
+            internal static void FetchFixedCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(2);
 
             /// <summary>Don't touch! Only for system.</summary>
             internal static void ExtractOwner(ref Component owner, Story.Task task) => owner = task.Info().Owner;
@@ -82,32 +81,30 @@ namespace Omochaya.HiddenStory
             internal static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
 
             /// <summary>Don't touch! Only for system.</summary>
+            internal static void ExtractCreationTrace(ref string trace, Story.Task task) => trace = task.Info2().CreationTraceForDebug;
+
+            /// <summary>Don't touch! Only for system.</summary>
             internal static void GetTaskList(List<Story.Task> outTasks)
             {
                 var self = TaskManager.Shared;
                 outTasks.Clear();
-                for (var i=0; i<self.ManualTopCount; ++i)
+                for (var i=0; i<self.TopCountForDebug(); ++i)
                 {
-                    var index = self.ManualIndexForDebug(i);
-                    TaskListAdd(outTasks, index, "Manual");
+                    var index = self.TopIndexForDebug(i);
+                    TaskListAdd(outTasks, index);
                 }
-                for (var i=0; i<self.AutoTopCount; ++i)
+                var bandCount = self.BandCountForDebug();
+                for (var j=0; j<bandCount; ++j)
                 {
-                    var index = self.AutoIndexForDebug(i);
-                    TaskListAdd(outTasks, index, "Auto");
-                }
-                for (var i=0; i<self.LateTopCount; ++i)
-                {
-                    var index = self.LateIndexForDebug(i);
-                    TaskListAdd(outTasks, index, "Late");
-                }
-                for (var i=0; i<self.FixedTopCount; ++i)
-                {
-                    var index = self.FixedIndexForDebug(i);
-                    TaskListAdd(outTasks, index, "Fixed");
+                    var topCount = self.TopCountForDebug(j);
+                    for (var i=0; i<topCount; ++i)
+                    {
+                        var index = self.TopIndexForDebug(j, i);
+                        TaskListAdd(outTasks, index);
+                    }
                 }
             }
-            static void TaskListAdd(List<Story.Task> outTasks, int index, string state)
+            static void TaskListAdd(List<Story.Task> outTasks, int index)
             {
                 if (index < 0) { return; }
                 var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
@@ -119,7 +116,6 @@ Dev.LoopBreak.Init();
 Dev.LoopBreak.Check(index.ToString());
                     ref var info2 = ref pool.UnsafeGet2(index);
                     info2.SortKeyForDebug = sortKey--;
-                    info2.StateForDebug = state;
                     outTasks.Add(Story.Task.UnsafeCreate(index));
                     index = info2.Next;
                     info = ref pool.UnsafeGet(index);
@@ -137,6 +133,9 @@ Dev.LoopBreak.Check(index.ToString());
 
     internal class Dev : UnityEngine.Debug
     {
+        /// <summary>Enables recording of task creation stack traces for debugging.</summary>
+        public static bool EnableTaskTracking = false;
+
         /// <summary>Forcibly stores a temporary integer value used for pool tracking diagnostics.</summary>
         internal static void SetInt(int prm) => storedInt = prm;
 
@@ -169,16 +168,20 @@ Dev.LoopBreak.Check(index.ToString());
         }
 
         /// <summary>Extracts the formatted bracketed name prefix of the specified state machine pool monitor.</summary>
-        internal static string ToString(StateMachine.IStateMachinePool pool)
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool)
         {
             if (pool is IPoolMonitorForDebug monitor)
             {
                 var name = monitor.PoolName;
-                var end = name.IndexOf("]");
-                if (0 < end) { return name.Substring(end+1); }
-                return name;
+                var start = name.IndexOf("]");
+                if (0 < start)
+                {
+                    start++;
+                    return sb.Append(name, start, name.Length - start);
+                }
+                return sb.Append(name);
             }
-            return GetTypeName(null);
+            return sb.Append(Messages.DebugInfo.TypeUnknown);
         }
 
         /// <summary>Formats the entire active or historical state configuration of a task handle into a comprehensive debug string.</summary>
@@ -187,21 +190,31 @@ Dev.LoopBreak.Check(index.ToString());
             ref var info = ref self.Info();
             ref var info2 = ref self.Info2();
 
-            var stateStr = info2.StateForDebug;
-            var methodName = info.IsValid ? info.GetMethodName() : string.Format(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age);
-            var ownerName = GetOwnerName(ref info);
-
-            var offset = info.IsTop ? (info.Offset & ~TaskManager.BAND_TYPE_MASK).ToString() : "w";
             var prevIndex = info.IsTop ? -1 : info2.Prev;
             var nextIndex = info2.Next;
             if (0 <= nextIndex &&
                 Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(nextIndex).IsTop) { nextIndex = -1; }
 
-            return $"{stateStr} ({offset}) | [{ToDebugString(self.Id.Index)}/{self.Id.Age}] [{ToDebugString(prevIndex)}:{ToDebugString(nextIndex)}] | {methodName} @ {ownerName}";
+            var sb = new StringBuilder(256);
+            GetBandAndOffset(sb, ref info, ref info2);
+            sb.Append(" | ");
+            ToDebugString(sb, self.Id.Index);
+            sb.Append(" [");
+            sb.Append(self.Id.Age);
+            sb.Append("] | ");
+            ToDebugString(sb, prevIndex);
+            sb.Append(" : ");
+            ToDebugString(sb, nextIndex);
+            sb.Append(" | ");
+            if (info.IsValid) { info.GetMethodName(sb); }
+            else { sb.AppendFormat(Messages.DebugInfo.InvalidTask, self.Id.Index, self.Id.Age); }
+            sb.Append(" | @");
+            sb.Append(GetOwnerName(ref info));
+            return sb.ToString();
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal static class Type<T> { internal static string Name = GetTypeName(typeof(T)); }
+        internal static class Type<T> { internal static string Name = GetTypeName(new StringBuilder(256), typeof(T)).ToString(); }
 
         /// <summary>Don't touch! Only for system.</summary>
         internal static class Pool<T> { internal static string Name = string.Format("[Pool] {0}", Type<T>.Name); }
@@ -254,46 +267,50 @@ Dev.LoopBreak.Check(index.ToString());
                         (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Awaiter<>));
             }
         }
-        static string GetTypeName(Type type)
+        static StringBuilder GetTypeName(StringBuilder sb, Type type)
         {
-            if (type == null) { return Messages.DebugInfo.TypeUnknown; }
+            if (sb == null) { return null; }
+
+            if (type == null) { return sb.Append(Messages.DebugInfo.TypeUnknown); }
 
             var name = type.Name;
-            var className = type.DeclaringType != null ? type.DeclaringType.Name : string.Empty;
+            var declaringType = type.DeclaringType;
 
-            // ジェネリックの型引数カウント (`1 など) を除去
+            // 親クラス名（DeclaringType）があれば先に書き込む
+            if (declaringType != null) { sb.Append(declaringType.Name).Append('.'); }
+
+            // ジェネリックの型引数カウント (`1 など) を除去した有効な長さを計算
+            var len = name.Length;
             var backtickIndex = name.IndexOf('`');
-            if (0 < backtickIndex)
-            {
-                name = name.Substring(0, backtickIndex);
-            }
+            if (0 < backtickIndex) { len = backtickIndex; }
 
             // コンパイラ生成クラス（ステートマシン）のパース
             if (name.StartsWith("<"))
             {
                 // ローカル関数の場合: <<Caller>g__LocalFunction|0_0>d
                 var gIndex = name.IndexOf(">g__");
-                if (0 < gIndex)
+                if (0 < gIndex && gIndex < len)
                 {
                     var pipeIndex = name.IndexOf('|', gIndex);
-                    if (0 < pipeIndex)
+                    if (0 < pipeIndex && pipeIndex < len)
                     {
-                        name = name.Substring(gIndex + 4, pipeIndex - (gIndex + 4));
+                        var start = gIndex + 4;
+                        var count = pipeIndex - start;
+                        return sb.Append(name, start, count);
                     }
                 }
+                
                 // 通常の非同期メソッドの場合: <MethodName>d__0
-                else
+                var dIndex = name.IndexOf(">d__");
+                if (0 < dIndex && dIndex < len)
                 {
-                    var dIndex = name.IndexOf(">d__");
-                    if (0 < dIndex)
-                    {
-                        name = name.Substring(1, dIndex - 1);
-                    }
+                    var count = dIndex - 1;
+                    return sb.Append(name, 1, count);
                 }
             }
 
-            // 親クラスがあれば "ClassName.MethodName" の形式にする
-            return string.IsNullOrEmpty(className) ? name : $"{className}.{name}";
+            // 通常の型名、またはパース条件から外れた場合はそのまま追加
+            return sb.Append(name, 0, len);
         }
         static string GetOwnerName(ref TaskInfo info)
         {
@@ -302,8 +319,37 @@ Dev.LoopBreak.Check(index.ToString());
             if (info.ShouldCancel) { return Messages.DebugInfo.StateDead; }
             return info.Owner.name;
         }
+        static readonly string[] bandLabels = {"Manual | ", "Auto | ", "Late | ", "Fixed | ", "(3) | ", "(4) | ", "(5) | ", "(6) | "};
+        static StringBuilder GetBandAndOffset(StringBuilder sb, ref TaskInfo info, ref TaskInfo2 info2)
+        {
+            var offset = info.Offset;
+            if (offset < 0)
+            {
+                var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
+Dev.LoopBreak.Init();
+                while (offset < 0)
+                {
+Dev.LoopBreak.Check("bad");
+                    var index = info2.Prev;
+                    if (index < 0)
+                    {
+                        sb.Append("_ | (_)");
+                        return sb;
+                    }
+                    info2 = ref pool.UnsafeGet2(index);
+                    offset = pool.UnsafeGet(index).Offset;
+                }
+            }
+            var band = (offset & TaskManager.BAND_TYPE_MASK) >> TaskManager.BAND_TYPE_SHIFT;
+            if (band < 0) { sb.Append("_ | "); }
+            else { sb.Append(bandLabels[band]); }
+            if (!info.IsTop) { sb.Append("("); }
+            sb.Append(offset & ~TaskManager.BAND_TYPE_MASK);
+            if (!info.IsTop) { sb.Append(")"); }
+            return sb;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static string ToDebugString(int num) => num < 0 ? "_" : num.ToString();
+        static StringBuilder ToDebugString(StringBuilder sb, int num) => num < 0 ? sb.Append("_") : sb.Append(num);
     }
 
 #else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK == false

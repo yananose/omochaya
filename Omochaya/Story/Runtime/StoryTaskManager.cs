@@ -36,7 +36,7 @@ namespace Omochaya.HiddenStory
 
         // const
 
-        const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
+        internal const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
 
         /// <summary>Don't touch! Only for system.</summary>
         internal const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
@@ -789,22 +789,17 @@ Dev.LoopBreak.Check(task.ToString());
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
-        internal int ManualTopCount => this.manualBand.Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int AutoTopCount => this.bandArray[0].Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int LateTopCount => this.bandArray[1].Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int FixedTopCount => this.bandArray[2].Count;
+        internal int BandCountForDebug() => this.bandArray.Length;
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal int ManualIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
+        internal int TopCountForDebug() => this.manualBand.Count;
         /// <summary>Don't touch! Only for system.</summary>
-        internal int AutoIndexForDebug(int rawOffset) => this.bandArray[0][rawOffset].Index;
+        internal int TopCountForDebug(int bandNo) => this.bandArray[bandNo].Count;
+
         /// <summary>Don't touch! Only for system.</summary>
-        internal int LateIndexForDebug(int rawOffset) => this.bandArray[1][rawOffset].Index;
+        internal int TopIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
         /// <summary>Don't touch! Only for system.</summary>
-        internal int FixedIndexForDebug(int rawOffset) => this.bandArray[2][rawOffset].Index;
+        internal int TopIndexForDebug(int bandNo, int rawOffset) => this.bandArray[bandNo][rawOffset].Index;
 #endif
     }
 }

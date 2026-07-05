@@ -89,9 +89,9 @@ namespace Omochaya.HiddenStory
         internal static class DebugInfo
         {
             internal const string InvalidTask = "[INVALID Task ({0}:{1})]";
-            internal const string StatePinned = "[Pinned]";
-            internal const string StateDead = "[Dead]";
-            internal const string OwnerNull = "null";
+            internal const string StatePinned = "[PINNED]";
+            internal const string StateDead = "[DEAD]";
+            internal const string OwnerNull = "[null]";
             internal const string TypeUnknown = "Unknown";
         }
 #else

@@ -357,6 +357,7 @@ Dev.LoopBreak.Check("bad");
     /// <summary>Don't touch! Only for system.</summary>
     internal class Dev : Debug
     {
+        public static bool EnableTaskTracking { get => false; set {} }
         [Conditional("DUMMY")] internal static void SetInt(int prm) {}
         internal static int GetInt() => 0;
         [Conditional("DUMMY")] internal static void PoolMonitorRegister(object monitor) {}
@@ -368,7 +369,7 @@ Dev.LoopBreak.Check("bad");
             [Conditional("DUMMY")] internal static void Check(string str) {}
         }
 
-        internal static string ToString(StateMachine.IStateMachinePool pool) => string.Empty;
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool) => null;
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         internal static string ToString(Story.Task self) => string.Empty;
         internal static class Type<T> { internal static string Name = string.Empty; }

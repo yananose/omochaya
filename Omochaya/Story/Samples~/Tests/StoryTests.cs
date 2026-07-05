@@ -1408,16 +1408,19 @@ namespace OmochayaTests
             var task = GenericCapacityTask<int>();
             task.Start(this.owner);
 
-            // モニターリストから対象のステートマシンプールを探す
-            // コンパイラ生成クラス名（<GenericCapacityTask>d__...）になるため Contains で判定
-            var monitor = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors
-                .Find(m => m != null && m.PoolName.Contains("GenericCapacityTask"));
+            var monitors = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors;
+            if (0 < monitors.Count) // モニタがひとつも存在しない = 製品版同等のテスト
+            {
+                // モニターリストから対象のステートマシンプールを探す
+                // コンパイラ生成クラス名（<GenericCapacityTask>d__...）になるため Contains で判定
+                var monitor = monitors.Find(m => m != null && m.PoolName.Contains("GenericCapacityTask"));
 
-            Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+                Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
 
-            // TotalCount = ActiveCount + FreeCount
-            var totalCapacity = monitor.ActiveCount + monitor.FreeCount;
-            Assert.IsTrue(totalCapacity >= 42, $"Capacity属性で指定したサイズ(42)以上が事前確保されているべき 実測: {totalCapacity}");
+                // TotalCount = ActiveCount + FreeCount
+                var totalCapacity = monitor.ActiveCount + monitor.FreeCount;
+                Assert.IsTrue(totalCapacity >= 42, $"Capacity属性で指定したサイズ(42)以上が事前確保されているべき 実測: {totalCapacity}");
+            }
 
             task.Stop();
             Utils.LogGCAlloc();
@@ -1444,14 +1447,17 @@ namespace OmochayaTests
                 tasks.Add(t);
             }
 
-            // エディタウィンドウ側の Update を跨がずに、即座にモニターを確認する
-            var monitor = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors
-                .Find(m => m != null && m.PoolName.Contains("SpikeTask"));
-                
-            Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+            var monitors = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors;
+            if (0 < monitors.Count) // モニタがひとつも存在しない = 製品版同等のテスト
+            {
+                // エディタウィンドウ側の Update を跨がずに、即座にモニターを確認する
+                var monitor = monitors.Find(m => m != null && m.PoolName.Contains("SpikeTask"));
+                    
+                Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
 
-            // PoolCore/StateMachine.Core 側でリアルタイムにカウントアップされていれば、即座に最大値が反映されているはず
-            Assert.IsTrue(monitor.WorstCount >= 50, $"WorstCountは瞬間的なスパイク数(50)を正確に記録しているべき 実測: {monitor.WorstCount}");
+                // PoolCore/StateMachine.Core 側でリアルタイムにカウントアップされていれば、即座に最大値が反映されているはず
+                Assert.IsTrue(monitor.WorstCount >= 50, $"WorstCountは瞬間的なスパイク数(50)を正確に記録しているべき 実測: {monitor.WorstCount}");
+            }
 
             // 後始末
             foreach (var t in tasks) { t.Stop(); }

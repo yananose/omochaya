@@ -403,6 +403,14 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             else { info.Keep(runningInfo.Owner); }
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void PrepareStart(ref TaskInfo info)
+        {
+            IsCanceled = false; // タスクの冒頭で IsCanceld をチェックされてもいいようにしておく
+            TryKeep(ref info);
+        }
+
         // ここから出ると
         // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
         // 可能性がある。また、解放されてなくても topIndex が指すタスクは
@@ -618,7 +626,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             var offset = topInfo.Offset;
 
             // オーナーがいなければ設定
-            TryKeep(ref rootInfo);
+            PrepareStart(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -665,7 +673,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             this.manualBand[topInfo.Offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
 
             // オーナーがいなければ設定
-            TryKeep(ref rootInfo);
+            PrepareStart(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -707,7 +715,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
 
             // オーナーがいなければ設定
-            TryKeep(ref rootInfo);
+            PrepareStart(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。

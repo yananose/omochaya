@@ -577,11 +577,6 @@ namespace Omochaya.HiddenStory
         internal TaskEnumerator(Story.Task task)
         {
             this.task = task;
-
-            // 事前計算（とりあえず Keep だけ。ToDo.他に高速化できる余地があるかは後で考える）
-            ref var info = ref task.Info();
-            Dev.Assert(info.IsValid);
-            TaskManager.Shared.TryKeep(ref info);
         }
 
         /// <summary>Don't touch! Only for system.</summary>

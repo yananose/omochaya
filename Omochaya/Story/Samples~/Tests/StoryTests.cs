@@ -6,6 +6,7 @@ namespace OmochayaTests
     using UnityEngine;
     using UnityEngine.TestTools;
     using Omochaya;
+    using Omochaya.HiddenStory;
 
     public class StoryTests
     {
@@ -74,6 +75,7 @@ namespace OmochayaTests
                 this.ownerObj = null;
                 this.owner = null;
             }
+            TaskManager.Shared.DefaultCancelModeForDebug = Story.CancelMode.Safe;
         }
 
         // ------------------------------------------------------------------------
@@ -1090,7 +1092,7 @@ namespace OmochayaTests
             Assert.IsTrue(hasCaughtException, "キャンセルすると例外が発生しているはず");
             Assert.IsTrue(hasReachedNextLine, "キャンセルを握り潰すと到達しているはず");
 
-            // SIMPLE_CHECK 時に失敗することがある。Story.ThrowIfCancel(e) 内で例外を投げるので。
+            // SIMPLE_CHECK 時に失敗することがある。GoodCancelTask で例外を投げるので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1131,7 +1133,7 @@ namespace OmochayaTests
                     hasCaughtException = true; // 例外発生
                     // 握りつぶす
                     // // キャンセルだったら上に通す
-                    // Story.ThrowIfCancel(e);
+                    // if (Story.IsCanceledException(e)) { throw; }
                 }
 
                 hasReachedNextLine = true; // 握りつぶすとここまで到達してしまう
@@ -1471,6 +1473,271 @@ namespace OmochayaTests
 
             [Story.Capacity(100)]
             async Story.Task SpikeTask() { await Story.Yield; }
+        }
+
+        // ------------------------------------------------------------------------
+        // キャンセルモード (CancelMode) の挙動テスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_Drop_キャンセル時に処理が消失しfinallyも実行されないこと()
+        {
+            var nextLineReached = false;
+            var finallyReached = false;
+
+            var task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Dropモードではawait以降の処理は実行されないべき");
+            Assert.IsFalse(finallyReached, "Dropモードではfinallyブロックも実行されないべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DropCancelTask()
+            {
+                Story.TaskCancelMode = Story.CancelMode.Drop;
+                try
+                {
+                    await Story.WaitTime(10f);
+                    nextLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_Drop_デフォルトがDropになっていること()
+        {
+            // Dropモードでテスト
+            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+            }
+            Story.DefaultCancelMode = Story.CancelMode.Drop;
+
+            var nextLineReached = false;
+            var finallyReached = false;
+
+            var task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Dropモードではawait以降の処理は実行されないべき");
+            Assert.IsFalse(finallyReached, "Dropモードではfinallyブロックも実行されないべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            // Safe モードでテスト
+            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+            }
+            Story.DefaultCancelMode = Story.CancelMode.Safe;
+
+            nextLineReached = false;
+            finallyReached = false;
+
+            task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Safeモードではawait以降の処理は実行されないべき");
+            Assert.IsTrue(finallyReached, "Safeモードではfinallyブロックも実行されているべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DropCancelTask()
+            {
+                try
+                {
+                    await Story.WaitTime(10f);
+                    nextLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_DontThrow_例外を出さずにIsCanceledがtrueになり正常なフローで終了できること()
+        {
+            var nextLineReached = false;
+            var endLineReached = false;
+            var finallyReached = false;
+
+            var task = DontThrowCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsTrue(nextLineReached, "DontThrowモードでは例外がスローされず、awaitの次の行へ進行するべき");
+            Assert.IsFalse(endLineReached, "キャンセルを正常に検知して後の処理は無視されているべき");
+            Assert.IsTrue(finallyReached, "正常なフロー(return)によってfinallyが実行されているべき");
+            Assert.IsFalse(task.IsValid, "完了後は正しく解放されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DontThrowCancelTask()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                try
+                {
+                    await Story.WaitTime(10f);
+                    
+                    nextLineReached = true;
+                    
+                    if (Story.IsCanceled) return; // 正常に脱出
+
+                    endLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_DontThrow_キャンセル状態が別のタスクへ汚染されないこと()
+        {
+            var taskB_Counter = 3;
+            var taskC_IsCompleted = true;
+
+            // 冒頭の IsCanceled 確認準備
+            var taskA = TaskA_Canceled();
+            var taskB = TaskB_Survivor();
+
+            // タスクAを開始
+            taskA.Start(this.owner);
+
+            // タスクAをキャンセル (DontThrowモードで処理を抜けさせる)
+            taskA.Stop();
+
+            Assert.IsFalse(taskA.IsValid, "タスクAは終了しているべき");
+
+            // 直後にタスクBを開始（キャンセル直後に開始するようにする）
+            taskB.Start(this.owner);
+            
+            yield return null;
+
+            var tempObj = new GameObject("TempOwner");
+            var tempOwner = tempObj.AddComponent<Story.TaskBehaviour>();
+
+            // await 後の IsCanceled 確認準備
+            taskA = TaskA_Canceled();
+            taskA.Keep(tempOwner);
+            var taskC = TaskC_Survivor(taskA);
+
+            // タスクCを開始
+            taskC.Start(this.owner);
+
+            yield return null;
+
+            // タスクAのオーナーを破棄
+            Object.Destroy(tempObj);
+
+            yield return null;
+
+            Assert.IsFalse(taskA.IsValid, "タスクAは終了しているべき");
+            Assert.IsFalse(taskB.IsValid, "タスクBは終了しているべき");
+            Assert.IsFalse(taskC.IsValid, "タスクCは終了しているべき");
+            Assert.IsTrue(taskB_Counter == 0, "タスクBは最後まで処理されているべき");
+            Assert.IsTrue(taskC_IsCompleted, "タスクCはキャンセルされず完了しているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task TaskA_Canceled()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                await Story.WaitTime(10f);
+                if (Story.IsCanceled) return; // ここで true になって終了する
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task TaskB_Survivor()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                while (!Story.IsCanceled)
+                {
+                    if (--taskB_Counter <= 0) { break; }
+                    await Story.Yield;
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task TaskC_Survivor(Story.Task taskA)
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+
+                await taskA;
+                if (Story.IsCanceled) { return; } // taskAではなく自身がキャンセルされた時に true になる
+
+                // キャンセルされずに終了した
+                taskC_IsCompleted = true;
+            }
+        }
+
+        // [Test]
+        public void Task_CancelMode_タスク外からのTaskCancelMode変更は弾かれること()
+        {
+            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
+                Story.TaskCancelMode = Story.CancelMode.Safe;
+            }
+        }
+
+        [Test]
+        public void Task_CancelMode_DefaultCancelModeに対するDontThrowの設定または開始後の変更は弾かれること()
+        {
+            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDontThrowAsDefault);
+                Story.DefaultCancelMode = Story.CancelMode.DontThrow;
+            }
         }
 
     }

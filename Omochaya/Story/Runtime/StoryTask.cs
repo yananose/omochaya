@@ -48,23 +48,23 @@ namespace Omochaya
     */
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>Specifies the behavior of a task when a cancellation is requested.</summary>
         public enum CancelMode
         {
-            /// <summary></summary>
+            /// <summary>Throws an exception upon cancellation to ensure finally blocks are executed.</summary>
             // 例外を投げて finally を実行
             Safe,
 
-            /// <summary></summary>
+            /// <summary>Suppresses the cancellation exception to allow manual branching via the IsCanceled flag.</summary>
             // 例外を投げず、IsCanceled フラグで分岐
             DontThrow,
 
-            /// <summary></summary>
+            /// <summary>Silently discards the task without throwing an exception or executing finally blocks.</summary>
             // 何もせずタスクを消失させる (ForceCancel)
             Drop
         }
 
-        /// <summary></summary>
+        /// <summary>Gets or sets the global default cancellation behavior for newly created tasks.</summary>
         public static CancelMode DefaultCancelMode
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -73,7 +73,7 @@ namespace Omochaya
             set => TaskManager.Shared.DefaultCancelMode = value;
         }
 
-        /// <summary></summary>
+        /// <summary>Gets or sets the cancellation behavior specifically for the currently executing task.</summary>
         public static CancelMode TaskCancelMode
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -82,7 +82,7 @@ namespace Omochaya
             set => TaskManager.Shared.TaskCancelMode = value;
         }
 
-        /// <summary></summary>
+        /// <summary>Gets a value indicating whether the currently executing task has been canceled.</summary>
         public static bool IsCanceled
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

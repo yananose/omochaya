@@ -38,6 +38,9 @@ namespace Omochaya.HiddenStory
             internal const string CannotOperateInvalidTask = "無効な（あるいは終了した）タスクは操作できません";
             internal const string CannotOperateInvalidTaskFormat = "無効な（あるいは終了した）タスクは操作できません：{0}";
             internal const string InvalidBandCount = "bandCountは1〜7を指定してください。標準は3です：{0}";
+            internal const string CannotSetDefaultCancelModeAfterStart = "使用を開始した後は DefaultCancelMode の指定はできません";
+            internal const string CannotSetDontThrowAsDefault = "DefaultCancelMode に DontThrow は指定できません";
+            internal const string CannotSetTaskCancelModeOutsideTask = "タスク外で TaskCancelMode の指定はできません";
         }
 
         // ------------------------------------------------------------------------
@@ -115,6 +118,9 @@ namespace Omochaya.HiddenStory
             internal const string CannotOperateInvalidTask = "Cannot operate on an invalid or already finished task.";
             internal const string CannotOperateInvalidTaskFormat = "Cannot operate on an invalid or already finished task: {0}";
             internal const string InvalidBandCount = "bandCount must be between 1 and 7. The default is 3: {0}";
+            internal const string CannotSetDefaultCancelModeAfterStart = "DefaultCancelMode cannot be specified after execution has started.";
+            internal const string CannotSetDontThrowAsDefault = "DontThrow cannot be specified for DefaultCancelMode.";
+            internal const string CannotSetTaskCancelModeOutsideTask = "TaskCancelMode cannot be specified outside of a task.";
         }
 
         // ------------------------------------------------------------------------

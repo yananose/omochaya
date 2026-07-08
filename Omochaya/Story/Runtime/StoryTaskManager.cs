@@ -100,11 +100,24 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
-                Dev.Assert(!HasValues, "使用を開始した後は DefaultCancelMode の指定はできません");
-                Dev.Assert(value != Story.CancelMode.DontThrow, "DefaultCancelMode に DontThrow は指定できません");
+                Dev.Assert(!HasValues, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+                Dev.Assert(value != Story.CancelMode.DontThrow, Messages.Exceptions.CannotSetDontThrowAsDefault);
                 this.defaultCancelMode = value;
             }
         }
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode DefaultCancelModeForDebug
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(value != Story.CancelMode.DontThrow, Messages.Exceptions.CannotSetDontThrowAsDefault);
+                this.defaultCancelMode = value;
+            }
+        }
+#endif
 
         /// <summary>Don't touch! Only for system.</summary>
         internal Story.CancelMode TaskCancelMode
@@ -114,7 +127,7 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
-                Dev.Assert(IsRunningValid, "タスク外で TaskCancelMode の指定はできません");
+                Dev.Assert(IsRunningValid, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
                 if (IsRunningValid) { GetRunningInfo().TaskCancelMode = value; }
             }
         }
@@ -403,14 +416,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             else { info.Keep(runningInfo.Owner); }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void PrepareStart(ref TaskInfo info)
-        {
-            IsCanceled = false; // タスクの冒頭で IsCanceld をチェックされてもいいようにしておく
-            TryKeep(ref info);
-        }
-
         // ここから出ると
         // 「(自身以外も含めて)info 配列等のアドレスが変わってる」
         // 可能性がある。また、解放されてなくても topIndex が指すタスクは
@@ -519,6 +524,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             topInfo.IsRunning = true; // InvokeCore の後で見て下ろす
             var parentIndex = this.runningIndex;
             this.runningIndex = topIndex;
+            IsCanceled = false;
             topInfo.Run();
             this.runningIndex = parentIndex;
             // topInfo.IsRunning / this.runningException != null
@@ -626,7 +632,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             var offset = topInfo.Offset;
 
             // オーナーがいなければ設定
-            PrepareStart(ref rootInfo);
+            TryKeep(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -673,7 +679,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             this.manualBand[topInfo.Offset].Caller = IsRunningValid ? new Story.Task(pool.UnsafeGetId(this.runningIndex)) : default;
 
             // オーナーがいなければ設定
-            PrepareStart(ref rootInfo);
+            TryKeep(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -715,7 +721,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
 
             // オーナーがいなければ設定
-            PrepareStart(ref rootInfo);
+            TryKeep(ref rootInfo);
 
             // 実行
             if (UnsafeInvokeChain(topIndex)) // これ以前の全infoおよび先頭は変わってる可能性があるので取得し直すこと。
@@ -771,7 +777,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         internal void GetResult()
         {
             CaptureResult();
-            IsCanceled = false;
             var e = this.runningException;
             if (e != null)
             {

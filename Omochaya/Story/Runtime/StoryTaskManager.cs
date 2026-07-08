@@ -66,6 +66,9 @@ namespace Omochaya.HiddenStory
         internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
         /// <summary>Don't touch! Only for system.</summary>
         internal bool HasValidResult;
+        Story.CancelMode defaultCancelMode;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool IsCanceled;
 
         // properties
 
@@ -89,6 +92,33 @@ namespace Omochaya.HiddenStory
             get => ref this.bandArray[0];
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode DefaultCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.defaultCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(!HasValues, "使用を開始した後は DefaultCancelMode の指定はできません");
+                Dev.Assert(value != Story.CancelMode.DontThrow, "DefaultCancelMode に DontThrow は指定できません");
+                this.defaultCancelMode = value;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetRunningInfo().TaskCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(IsRunningValid, "タスク外で TaskCancelMode の指定はできません");
+                if (IsRunningValid) { GetRunningInfo().TaskCancelMode = value; }
+            }
+        }
+
         // constructors
         TaskManager()
         {
@@ -106,7 +136,7 @@ namespace Omochaya.HiddenStory
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var id = pool.Alloc();
             var offset = this.manualBand.Add(id.Index);
-            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
+            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset, this.defaultCancelMode);
             pool.UnsafeGet2(id.Index).Entry(id.Index);
             FrameCheck();
             return new Story.Task(id);
@@ -401,8 +431,15 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
                 if (topInfo.ShouldCancel)
                 {
+                    // 即消失
+                    if (topInfo.TaskCancelMode == Story.CancelMode.Drop)
+                    {
+                        // 有効な結果は受け取れない
+                        HasValidResult = false;
+                        CaptureResult();
+                    }
                     // 使用中のみ
-                    if (topInfo.IsStarted)
+                    else if (topInfo.IsStarted)
                     {
                         // キャンセル要求を下ろしてピン留め
                         topInfo.WillCancel = false;
@@ -726,12 +763,17 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         internal void GetResult()
         {
             CaptureResult();
+            IsCanceled = false;
             var e = this.runningException;
             if (e != null)
             {
                 this.runningException = null;
                 // ここで投げた例外は（利用者に握りつぶされなければ）SetException で受け取る
-                if (e == CanceledException.Shared) { throw e; }
+                if (e == CanceledException.Shared)
+                {
+                    IsCanceled = true;
+                    if (TaskCancelMode == Story.CancelMode.Safe) { throw e; }
+                }
                 else { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw(); }
             }
         }

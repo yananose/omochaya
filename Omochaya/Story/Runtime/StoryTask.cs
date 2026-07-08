@@ -48,6 +48,47 @@ namespace Omochaya
     */
     public static partial class Story
     {
+        /// <summary></summary>
+        public enum CancelMode
+        {
+            /// <summary></summary>
+            // 例外を投げて finally を実行
+            Safe,
+
+            /// <summary></summary>
+            // 例外を投げず、IsCanceled フラグで分岐
+            DontThrow,
+
+            /// <summary></summary>
+            // 何もせずタスクを消失させる (ForceCancel)
+            Drop
+        }
+
+        /// <summary></summary>
+        public static CancelMode DefaultCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.DefaultCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => TaskManager.Shared.DefaultCancelMode = value;
+        }
+
+        /// <summary></summary>
+        public static CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.TaskCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => TaskManager.Shared.TaskCancelMode = value;
+        }
+
+        /// <summary></summary>
+        public static bool IsCanceled
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.IsCanceled;
+        }
+
         /// <summary>The default number of execution bands (Auto, Late, and Fixed) allocated for the task manager.</summary>
         public const int DEFAULT_BAND_COUNT = 3;
 
@@ -60,7 +101,14 @@ namespace Omochaya
 
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Custom(int bandCount = DEFAULT_BAND_COUNT, int taskCount = DEFAULT_TASK_COUNT) => TaskManager.Shared.Custom(bandCount, taskCount);
+        public static void Custom(
+            int bandCount = DEFAULT_BAND_COUNT,
+            int taskCount = DEFAULT_TASK_COUNT,
+            Story.CancelMode defaultCancelMode = Story.CancelMode.Safe)
+        {
+            DefaultCancelMode = defaultCancelMode;
+            TaskManager.Shared.Custom(bandCount, taskCount);
+        }
 
         /// <summary>Drives the global task manager loop forward, executing all registered automated tasks for the current frame.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -487,6 +535,8 @@ namespace Omochaya.HiddenStory
             IsPinned = 1 << 3,
             IsRunning = 1 << 4,
             WillCancel = 1 << 5,
+            CancelMode0 = 1 << 6,
+            CancelMode1 = 1 << 7,
         }
 
         // fields
@@ -561,6 +611,31 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        public Story.CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            readonly get
+            {
+                switch (this.flags & (Flags.CancelMode0|Flags.CancelMode1))
+                {
+                    case Flags.CancelMode0: return Story.CancelMode.DontThrow;
+                    case Flags.CancelMode1: return Story.CancelMode.Drop;
+                    default: return Story.CancelMode.Safe;
+                }
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                this.flags &= ~(Flags.CancelMode0|Flags.CancelMode1);
+                switch (value)
+                {
+                    case Story.CancelMode.DontThrow: this.flags |= Flags.CancelMode0; break;
+                    case Story.CancelMode.Drop: this.flags |= Flags.CancelMode1; break;
+                }
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
         public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -598,11 +673,12 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Entry(in StateMachine stateMachine, int offset)
+        public void Entry(in StateMachine stateMachine, int offset, Story.CancelMode taskCancelMode)
         {
             this.stateMachine = stateMachine;
             IsValid = true;
             Offset = offset;
+            TaskCancelMode = taskCancelMode;
         }
 
         /// <summary>Don't touch! Only for system.</summary>

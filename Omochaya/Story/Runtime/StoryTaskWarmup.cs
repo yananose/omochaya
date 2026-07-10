@@ -164,7 +164,7 @@ namespace Omochaya.HiddenStory
         internal void Complete(int count)
         {
             Dev.Assert(this.pool != null, "Warmupモード中に作成したタスクを指定してください");
-            if (this.pool.Core.IsValid)
+            if (this.pool.Func(StateMachine.FuncType.IsValid, 0))
             {
                 Dev.LogWarning($"割り当て済みのプールを Warmup() しようとしたので無視します : {this.type}");
             }
@@ -174,7 +174,7 @@ namespace Omochaya.HiddenStory
                 if (count <= 0) { count = TaskWarmup.GetCapacity(this.type); }
 // #endif
                 if (count <= 0) { count = Story.Pool.GetNeedCountAtCreate(this.size); }
-                this.pool.Expand(count);
+                this.pool.Func(StateMachine.FuncType.Expand, count);
             }
             this.pool = null;
         }

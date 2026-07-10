@@ -48,7 +48,7 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         internal static class Warnings
         {
-            internal const string WarmupOnly = "Warmupはプールの拡張のみ可能です({0} -> {1})";
+            internal const string ExpandOnly = "プールは拡張のみ可能です({0} -> {1})";
             internal const string ArrayExpanded = "配列が拡張されました: {0} -> {1}({2}) [{3}]";
             internal const string CannotCustomizeAfterStart = "使用を開始した後はカスタムできません";
             internal const string UnhandledResult = "結果が受け取られませんでした：{0}";
@@ -126,7 +126,7 @@ namespace Omochaya.HiddenStory
         // ------------------------------------------------------------------------
         internal static class Warnings
         {
-            internal const string WarmupOnly = "Warmup can only expand the pool. ({0} -> {1})";
+            internal const string ExpandOnly = "Expands can only expand the pool. ({0} -> {1})";
             internal const string ArrayExpanded = "Array is expanded: {0} -> {1}({2}) [{3}]";
             internal const string CannotCustomizeAfterStart = "Cannot customize after execution has started.";
             internal const string UnhandledResult = "Result was not received (unhandled): {0}";

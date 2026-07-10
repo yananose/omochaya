@@ -15,9 +15,7 @@
 namespace Omochaya.HiddenStory
 {
     using System;
-    using System.Reflection;
     using System.Runtime.CompilerServices;
-    using UnityEngine;
 
     // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
     // builder
@@ -35,7 +33,8 @@ namespace Omochaya.HiddenStory
         public void Start<S>(ref S s)
             where S : struct, IAsyncStateMachine
         {
-            this.task = TaskManager.Shared.Entry(StateMachine.Alloc(in s)); // 常にプールする。AwaitOnCompleted 内でやると直前のステートマシンのコピーを避けられないため。
+            if (TaskWarmup.IsValid) { TaskWarmup.Shared.Setup<S>(); }
+            else { this.task = TaskManager.Shared.Entry(StateMachine.Alloc(in s)); } // 遅延起動のため常にプールする
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -78,7 +77,8 @@ namespace Omochaya.HiddenStory
         public void Start<S>(ref S s)
             where S : struct, IAsyncStateMachine
         {
-            this.task = TaskManager.Shared.Entry<R>(StateMachine.Alloc(in s));
+            if (TaskWarmup.IsValid) { TaskWarmup.Shared.Setup<S>(); }
+            else { this.task = TaskManager.Shared.Entry<R>(StateMachine.Alloc(in s)); } // 遅延起動のため常にプールする
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -123,14 +123,16 @@ namespace Omochaya.HiddenStory
         readonly IStateMachinePool pool;
         readonly int index;
 
+        // inner classes
+        internal enum FuncType { IsValid, Expand, Free }
+
         // interfaces
 
         /// <summary>Don't touch! Only for system.</summary>
         internal interface IStateMachinePool
         {
-            void Free(int index);
+            bool Func(FuncType funcType, int param);
             void MoveNext(int index);
-            void Warmup(int length);
         }
 
         // constructors
@@ -141,17 +143,17 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Free() => this.pool.Free(this.index);
+        internal void Warmup(int count) => this.pool.Func(FuncType.Expand, count);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void Free() => this.pool.Func(FuncType.Free, this.index);
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void MoveNext() => this.pool.MoveNext(this.index);
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Warmup(int length) => this.pool.Warmup(length);
-
-        // ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
+// ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
 
         // creators
 
@@ -165,64 +167,69 @@ namespace Omochaya.HiddenStory
 
         // inner classes
 
-        class StateMachinePool<S> : IStateMachinePool
+        /// <summary>Don't touch! Only for system.</summary>
+        internal class StateMachinePool<S> : IStateMachinePool
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             , IPoolMonitorForDebug
 #endif
             where S : struct, IAsyncStateMachine
         {
             /// <summary>Don't touch! Only for system.</summary>
-            internal static readonly StateMachinePool<S> Shared;
-
-            static StateMachinePool()
-            {
-                Shared = new StateMachinePool<S>();
-#if !STORY_NO_PRE_CAPACITY
-                var capacity = GetCapacity(typeof(S));
-                if (0 < capacity) { Shared.Warmup(capacity); }
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-                else if (capacity < 0) { Dev.LogWarning(string.Format("Pool capacity initialization failed for {0}", typeof(S).Name)); }
-#endif
-#endif
-            }
+            internal static readonly StateMachinePool<S> Shared = new();
 
             // fields
-            Core core;
+            Story.PoolCore core;
             S[] array;
 
+            // constructors
             StateMachinePool() => Dev.PoolMonitorRegister(this);
 
             // methods
 
             /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
             internal int Alloc(in S value)
             {
-                if (this.core.IsUsedUp)
+                int index;
+                var need = 0;
+
+#if !STORY_NO_PRE_CAPACITY
+                if (this.array == null) { need = TaskWarmup.GetCapacity(typeof(S)); }
+
+                if (0 < need)
                 {
-                    var count = this.core.ExpandAtAlloc(Unsafe.SizeOf<S>());
-                    if (this.array == null) { this.array = new S[count]; }
-                    else
-                    {
-                        Dev.Assert(this.array.Length < count);
-                        Dev.SetInt(this.array.Length);
-                        System.Array.Resize(ref this.array, count);
-                        Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded_StateMachine, Dev.GetInt(), array.Length, Dev.FormatMemorySize(Unsafe.SizeOf<S>() * array.Length), typeof(S).Name));
-                    }
+                    index = 0;
+                    this.core.FirstAlloc(need);
+                }
+                else
+#endif
+                {
+                    var result = this.core.AllocBasedOnItemSize(Unsafe.SizeOf<S>());
+                    index = result.Index;
+                    need = result.Need;
                 }
 
-                var ret = this.core.Alloc();
-                this.array[ret] = value;
-                return ret;
+                if (0 < need) { Story.Pool.Expand(ref this.array, need); }
+                this.array[index] = value;
+                return index;
             }
 
             // for IStateMachinePool
 
             /// <summary>Don't touch! Only for system.</summary>
-            public void Free(int index)
+            public bool Func(FuncType funcType, int param)
             {
-                this.array[index] = default;
-                this.core.Free(index);
+                switch (funcType)
+                {
+                    case FuncType.Expand:
+                        if (this.core.TryExpand(param)) { Story.Pool.Expand(ref this.array, param); }
+                        return true;
+                    case FuncType.Free:
+                        this.core.Free(param);
+                        this.array[param] = default;
+                        return true;
+                    default:
+                        return this.core.IsValid;
+                }
             }
 
             /// <summary>Don't touch! Only for system.</summary>
@@ -231,16 +238,6 @@ namespace Omochaya.HiddenStory
                 var array = this.array;
                 array[index].MoveNext();
                 if (this.array != array) { this.array[index] = array[index]; } // 配列拡張時に新しい配列へ情報を反映
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public void Warmup(int length)
-            {
-                if (this.core.Warmup(length))
-                {
-                    if (this.array == null) { this.array = new S[length]; }
-                    else { System.Array.Resize(ref this.array, length); }
-                }
             }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
@@ -257,183 +254,8 @@ namespace Omochaya.HiddenStory
 #endif
         }
 
-        // ↑↑↑↑↑↑ ここまでステートマシンのジェネリクスによるコードブロート対象 ↑↑↑↑↑↑
+// ↑↑↑↑↑↑ ここまでステートマシンのジェネリクスによるコードブロート対象 ↑↑↑↑↑↑
 
-        /// <summary>Don't touch! Only for system.</summary>
-        // StateMachinePool用のコア機能
-        internal struct Core
-        {
-            // fields
-            int[] nextFree;
-            int freeHead;
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            int useCount;
-            int worstCount;
-#endif
-
-            // properties
-
-            /// <summary>Don't touch! Only for system.</summary>
-            internal readonly bool IsUsedUp
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => this.nextFree == null || this.freeHead == -1;
-            }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            /// <summary>Don't touch! Only for system.</summary>
-            internal int ActiveCount => this.useCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            internal int WorstCount => this.worstCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            internal int TotalCount => this.nextFree?.Length ?? 0;
-            /// <summary>Don't touch! Only for system.</summary>
-            internal int ArraySize => TotalCount * Unsafe.SizeOf<int>();
-#endif
-
-            // methods
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal int Alloc()
-            {
-                var index = this.freeHead;
-                this.freeHead = this.nextFree[index];
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-                this.useCount++;
-                this.worstCount = Mathf.Max(this.worstCount, this.useCount);
-#endif
-
-                return index;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal void Free(int index)
-            {
-                this.nextFree[index] = this.freeHead;
-                this.freeHead = index;
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-                this.useCount--;
-#endif
-
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            internal int ExpandAtAlloc(int itemSize)
-            {
-                if (this.nextFree != null && this.freeHead != -1) { return 0; }
-
-                int oldLength;
-                if (this.nextFree == null)
-                {
-                    oldLength = 0;
-                    this.freeHead = -1;
-                    Story.Pool.CreateBasedOnItemSize(ref this.nextFree, itemSize);
-                }
-                else
-                {
-                    oldLength = this.nextFree.Length;
-                    Story.Pool.ExpandBasedOnItemSize(ref this.nextFree, itemSize);
-                }
-
-                MakeLink(oldLength);
-
-                return this.nextFree.Length;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // コードブロートの影響を抑えるため明示的にインライン化しない
-            internal bool Warmup(int length)
-            {
-                if (this.nextFree == null)
-                {
-                    this.freeHead = -1;
-                    this.nextFree = new int[length];
-                    MakeLink(0);
-                    return true;
-                }
-
-                var oldLength = this.nextFree.Length;
-                if (length <= oldLength)
-                {
-                    Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, oldLength, length));
-                    return false;
-                }
-
-                System.Array.Resize(ref this.nextFree, length);
-                MakeLink(oldLength);
-
-                return true;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            void MakeLink(int oldLength)
-            {
-                var newLength = this.nextFree.Length;
-                for (var i = oldLength; i < newLength-1; ++i) { this.nextFree[i] = i + 1; }
-                this.nextFree[newLength - 1] = this.freeHead;
-                this.freeHead = oldLength;
-            }
-        }
-
-        static int GetCapacity(Type stateMachineType)
-        {
-            try
-            {
-                var declaringType = stateMachineType.DeclaringType;
-                if (declaringType == null) { return -1; }
-
-
-                var smName = stateMachineType.Name;
-                if (!smName.StartsWith("<")) { return -1; }
-                var index = smName.IndexOf('>');
-                if (index < 2) { return -1; }
-                var targetMethodName = smName.Substring(1, index - 1);
-                var methods = declaringType.GetMethods(
-                    System.Reflection.BindingFlags.Public |
-                    System.Reflection.BindingFlags.NonPublic |
-                    System.Reflection.BindingFlags.Instance |
-                    System.Reflection.BindingFlags.Static);
-
-                var smTypeToCompare = stateMachineType.IsGenericType && !stateMachineType.IsGenericTypeDefinition
-                                    ? stateMachineType.GetGenericTypeDefinition()
-                                    : stateMachineType;
-
-                // 通常の非同期メソッド
-                foreach (var method in methods)
-                {
-                    if (method.Name != targetMethodName) continue;
-                    var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
-                    if (asyncAttr == null) { continue; }
-                    if (asyncAttr.StateMachineType != smTypeToCompare) { continue; }
-                    var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
-                    return capacityAttr != null ? capacityAttr.Capacity : 0;
-                }
-                // ローカル関数等の名前が特殊な非同期メソッド
-                foreach (var method in methods)
-                {
-                    // if (method.Name != targetMethodName) continue;
-                    var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
-                    if (asyncAttr == null) { continue; }
-                    if (asyncAttr.StateMachineType != smTypeToCompare) { continue; }
-                    var capacityAttr = method.GetCustomAttribute<Story.CapacityAttribute>();
-                    return capacityAttr != null ? capacityAttr.Capacity : 0;
-                }
-
-                return 0;
-            }
-            catch (System.Exception e)
-            {
-                Dev.LogWarning(e.Message);
-
-                return -1;
-            }
-        }
     }
 
     // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜

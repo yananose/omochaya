@@ -253,15 +253,6 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task a) => this.Id.Matches(a.Id);
 
-            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Warmup(int length = 0)
-            {
-                ref var info = ref this.Info();
-                Dev.Assert(info.IsValid);
-                if (0 < length) { info.Warmup(length); }
-            }
-
             /// <summary>Creates a task handle directly from a raw pool index without validation.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static Task UnsafeCreate(int index) => new Task(Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGetId(index));
@@ -372,7 +363,7 @@ namespace Omochaya
 
             /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Warmup(int length) => this.rawTask.Warmup(length);
+            public void Warmup(int count) => this.rawTask.Warmup(count);
 
             // for awaiter（利用者による呼び出し禁止）
 
@@ -710,7 +701,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(int length) => this.stateMachine.Warmup(length);
+        public void Warmup(int count) => this.stateMachine.Warmup(count);
 
         /// <summary>Don't touch! Only for system.</summary>
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

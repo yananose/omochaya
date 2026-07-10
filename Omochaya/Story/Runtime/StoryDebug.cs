@@ -136,12 +136,6 @@ Dev.LoopBreak.Check(index.ToString());
         /// <summary>Enables recording of task creation stack traces for debugging.</summary>
         public static bool EnableTaskTracking = false;
 
-        /// <summary>Forcibly stores a temporary integer value used for pool tracking diagnostics.</summary>
-        internal static void SetInt(int prm) => storedInt = prm;
-
-        /// <summary>Retrieves the temporarily stored integer value used for pool tracking diagnostics.</summary>
-        internal static int GetInt() => storedInt;
-
         /// <summary>Registers a diagnostic pool monitor instance to the global debug registry.</summary>
         internal static void PoolMonitorRegister(IPoolMonitorForDebug monitor)
             => IPoolMonitorForDebug.Register(monitor);
@@ -254,7 +248,6 @@ Dev.LoopBreak.Check(index.ToString());
 
         // for debug only
 
-        static int storedInt;
         static class AwaiterValidator<T>
         {
             internal static readonly bool IsValid;
@@ -358,8 +351,6 @@ Dev.LoopBreak.Check("bad");
     internal class Dev : Debug
     {
         public static bool EnableTaskTracking { get => false; set {} }
-        [Conditional("DUMMY")] internal static void SetInt(int prm) {}
-        internal static int GetInt() => 0;
         [Conditional("DUMMY")] internal static void PoolMonitorRegister(object monitor) {}
         [Conditional("DUMMY")] internal static void ValidateAwaiter<T>() {}
 

@@ -73,10 +73,10 @@ namespace Omochaya.HiddenStory
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal bool HasValues
+        internal bool IsPrepared
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.manualBand.HasValues;
+            get => this.manualBand.IsValid;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -100,7 +100,7 @@ namespace Omochaya.HiddenStory
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
-                Dev.Assert(!HasValues, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+                Dev.Assert(!IsPrepared, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
                 Dev.Assert(value != Story.CancelMode.DontThrow, Messages.Exceptions.CannotSetDontThrowAsDefault);
                 this.defaultCancelMode = value;
             }
@@ -172,7 +172,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Custom(int bandCount, int taskCount , bool warning = true)
         {
-            if (TaskManager.Shared.HasValues)
+            if (TaskManager.Shared.IsPrepared)
             {
                 if (warning) { Dev.LogWarning(Messages.Warnings.CannotCustomizeAfterStart); }
                 return;

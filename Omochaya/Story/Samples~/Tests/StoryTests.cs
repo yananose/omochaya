@@ -20,7 +20,10 @@ namespace OmochayaTests
             void Awake()
             {
                 Story.Warmup(1024); // システムプールの事前確保
-                Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
+                using (Story.WarmupMode())
+                {
+                    Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
+                }
             }
 
             void Update() 
@@ -86,8 +89,11 @@ namespace OmochayaTests
         public IEnumerator Task_コルーチンとの比較()
         {
             // 【Story専用】各タスクを Warmup することでプールを事前確保できます（任意）
-            StoryMain(null).Warmup();
-            StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
+            using (Story.WarmupMode())
+            {
+                StoryMain(null).Warmup();
+                StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
+            }
 
             // 記録帳
             var coroutineNote = new List<int>(1024);
@@ -402,7 +408,10 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_子タスクをawait中にキャンセルされた場合_親子両方のfinallyが実行されること()
         {
-            ChildTask().Warmup();
+            using (Story.WarmupMode())
+            {
+                ChildTask().Warmup();
+            }
 
             var parentFinally = false;
             var childFinally = false;
@@ -632,7 +641,10 @@ namespace OmochayaTests
         public IEnumerator Task_指定した実行バンドが変更されずに再開されること()
         {
             var executionStep = 0;
-            SubStory().Warmup();
+            using (Story.WarmupMode())
+            {
+                SubStory().Warmup();
+            }
 
             var fixedDeltaTime = Time.fixedDeltaTime;
             Time.fixedDeltaTime = 0.1f; // 検証用に FixedUpdate を 10 fpsにする
@@ -1023,7 +1035,10 @@ namespace OmochayaTests
             var hasCaughtException = false;
             var testException = new System.Exception("ExpectedTestException");
 
-            ThrowChildTask().Warmup(); // testException を参照するのでこの位置
+            using (Story.WarmupMode())
+            {
+                ThrowChildTask().Warmup(); // testException を参照するのでこの位置
+            }
 
             var task = ParentTask();
             task.Start(this.owner);
@@ -1251,7 +1266,10 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_親子のキャンセル時に子がfinally内でawaitすると_親の解放は子の完了を待つこと()
         {
-            ChildTask().Warmup();
+            using (Story.WarmupMode())
+            {
+                ChildTask().Warmup();
+            }
 
             var childFinallyCompleted = false;
             var parentFinallyCompleted = false;

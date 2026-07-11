@@ -64,7 +64,7 @@ namespace Omochaya
             const int CREATE_LIMIT_SIZE = 1024 * 1;
             const int EXPAND_LIMIT_SIZE = 1024 * 128;
 
-            /// <summary></summary>
+            /// <summary>Expands the specified raw array to the exact capacity, logging a diagnostic warning upon resizing.</summary>
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public static void Expand<T>(ref T[] array, int count)
             {
@@ -170,7 +170,7 @@ namespace Omochaya
 
             // methods
 
-            /// <summary></summary>
+            /// <summary>Expands the underlying unmanaged pool capacity for the specified type to the exact count.</summary>
             public void Expand<T>(int count)
                 => UnsafePool<T>.Shared.Expand(count);
 

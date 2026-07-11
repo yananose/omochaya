@@ -4,6 +4,8 @@
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
+//   Provides scoped initialization mechanisms and extension methods to safely pre-allocate 
+//   state machine pool capacities, avoiding runtime expansion overhead.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -13,7 +15,7 @@ namespace Omochaya
 
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>Enters a disposable warmup scope to safely pre-allocate pool capacities for tasks initialized within the block.</summary>
         public static TaskWarmuper WarmupMode() => TaskWarmup.Create();
 
         /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>

@@ -1758,5 +1758,91 @@ namespace OmochayaTests
             }
         }
 
+        // ------------------------------------------------------------------------
+        // 事前確保モード (WarmupMode) の挙動テスト
+        // ------------------------------------------------------------------------
+
+        [Test]
+        public void Task_WarmupMode_ネストしたスコープの整合性テスト()
+        {
+            using (var scope1 = Story.WarmupMode())
+            {
+                using (var scope2 = Story.WarmupMode())
+                {
+                    Assert.AreSame(scope2, TaskWarmup.Shared, "内側のスコープが有効であるべき");
+                }
+                Assert.AreSame(scope1, TaskWarmup.Shared, "外側のスコープに正しく復元されるべき");
+            }
+            Assert.IsNull(TaskWarmup.Shared, "すべてのスコープ終了後は無効であるべき");
+        }
+
+        // ------------------------------------------------------------------------
+        // プールの挙動テスト
+        // ------------------------------------------------------------------------
+
+        [Test]
+        public void Pool_境界値での配列拡張テスト()
+        {
+            // 小さなプールを作成
+            var pool = Story.Pool<int>.Shared;
+            pool.Expand(8); // 8個で固定
+
+            // 限界まで使う
+            var ids = new List<Story.Pool.Id>();
+            for (int i = 0; i < 8; i++) ids.Add(pool.Alloc());
+
+            // 9個目を追加した瞬間に Expand が走るか確認
+            Assert.DoesNotThrow(() => pool.Alloc(), "限界値での追加割り当てが例外なく成功すること");
+        }
+
+        [Test]
+        public void Pool_拡張容量計算ロジックの厳密な検証()
+        {
+            // Story.Pool.GetNeedCountAtExpand の計算式:
+            // count + Mathf.Min(count, Mathf.Max(4, limit / itemSize))
+
+            // ケース1: 制限に達していない場合の倍加（countが加算される）
+            // limit = 1000, itemSize = 10 -> 許容増加数(limit / itemSize) = 100
+            // count(10) < 100 のため、Min(10, 100) = 10 が加算される
+            Assert.AreEqual(20, Story.Pool.GetNeedCountAtExpand(10, 10, 1000));
+
+            // ケース2: 制限(limit)による拡張数の頭打ち
+            // limit = 1000, itemSize = 10 -> 許容増加数 = 100
+            // count(200) > 100 のため、Min(200, 100) = 100 が加算される（倍加しない）
+            Assert.AreEqual(300, Story.Pool.GetNeedCountAtExpand(200, 10, 1000));
+
+            // ケース3: 最低保証加算値（4）の適用
+            // limit = 10, itemSize = 10 -> 許容増加数 = 1
+            // Max(4, 1) = 4 となり、count(10) > 4 のため 4 が加算される
+            Assert.AreEqual(14, Story.Pool.GetNeedCountAtExpand(10, 10, 10));
+
+            // ケース4: 最低保証加算値（4）の範囲内でcountが小さい場合
+            // limit = 10, itemSize = 10 -> 許容増加数 = 1 -> Max(4, 1) = 4
+            // count(2) < 4 のため、Min(2, 4) = 2 が加算される（倍加する）
+            Assert.AreEqual(4, Story.Pool.GetNeedCountAtExpand(2, 10, 10));
+        }
+
+        [Test]
+        public void Pool_初期容量計算ロジックの厳密な検証()
+        {
+            // Story.Pool.GetNeedCountAtCreate の計算式:
+            // Mathf.Clamp(limit / itemSize, 8, 32)
+
+            // ケース1: 計算結果が下限（8）を下回る場合
+            // limit = 100, itemSize = 20 -> 許容作成数(limit / itemSize) = 5
+            // 最低保証として 8 に切り上げられること
+            Assert.AreEqual(8, Story.Pool.GetNeedCountAtCreate(20, 100));
+
+            // ケース2: 計算結果が範囲内（8〜32）に収まる場合
+            // limit = 200, itemSize = 10 -> 許容作成数 = 20
+            // 範囲内のためそのまま 20 となること
+            Assert.AreEqual(20, Story.Pool.GetNeedCountAtCreate(10, 200));
+
+            // ケース3: 計算結果が上限（32）を上回る場合
+            // limit = 1000, itemSize = 10 -> 許容作成数 = 100
+            // 初期確保の制限として 32 に切り捨てられること
+            Assert.AreEqual(32, Story.Pool.GetNeedCountAtCreate(10, 1000));
+        }
+
     }
 }

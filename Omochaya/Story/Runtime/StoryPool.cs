@@ -77,32 +77,34 @@ namespace Omochaya
                 }
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
+            /// <summary>Calculates the optimal initial element capacity bounded by the specified memory limit threshold.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-            internal static int GetNeedCountAtCreate(int itemSize, int limit = CREATE_LIMIT_SIZE)
+            public static int GetNeedCountAtCreate(int itemSize, int limit = CREATE_LIMIT_SIZE)
                 => Mathf.Clamp(limit / itemSize, 8, 32);
 
-            /// <summary>Don't touch! Only for system.</summary>
+            /// <summary>Calculates the optimal expanded element capacity scaled geometrically and bounded by the specified memory limit threshold.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-            internal static int GetNeedCountAtExpand(int count, int itemSize, int limit = EXPAND_LIMIT_SIZE)
+            public static int GetNeedCountAtExpand(int count, int itemSize, int limit = EXPAND_LIMIT_SIZE)
                 => count + Mathf.Min(count, Mathf.Max(4, limit / itemSize));
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            [Obsolete("このメソッドは廃止されました。代わりに Create(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。")]
+            // ※ GetNeedCountAtCreate を public に変更したと仮定したメッセージです。
+            // 変更しない場合はメッセージの実装指示を書き換えてください。
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。", true)]
             public static void Create<T>(ref T[] array)
-                => Dev.Assert(false, "このメソッドは廃止されました。代わりに Create(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。");
+                => throw new NotSupportedException();
 
-            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, Unsafe.SizeOf<T>())) を使用してください。")]
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, Unsafe.SizeOf<T>())) を使用してください。", true)]
             public static void Expand<T>(ref T[] array)
-                => Dev.Assert(false, "このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, Unsafe.SizeOf<T>())) を使用してください。");
+                => throw new NotSupportedException();
 
-            [Obsolete("このメソッドは廃止されました。代わりに Create(ref array, GetNeedCountAtCreate(itemSize, limit)) を使用してください。")]
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(itemSize, limit)) を使用してください。", true)]
             public static void CreateBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = CREATE_LIMIT_SIZE)
-                => Dev.Assert(false, "このメソッドは廃止されました。代わりに Create(ref array, GetNeedCountAtCreate(itemSize, limit)) を使用してください。");
+                => throw new NotSupportedException();
 
-            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, itemSize, limit)) を使用してください。")]
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, itemSize, limit)) を使用してください。", true)]
             public static void ExpandBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = EXPAND_LIMIT_SIZE)
-                => Dev.Assert(false, "このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, itemSize, limit)) を使用してください。");
+                => throw new NotSupportedException();
 #endif
 
         }
@@ -463,12 +465,9 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             protected int ArraySize => this.array.ArraySize + this.core.ArraySize;
 
-            [Obsolete("このメソッドは廃止されました。代わりに Get(Alloc()) = value を使用してください。")]
+            [Obsolete("このメソッドは廃止されました。代わりに Get(Alloc()) = value を使用してください。", true)]
             public Pool.Id Alloc(in T value)
-            {
-                Dev.Assert(false, "このメソッドは廃止されました。代わりに Get(Alloc()) = value を使用してください。");
-                return default;
-            }
+                => throw new NotSupportedException();
 #endif
         }
 
@@ -626,12 +625,9 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             protected new int ArraySize => base.ArraySize + Unsafe.SizeOf<COOL>() * (ActiveCount + FreeCount);
 
-            [Obsolete("このメソッドは廃止されました。代わりに var id = Alloc(); Get(id) = hot; Get2(id) = cool; を使用してください。")]
+            [Obsolete("このメソッドは廃止されました。代わりに var id = Alloc(); Get(id) = hot; Get2(id) = cool; を使用してください。", true)]
             public Pool.Id Alloc(in HOT hot, in COOL cool)
-            {
-                Dev.Assert(false, "このメソッドは廃止されました。代わりに var id = Alloc(); Get(id) = hot; Get2(id) = cool; を使用してください。");
-                return default;
-            }
+                => throw new NotSupportedException();
 #endif
         }
 

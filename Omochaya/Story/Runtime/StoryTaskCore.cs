@@ -47,14 +47,14 @@ namespace Omochaya.HiddenStory
         public void SetException(Exception e) => TaskManager.Shared.SetException(e);
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitOnCompleted<A, S>(ref A a, ref S s)
             where A : INotifyCompletion
             where S : IAsyncStateMachine
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
             where A : ICriticalNotifyCompletion
             where S : IAsyncStateMachine
@@ -91,14 +91,14 @@ namespace Omochaya.HiddenStory
         public void SetException(Exception e) => TaskManager.Shared.SetException(e);
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitOnCompleted<A, S>(ref A a, ref S s)
             where A : INotifyCompletion
             where S : IAsyncStateMachine
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
             where A : ICriticalNotifyCompletion
             where S : IAsyncStateMachine
@@ -136,21 +136,21 @@ namespace Omochaya.HiddenStory
         }
 
         // constructors
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
         StateMachine(IStateMachinePool pool, int index) { this.pool = pool; this.index = index; }
 
         // methods
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（Func は仮想メソッド）
         internal void Warmup(int count) => this.pool.Func(FuncType.Expand, count);
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（Func は仮想メソッド）
         internal void Free() => this.pool.Func(FuncType.Free, this.index);
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（MoveNext は仮想メソッド）
         internal void MoveNext() => this.pool.MoveNext(this.index);
 
 // ↓↓↓↓↓↓ ここからステートマシンのジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
@@ -158,7 +158,7 @@ namespace Omochaya.HiddenStory
         // creators
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（Alloc が NoInlining）
         internal static StateMachine Alloc<S>(in S value) where S : struct, IAsyncStateMachine
         {
             var pool = StateMachinePool<S>.Shared;
@@ -187,6 +187,7 @@ namespace Omochaya.HiddenStory
             // methods
 
             /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.NoInlining)] // !!! ジェネリクスによるコードブロート防止のため明示的にインライン化しない !!!
             internal int Alloc(in S value)
             {
                 int index;
@@ -202,8 +203,9 @@ namespace Omochaya.HiddenStory
                 }
                 else
 #endif
+                if (!this.core.TryAllocFast(out index))
                 {
-                    var result = this.core.AllocBasedOnItemSize(Unsafe.SizeOf<S>());
+                    var result = this.core.ExpandAndAlloc(Unsafe.SizeOf<S>());
                     index = result.Index;
                     need = result.Need;
                 }
@@ -216,6 +218,7 @@ namespace Omochaya.HiddenStory
             // for IStateMachinePool
 
             /// <summary>Don't touch! Only for system.</summary>
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 仮想メソッド
             public bool Func(FuncType funcType, int param)
             {
                 switch (funcType)
@@ -233,6 +236,7 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 仮想メソッド
             public void MoveNext(int index)
             {
                 var array = this.array;

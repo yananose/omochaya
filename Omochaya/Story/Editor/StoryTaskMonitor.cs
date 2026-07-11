@@ -244,8 +244,7 @@ namespace Omochaya.HiddenStory
             topPane.Add(this.listView);
             splitView.Add(topPane); // 上部ペインをSplitViewに登録
 
-
-            // 【下部ペイン】詳細情報とコピーボタンを格納
+            // 【下部ペイン】詳細情報を格納
             var bottomPane = new VisualElement { style = { flexGrow = 1 } };
 
             var detailPane = new ScrollView
@@ -255,7 +254,7 @@ namespace Omochaya.HiddenStory
                     borderTopWidth = 1, 
                     borderTopColor = Color.gray, 
                     backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f),
-                    paddingLeft = 4, paddingRight = 4, paddingTop = 26, paddingBottom = 4 // コピーボタン用に上部の余白を確保
+                    paddingLeft = 4, paddingRight = 4, paddingTop = 4, paddingBottom = 4 // コピーボタンがフッタに移動したため paddingTop を調整
                 }
             };
 
@@ -297,9 +296,9 @@ namespace Omochaya.HiddenStory
             }) 
             { 
                 text = "Copy", 
-                style = { position = Position.Absolute, top = 4, right = 16, height = 20, width = 60 } 
+                style = { position = Position.Absolute, top = 2, right = 4, height = 20, width = 60 } 
             };
-            bottomPane.Add(copyButton);
+            copyButton.SetEnabled(false); // 初期状態は無効
 
             splitView.Add(bottomPane); // 下部ペインをSplitViewに登録
             root.Add(splitView);       // SplitViewを大元に追加
@@ -328,9 +327,12 @@ namespace Omochaya.HiddenStory
                         detailLabel.text = currentRawTrace;
                     }
                 }
+
+                // コピーボタンの有効/無効を更新
+                copyButton.SetEnabled(!string.IsNullOrEmpty(currentRawTrace));
             };
 
-            // 5. フッター（ステータス情報ラベル）
+            // 5. フッター（ステータス情報ラベルとコピーボタン）
             this.footer = new VisualElement();
             this.footer.style.height = 24;
             this.footer.style.flexShrink = 0;
@@ -343,6 +345,9 @@ namespace Omochaya.HiddenStory
 
             this.infoLabel = new Label { style = { unityFontStyleAndWeight = FontStyle.Bold } };
             this.footer.Add(this.infoLabel);
+
+            // フッターにコピーボタンを追加
+            this.footer.Add(copyButton);
 
             // 初回描画
             RefreshData();

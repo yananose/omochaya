@@ -23,14 +23,14 @@ namespace Omochaya
         {
             if (TaskWarmup.IsValid)
             {
-                Dev.Assert(!self.IsValid, $"using(WarmupMode()){{}} 内では割り当て済みのプールを Warmup() できません : {self}");
+                Dev.Assert(!self.IsValid, string.Format(Messages.Exceptions.CannotWarmupAllocatedPool, self));
                 TaskWarmup.Shared.Complete(count);
             }
             else
             {
                 ref var info = ref self.Info();
-                Dev.Assert(info.IsValid, "using(WarmupMode()){} 内で作成したタスクはブロック内で Warmup() してください");
-                Dev.LogWarning($"割り当て済みのプールをリサイズします。初期容量を指定したい場合は using(WarmupMode()){{}} 内で Warmup() してください : {self}");
+                Dev.Assert(info.IsValid, Messages.Exceptions.MustWarmupInBlock);
+                Dev.LogWarning(string.Format(Messages.Warnings.ResizingAllocatedPool, self));
                 info.Warmup(count);
             }
         }
@@ -78,7 +78,7 @@ namespace Omochaya.HiddenStory
         {
             var count = GetCapacityCore(stateMachineType);
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            if (count < 0) { Dev.LogWarning(string.Format("Pool capacity initialization failed for {0}", stateMachineType)); }
+            if (count < 0) { Dev.LogWarning(string.Format(Messages.Warnings.PoolCapacityInitFailed, stateMachineType)); }
 #endif
             return count;
         }
@@ -156,7 +156,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal void Setup<S>() where S : struct, IAsyncStateMachine
         {
-            Dev.Assert(this.pool == null, $"using(WarmupMode()){{}} 内で作成したタスクは Warmup() 以外の目的で使用することはできません。即座に Warmup() してください : {this.type}");
+            Dev.Assert(this.pool == null, string.Format(Messages.Exceptions.MustWarmupImmediately, this.type));
             this.pool = StateMachine.StateMachinePool<S>.Shared;
             this.type = typeof(S);
             this.size = Unsafe.SizeOf<S>();
@@ -165,10 +165,10 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal void Complete(int count)
         {
-            Dev.Assert(this.pool != null, "Warmupモード中に作成したタスクを指定してください");
+            Dev.Assert(this.pool != null, Messages.Exceptions.MustSpecifyTaskInWarmupMode);
             if (this.pool.Func(StateMachine.FuncType.IsValid, 0))
             {
-                Dev.LogWarning($"割り当て済みのプールを Warmup() しようとしたので無視します : {this.type}");
+                Dev.LogWarning(string.Format(Messages.Warnings.IgnoredWarmupForAllocatedPool, this.type));
             }
             else
             {

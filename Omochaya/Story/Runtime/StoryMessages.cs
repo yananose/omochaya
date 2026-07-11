@@ -41,6 +41,10 @@ namespace Omochaya.HiddenStory
             internal const string CannotSetDefaultCancelModeAfterStart = "使用を開始した後は DefaultCancelMode の指定はできません";
             internal const string CannotSetDontThrowAsDefault = "DefaultCancelMode に DontThrow は指定できません";
             internal const string CannotSetTaskCancelModeOutsideTask = "タスク外で TaskCancelMode の指定はできません";
+            internal const string CannotWarmupAllocatedPool = "using(WarmupMode()){{}} 内では割り当て済みのプールを Warmup() できません : {0}";
+            internal const string MustWarmupInBlock = "using(WarmupMode()){{}} 内で作成したタスクはブロック内で Warmup() してください";
+            internal const string MustWarmupImmediately = "using(WarmupMode()){{}} 内で作成したタスクは Warmup() 以外の目的で使用することはできません。即座に Warmup() してください : {0}";
+            internal const string MustSpecifyTaskInWarmupMode = "Warmupモード中に作成したタスクを指定してください";
         }
 
         // ------------------------------------------------------------------------
@@ -52,6 +56,9 @@ namespace Omochaya.HiddenStory
             internal const string ArrayExpanded = "配列が拡張されました: {0} -> {1}({2}) [{3}]";
             internal const string CannotCustomizeAfterStart = "使用を開始した後はカスタムできません";
             internal const string UnhandledResult = "結果が受け取られませんでした：{0}";
+            internal const string ResizingAllocatedPool = "割り当て済みのプールをリサイズします。初期容量を指定したい場合は using(WarmupMode()){{}} 内で Warmup() してください : {0}";
+            internal const string IgnoredWarmupForAllocatedPool = "割り当て済みのプールを Warmup() しようとしたため無視します : {0}";
+            internal const string PoolCapacityInitFailed = "Pool capacity initialization failed for {0}";
         }
 
         // ------------------------------------------------------------------------
@@ -119,6 +126,10 @@ namespace Omochaya.HiddenStory
             internal const string CannotSetDefaultCancelModeAfterStart = "DefaultCancelMode cannot be specified after execution has started.";
             internal const string CannotSetDontThrowAsDefault = "DontThrow cannot be specified for DefaultCancelMode.";
             internal const string CannotSetTaskCancelModeOutsideTask = "TaskCancelMode cannot be specified outside of a task.";
+            internal const string CannotWarmupAllocatedPool = "Cannot call Warmup() on an already allocated pool inside using(WarmupMode()){{}} : {0}";
+            internal const string MustWarmupInBlock = "Tasks created inside using(WarmupMode()){{}} must be warmed up within the block.";
+            internal const string MustWarmupImmediately = "Tasks created inside using(WarmupMode()){{}} cannot be used for any purpose other than Warmup(). Please call Warmup() immediately : {0}";
+            internal const string MustSpecifyTaskInWarmupMode = "Please specify a task created during Warmup mode.";
         }
 
         // ------------------------------------------------------------------------
@@ -130,6 +141,9 @@ namespace Omochaya.HiddenStory
             internal const string ArrayExpanded = "Array is expanded: {0} -> {1}({2}) [{3}]";
             internal const string CannotCustomizeAfterStart = "Cannot customize after execution has started.";
             internal const string UnhandledResult = "Result was not received (unhandled): {0}";
+            internal const string ResizingAllocatedPool = "Resizing an already allocated pool. If you want to specify the initial capacity, please call Warmup() inside using(WarmupMode()){{}} : {0}";
+            internal const string IgnoredWarmupForAllocatedPool = "Ignored an attempt to call Warmup() on an already allocated pool : {0}";
+            internal const string PoolCapacityInitFailed = "Pool capacity initialization failed for {0}";
         }
 
         // ------------------------------------------------------------------------

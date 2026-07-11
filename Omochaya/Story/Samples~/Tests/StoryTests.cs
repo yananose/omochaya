@@ -1541,7 +1541,7 @@ namespace OmochayaTests
         public IEnumerator Task_CancelMode_Drop_デフォルトがDropになっていること()
         {
             // Dropモードでテスト
-            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            if (Dev.IsEnableAssert)
             {
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
             }
@@ -1565,7 +1565,7 @@ namespace OmochayaTests
             Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
 
             // Safe モードでテスト
-            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            if (Dev.IsEnableAssert)
             {
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
             }
@@ -1740,7 +1740,7 @@ namespace OmochayaTests
         // [Test]
         public void Task_CancelMode_タスク外からのTaskCancelMode変更は弾かれること()
         {
-            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            if (Dev.IsEnableAssert)
             {
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
                 Story.TaskCancelMode = Story.CancelMode.Safe;
@@ -1750,7 +1750,7 @@ namespace OmochayaTests
         [Test]
         public void Task_CancelMode_DefaultCancelModeに対するDontThrowの設定または開始後の変更は弾かれること()
         {
-            if (!string.IsNullOrEmpty(Dev.Type<int>.Name)) // Assertが無効化されてないなら
+            if (Dev.IsEnableAssert)
             {
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
                 UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDontThrowAsDefault);

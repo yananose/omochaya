@@ -9,8 +9,9 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-// #define SIMPLE_CHECK
-// ↑コメントアウトを外すと簡易的にエディタ上でもある程度の製品版のロジックで動作させることができます
+// #define STORY_NO_DEBUG
+// ↑ここのコメントアウトを外すと簡易的にエディタ上でも Story をある程度製品版のロジックで動作させることができます
+// が、Story を完全に製品版ロジックで動作させるには Scripting Define Symbols に STORY_NO_DEBUG を追加してください
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
@@ -26,7 +27,7 @@ namespace Omochaya.HiddenStory
 
 // --------------------------------------------------------------------------------------------------------------------
 // エディタ向け機能
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
     /// <summary>Don't touch! Only for system.</summary>
     internal interface IPoolMonitorForDebug
@@ -52,6 +53,45 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         internal static void Register(IPoolMonitorForDebug monitor) => Monitors.Add(monitor);
     }
+
+#if STORY_NO_DEBUG
+
+    /// <summary>Don't touch! Only for system.</summary>
+    internal static class DevForEditor
+    {
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static string FormatMemorySize(int bytes) => Dev.FormatMemorySize(bytes);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal static class TaskMonitorAPI
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void FetchAutoCount(ref int count) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void FetchManualCount(ref int count) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void FetchLateCount(ref int count) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void FetchFixedCount(ref int count) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void ExtractOwner(ref Component owner, Story.Task task) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void GetOrder(ref long offset, Story.Task task) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void ExtractCreationTrace(ref string trace, Story.Task task) {}
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [Conditional("DUMMY")] internal static void GetTaskList(List<Story.Task> outTasks) {}
+        }
+    }
+
+#else // (STORY_NO_DEBUG) == false
 
     /// <summary>Don't touch! Only for system.</summary>
     internal static class DevForEditor
@@ -124,17 +164,22 @@ Dev.LoopBreak.Check(index.ToString());
         }
     }
 
-#endif
+#endif // STORY_NO_DEBUG
+
+#endif // (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
 // --------------------------------------------------------------------------------------------------------------------
 // 開発向け機能
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
     internal class Dev : UnityEngine.Debug
     {
+        /// <summary></summary>
+        internal static bool IsEnableAssert = true;
+
         /// <summary>Enables recording of task creation stack traces for debugging.</summary>
-        public static bool EnableTaskTracking = false;
+        internal static bool EnableTaskTracking = false;
 
         /// <summary>Registers a diagnostic pool monitor instance to the global debug registry.</summary>
         internal static void PoolMonitorRegister(IPoolMonitorForDebug monitor)
@@ -345,12 +390,14 @@ Dev.LoopBreak.Check("bad");
         static StringBuilder ToDebugString(StringBuilder sb, int num) => num < 0 ? sb.Append("_") : sb.Append(num);
     }
 
-#else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG && !SIMPLE_CHECK == false
+#else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG == false
 
     /// <summary>Don't touch! Only for system.</summary>
     internal class Dev : Debug
     {
-        public static bool EnableTaskTracking { get => false; set {} }
+        internal static bool IsEnableAssert = false;
+
+        internal static bool EnableTaskTracking { get => false; set {} }
         [Conditional("DUMMY")] internal static void PoolMonitorRegister(object monitor) {}
         [Conditional("DUMMY")] internal static void ValidateAwaiter<T>() {}
 
@@ -361,14 +408,18 @@ Dev.LoopBreak.Check("bad");
         }
 
         internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool) => null;
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+
+#if FOR_DEBUG || UNITY_EDITOR
+
         internal static string ToString(Story.Task self) => string.Empty;
         internal static class Type<T> { internal static string Name = string.Empty; }
         internal static class Pool<T> { internal static string Name = string.Empty; }
         internal static class Pool<HOT, COOL> { internal static string Name = string.Empty; }
         internal static class HiddenPool<T> { internal static string Name = string.Empty; }
         internal static class StateMachinePool<S> { internal static string Name = string.Empty; }
-#endif
+
+#endif // FOR_DEBUG || UNITY_EDITOR
+
         internal static string FormatMemorySize(int bytes) => string.Empty;
 
         [Conditional("DUMMY")] internal static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message) {}
@@ -388,24 +439,24 @@ Dev.LoopBreak.Check("bad");
     internal class Debug
     {
 
-#if STORY_FAST || SIMPLE_CHECK // 製品版でパフォーマンスを重視したいとき
+#if STORY_FAST || STORY_NO_DEBUG // 製品版でパフォーマンスを重視したいとき
 
         [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
 
-#if SIMPLE_CHECK // 簡易テスト時
+#if STORY_NO_DEBUG
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
         internal static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
 
-#else
+#else // (STORY_NO_DEBUG) == false
 
         [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
 
-#endif
+#endif // STORY_NO_DEBUG
 
-#else // 製品版でリスクヘッジしたいとき
+#else // (STORY_FAST || STORY_NO_DEBUG) == false 製品版でリスクヘッジしたいとき
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Assert(bool condition, string message) { if (!condition) { throw new Exception(message); } }
@@ -414,12 +465,12 @@ Dev.LoopBreak.Check("bad");
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
 
-#endif
+#endif // STORY_FAST || STORY_NO_DEBUG
 
         [Conditional("DUMMY")] internal static void Log(object message) {}
         [Conditional("DUMMY")] internal static void LogWarning(object message) {}
     }
 
-#endif
+#endif // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
 }

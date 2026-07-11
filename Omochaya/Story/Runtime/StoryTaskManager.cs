@@ -106,7 +106,7 @@ namespace Omochaya.HiddenStory
             }
         }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR // テストで使用するので STORY_NO_DEBUG でも UNITY_EDITOR なら有効。
         /// <summary>Don't touch! Only for system.</summary>
         internal Story.CancelMode DefaultCancelModeForDebug
         {

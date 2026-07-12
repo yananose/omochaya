@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-13
+
+### Added
+- タスクがキャンセルされた時の挙動（`Safe` / `DontThrow` / `Drop`）を制御できるキャンセルモード機能 (`Story.CancelMode`, `Story.DefaultCancelMode`, `Story.TaskCancelMode`) を追加。
+- 未使用タスクの無駄なアロケーションを抑止しつつプールを事前確保できる `Story.WarmupMode()` を追加。
+- 並行実行ユーティリティ `Task.With()` に、引数5〜8をサポートするオーバーロードを追加。
+- エディタ拡張「Story Task Monitor」に、カラム表示と、コードジャンプ・コピー機能付きのコールスタック表示機能を追加。
+
+### Changed
+- ステートマシンプールのコアを汎用プールと共通化し、コードブロート削減の観点からプールの `Alloc` および `Expand` を中心に処理を整理。
+- 組み込みの各種タスク関数において、キャンセル時に不必要な例外が発生しないよう内部処理を改善。
+- エディタ拡張「Story Pool Monitor」の `Worst` 値の計測精度を向上させ、表示する型名フォーマットを見やすく調整。
+
+### Deprecated
+- プール処理の共通化とコードブロート対策に伴い、一部のメソッド（`Story.Pool.Create<T>`, `Story.Pool.Expand<T>`, `Story.Pool.CreateBasedOnItemSize<T>`, `Story.Pool.ExpandBasedOnItemSize<T>`, `PoolBase<T>.Alloc` など）を廃止（`[Obsolete]`）に変更。※移行先はIDEのメッセージにて案内されます。
+
+### Fixed
+- ジェネリックなタスクにおいて `[Story.Capacity]` 属性による確保サイズ指定が無効になっていた不具合を修正。
+- `STORY_NO_DEBUG` ディファインを有効にした際に発生する不具合を修正。
+
 ## [1.0.0] - 2026-07-01
 
 ### Added

@@ -36,6 +36,7 @@ namespace Omochaya.HiddenStory
 
         // const
 
+        /// <summary>Don't touch! Only for system.</summary>
         internal const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
 
         /// <summary>Don't touch! Only for system.</summary>

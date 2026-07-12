@@ -19,10 +19,18 @@ namespace OmochayaTests
             // methods
             void Awake()
             {
-                Story.Warmup(1024); // システムプールの事前確保
+                // 【任意】キャンセルモードの指定
+                Story.DefaultCancelMode = Story.CancelMode.Safe;
+
+                // 【任意】一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
+                Story.Warmup(1024);
+
+                // 【任意】各タスクのプールの事前確保
                 using (Story.WarmupMode())
                 {
-                    Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
+                    // 使用するタスクのプールを事前確保する
+                    // ※Capacity属性が設定されていればそのサイズ、引数で上書きも可能
+                    Story.WaitTime(0f).Warmup();
                 }
             }
 

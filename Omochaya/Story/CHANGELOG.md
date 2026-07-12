@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - タスクがキャンセルされた時の挙動（`Safe` / `DontThrow` / `Drop`）を制御できるキャンセルモード機能 (`Story.CancelMode`, `Story.DefaultCancelMode`, `Story.TaskCancelMode`) を追加。
-- 未使用タスクの無駄なアロケーションを抑止しつつプールを事前確保できる `Story.WarmupMode()` を追加。
+- タスクのプールを無駄なく事前確保する `Story.WarmupMode()` を追加。
 - 並行実行ユーティリティ `Task.With()` に、引数5〜8をサポートするオーバーロードを追加。
-- エディタ拡張「Story Task Monitor」に、カラム表示と、コードジャンプ・コピー機能付きのコールスタック表示機能を追加。
+- エディタ拡張「Story Task Monitor」をカラム表示化し、コードジャンプ・コピー機能付きのコールスタック表示機能を追加。
 
 ### Changed
 - ステートマシンプールのコアを汎用プールと共通化し、コードブロート削減の観点からプールの `Alloc` および `Expand` を中心に処理を整理。

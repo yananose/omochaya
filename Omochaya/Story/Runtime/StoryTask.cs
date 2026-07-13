@@ -363,7 +363,7 @@ namespace Omochaya
 
             /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Warmup(int count) => this.rawTask.Warmup(count);
+            public void Warmup(int count = 0) => this.rawTask.Warmup(count);
 
             // for awaiter（利用者による呼び出し禁止）
 

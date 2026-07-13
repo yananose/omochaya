@@ -175,7 +175,7 @@ Debug.Log(7);
 
     // サブタスク：往復移動させる
     [Story.Capacity(5)]
-    async Story.Task SubTask(RectTransform rt)
+    async Story.Task<int> SubTask(RectTransform rt)
     {
         var position = rt.anchoredPosition;
         while (true)

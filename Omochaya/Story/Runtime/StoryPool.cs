@@ -32,7 +32,7 @@ namespace Omochaya
 
                 // constructors
 
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public Id(int index, int age) { this.Index = index; this.Age = age; }
 
                 // properties
@@ -40,14 +40,13 @@ namespace Omochaya
                 /// <summary>Gets a value indicating whether this identifier is valid and assigned.</summary>
                 public readonly bool IsValid
                 {
-                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                    [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                     get => this.Age != 0;
                 }
 
                 // methods
 
                 /// <summary>Determines whether this identifier matches the specified identifier.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly bool Matches(Id a) => this.Index == a.Index && this.Age == a.Age;
 
                 // for collection（ユーザによる呼び出し禁止）
@@ -62,44 +61,52 @@ namespace Omochaya
                 public override int GetHashCode() => HashCode.Combine(Index, Age);
             }
 
-            /// <summary>Initializes a raw array using default capacity settings determined by item size calculations.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static void Create<T>(ref T[] array)
-                => CreateBasedOnItemSize(ref array, Unsafe.SizeOf<T>());
+            const int CREATE_LIMIT_SIZE = 1024 * 1;
+            const int EXPAND_LIMIT_SIZE = 1024 * 128;
 
-            /// <summary>Expands the capacity of a raw array based on default exponential scaling boundaries.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static void Expand<T>(ref T[] array)
-                => ExpandBasedOnItemSize(ref array, Unsafe.SizeOf<T>());
-
-            /// <summary>Expands a raw array to a specific length, logging warning traces upon expansion profiles.</summary>
-            public static void Expand<T>(ref T[] array, int length)
+            /// <summary>Expands the specified raw array to the exact capacity, logging a diagnostic warning upon resizing.</summary>
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public static void Expand<T>(ref T[] array, int count)
             {
-                if (array == null) { array = new T[length]; }
+                if (array == null) { array = new T[count]; }
                 else
                 {
-                    Dev.Assert(array.Length < length);
-                    Dev.SetInt(array.Length);
-                    System.Array.Resize(ref array, length);
-                    Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded, Dev.GetInt(), array.Length, Dev.FormatMemorySize(Unsafe.SizeOf<T>() * array.Length), typeof(T).Name));
+                    Dev.Assert(array.Length < count);
+                    Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded, array.Length, count, Dev.FormatMemorySize(Unsafe.SizeOf<T>() * count), typeof(T).Name));
+                    System.Array.Resize(ref array, count);
                 }
             }
 
-            /// <summary>Creates a raw array optimized within an initial memory limit threshold constraint.</summary>
-            public static void CreateBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = 1024 * 1)
-            {
-                var count = Mathf.Clamp(limit / itemSize, 8, 32);
-                array = new T[count];
-            }
+            /// <summary>Calculates the optimal initial element capacity bounded by the specified memory limit threshold.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+            public static int GetNeedCountAtCreate(int itemSize, int limit = CREATE_LIMIT_SIZE)
+                => Mathf.Clamp(limit / itemSize, 8, 32);
 
-            /// <summary>Expands a raw array scale with geometric clamping guidelines bounded by a maximum limit threshold.</summary>
-            public static void ExpandBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = 1024 * 128)
-            {
-                var newLength = array.Length;
-                newLength += Mathf.Min(newLength, Mathf.Max(4, limit / itemSize));
-                Dev.LogWarning(string.Format(Messages.Warnings.ArrayExpanded_BasedOn, array.Length, newLength, Dev.FormatMemorySize(Unsafe.SizeOf<T>() * newLength), typeof(T).Name));
-                System.Array.Resize(ref array, newLength);
-            }
+            /// <summary>Calculates the optimal expanded element capacity scaled geometrically and bounded by the specified memory limit threshold.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+            public static int GetNeedCountAtExpand(int count, int itemSize, int limit = EXPAND_LIMIT_SIZE)
+                => count + Mathf.Min(count, Mathf.Max(4, limit / itemSize));
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            // ※ GetNeedCountAtCreate を public に変更したと仮定したメッセージです。
+            // 変更しない場合はメッセージの実装指示を書き換えてください。
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。", true)]
+            public static void Create<T>(ref T[] array)
+                => throw new NotSupportedException();
+
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, Unsafe.SizeOf<T>())) を使用してください。", true)]
+            public static void Expand<T>(ref T[] array)
+                => throw new NotSupportedException();
+
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(itemSize, limit)) を使用してください。", true)]
+            public static void CreateBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = CREATE_LIMIT_SIZE)
+                => throw new NotSupportedException();
+
+            [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtExpand(array.Length, itemSize, limit)) を使用してください。", true)]
+            public static void ExpandBasedOnItemSize<T>(ref T[] array, int itemSize, int limit = EXPAND_LIMIT_SIZE)
+                => throw new NotSupportedException();
+#endif
+
         }
 
         // 構造体配列によるプールの実装。IDによる要素管理とロック機構を提供する。
@@ -152,19 +159,22 @@ namespace Omochaya
             /// <summary>Gets a value indicating whether this memory handle is bound to an active unmanaged pool.</summary>
             public bool IsValid
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 get => this.pool != null;
             }
 
             // constructors
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             PoolMemory(IUnsafePool pool, int index) { this.pool = pool; this.index = index; }
 
-            // creators
+            // methods
+
+            /// <summary>Expands the underlying unmanaged pool capacity for the specified type to the exact count.</summary>
+            public void Expand<T>(int count)
+                => UnsafePool<T>.Shared.Expand(count);
 
             /// <summary>Allocates a lightweight memory handle from the hidden global shared pool without generation tracking.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static PoolMemory Alloc<T>()
             {
                 var pool = UnsafePool<T>.Shared;
@@ -172,17 +182,13 @@ namespace Omochaya
             }
 
             /// <summary>Allocates a lightweight memory handle initialized with a value from the hidden global shared pool without generation tracking.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static PoolMemory Alloc<T>(in T value)
             {
                 var pool = UnsafePool<T>.Shared;
                 return new PoolMemory(pool, pool.Alloc(value));
             }
 
-            // methods
-
             /// <summary>Explicitly releases the unmanaged memory slot handle back to its originating pool.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Free()
             {
                 if (IsValid) { this.pool.Free(this.index); }
@@ -209,7 +215,6 @@ namespace Omochaya
             /// memory.Get().Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref T Get<T>()
             {
                 Dev.Assert(UnsafePool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", UnsafePool<T>.Shared, this.pool, typeof(T)));
@@ -218,11 +223,9 @@ namespace Omochaya
 
             /// <summary>Determines whether the allocated memory type does not match the specified type.</summary>
             // 型が一致しない
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool IsMissType<T>() => UnsafePool<T>.Shared != this.pool;
 
             /// <summary>Disposes of the unmanaged memory handle, safely recycling its index slot.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Dispose() => Free();
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
@@ -247,23 +250,19 @@ namespace Omochaya
                 PoolSlot<T>[] array;
 
                 /// <summary>Expands the underlying slot array to the specified capacity.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public void Expand(int length) => Pool.Expand(ref this.array, length);
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+                public void Expand(int count) => Pool.Expand(ref this.array, count);
 
                 /// <summary>Allocates a new identifier from the underlying slot at the specified index.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public Pool.Id Alloc(int index) => this.array[index].Alloc(index);
 
-                /// <summary>Allocates a new identifier from the underlying slot, assigning the initial value.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Pool.Id Alloc(int index, in T value) => this.array[index].Alloc(index, in value);
-
                 /// <summary>Frees the slot at the specified index and clears its value.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public void Free(int index) => this.array[index].Free();
 
                 /// <summary>Validates whether the given identifier matches the index and generation age of the active slot.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public bool IsValid(Pool.Id id) => this.array != null && (uint)id.Index < this.array.Length && this.array[id.Index].Age == id.Age;
 
                 /// <summary>Gets a reference to the value associated with the specified identifier.</summary>
@@ -287,7 +286,7 @@ namespace Omochaya
                 /// pool.Get(id).Value = 20;
                 /// </code>
                 /// </example>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public ref T Get(Pool.Id id)
                 {
                     Dev.Assert(IsValid(id));
@@ -315,21 +314,17 @@ namespace Omochaya
                 /// pool.UnsafeGet(index).Value = 20;
                 /// </code>
                 /// </example>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public ref T UnsafeGet(int index)
-                {
-                    return ref this.array[index].Value;
-                }
+                    => ref this.array[index].Value;
 
                 /// <summary>Retrieves the current identifier for the raw index using its active generation age.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public Pool.Id UnsafeGetId(int index)
-                {
-                    return new Pool.Id(index, this.array[index].Age);
-                }
+                    => new Pool.Id(index, this.array[index].Age);
 
                 /// <summary>Forcibly updates the generation age of the slot matching the specified identifier.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public void Reborn(Pool.Id id)
                 {
                     Dev.Assert(IsValid(id));
@@ -337,7 +332,7 @@ namespace Omochaya
                 }
 
                 /// <summary>Forcibly updates the generation age of the slot at the raw index without validation.</summary>
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 public void UnsafeReborn(int index) => this.array[index].Reborn();
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
@@ -346,7 +341,7 @@ namespace Omochaya
             }
 
             // fields
-            PoolCore core;
+            private protected PoolCore core;
 
             /// <summary>Don't touch! Only for system.</summary>
             protected PoolSlotArray array;
@@ -357,54 +352,29 @@ namespace Omochaya
             // properties
 
             /// <summary>Gets the current length of the active core allocation pool.</summary>
-            public int Length
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => this.core.Length;
-            }
+            public int Length => this.core.Count;
 
             // methods
 
+            /// <summary>Expands the pool capacity to the specified count if it exceeds the current capacity.</summary>
+            public void Expand(int count)
+            {
+                if (this.core.TryExpand(count)) { this.array.Expand(count); }
+            }
+
             /// <summary>Allocates an empty slot from the pool and returns its unique identifier.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
             public Pool.Id Alloc()
             {
-                if (this.core.IsUsedUp)
+                if (!this.core.TryAllocFast(out int index))
                 {
-                    this.core.ExpandBasedOnItemSizeAtAlloc(Unsafe.SizeOf<PoolSlot<T>>());
-                    this.array.Expand(this.core.Length);
+                    var result = this.core.ExpandAndAlloc(Unsafe.SizeOf<PoolSlot<T>>());
+                    if (0 < result.Need) { this.array.Expand(result.Need); }
+                    index = result.Index;
                 }
-                var index = this.core.Alloc();
                 return this.array.Alloc(index);
             }
 
-            /// <summary>Allocates a slot initialized with the specified value and returns its unique identifier.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
-            public Pool.Id Alloc(in T value)
-            {
-                if (this.core.IsUsedUp)
-                {
-                    this.core.ExpandBasedOnItemSizeAtAlloc(Unsafe.SizeOf<PoolSlot<T>>());
-                    this.array.Expand(this.core.Length);
-                }
-                var index = this.core.Alloc();
-                return this.array.Alloc(index, in value);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
-            protected int AllocCore<HOT>(ref HOT[] hotArray) // 派生クラス向けの処理...ここで書きたくない...
-            {
-                if (this.core.IsUsedUp)
-                {
-                    this.core.ExpandBasedOnItemSizeAtAlloc(Unsafe.SizeOf<PoolSlot<T>>() + Unsafe.SizeOf<HOT>());
-                    this.array.Expand(this.core.Length);
-                    Pool.Expand(ref hotArray, this.core.Length);
-                }
-                return this.core.Alloc();
-            }
-
             /// <summary>Safely releases the slot associated with the specified identifier back to the pool.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Free(Pool.Id id)
             {
                 if (!IsValid(id)) { return; }
@@ -413,7 +383,6 @@ namespace Omochaya
             }
 
             /// <summary>Releases the slot at the raw index back to the pool without identifier validation.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void UnsafeFree(int index)
             {
                 this.array.Free(index);
@@ -421,7 +390,7 @@ namespace Omochaya
             }
 
             /// <summary>Determines whether the specified identifier is valid within the underlying slot array.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public bool IsValid(Pool.Id id) => this.array.IsValid(id);
 
             /// <summary>Gets a reference to the element associated with the valid identifier.</summary>
@@ -445,7 +414,7 @@ namespace Omochaya
             /// pool.Get(id).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public ref T Get(Pool.Id id) => ref this.array.Get(id);
 
             /// <summary>Gets a direct reference to the element at the raw index without identifier validation.</summary>
@@ -469,50 +438,24 @@ namespace Omochaya
             /// pool.UnsafeGet(index).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public ref T UnsafeGet(int index) => ref this.array.UnsafeGet(index);
 
             /// <summary>Retrieves the identifier corresponding to the raw index from the underlying slot array.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public Pool.Id UnsafeGetId(int index) => this.array.UnsafeGetId(index);
 
             /// <summary>Advances the generation age of the slot associated with the specified identifier.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Reborn(Pool.Id id) => this.array.Reborn(id);
 
             /// <summary>Advances the generation age of the slot at the raw index without validation.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void UnsafeReborn(int index) => this.array.UnsafeReborn(index);
-
-            /// <summary>Expands the pool capacity to the specified length if it exceeds the current capacity.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Expand(int length)
-            {
-                if (Length < length)
-                {
-                    this.core.ExpandArray(length);
-                    this.array.Expand(length);
-                }
-                else { Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, Length, length)); }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            protected void ExpandCore<HOT>(ref HOT[] hotArray, int length) // 派生クラス向けの処理...ここで書きたくない...けどパッと見で差分がわかり易くない？
-            {
-                if (Length < length)
-                {
-                    this.core.ExpandArray(length);
-                    this.array.Expand(length);
-                    Pool.Expand(ref hotArray, length);
-                }
-                else { Dev.LogWarning(string.Format(Messages.Warnings.WarmupOnly, Length, length)); }
-            }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             public int ActiveCount => this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
-            public int WorstCount { get; set; }
+            public int WorstCount => this.core.WorstCount;
             /// <summary>Don't touch! Only for system.</summary>
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
             /// <summary>Don't touch! Only for system.</summary>
@@ -521,6 +464,10 @@ namespace Omochaya
             public abstract int TotalBytes { get; }
             /// <summary>Don't touch! Only for system.</summary>
             protected int ArraySize => this.array.ArraySize + this.core.ArraySize;
+
+            [Obsolete("このメソッドは廃止されました。代わりに Get(Alloc()) = value を使用してください。", true)]
+            public Pool.Id Alloc(in T value)
+                => throw new NotSupportedException();
 #endif
         }
 
@@ -537,26 +484,30 @@ namespace Omochaya
 
             // methods
 
+            /// <summary>Expands both the hot and cool data arrays to the specified count.</summary>
+            public new void Expand(int count)
+            {
+                if (this.core.TryExpand(count))
+                {
+                    Pool.Expand(ref this.hotArray, count);
+                    this.array.Expand(count); // for cool
+                }
+            }
+
             /// <summary>Allocates a slot and returns its identifier, splitting management into hot and cool data arrays.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
             public new Pool.Id Alloc()
             {
-                var index = AllocCore(ref this.hotArray);
+                if (!this.core.TryAllocFast(out int index))
+                {
+                    var result = this.core.ExpandAndAlloc(Unsafe.SizeOf<HOT>() + Unsafe.SizeOf<PoolSlot<COOL>>());
+                    Pool.Expand(ref this.hotArray, result.Need);
+                    this.array.Expand(result.Need); // for cool
+                    index = result.Index;
+                }
                 return this.array.Alloc(index);
             }
 
-            /// <summary>Allocates a slot, initializes both its hot and cool elements, and returns its unique identifier.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
-            public Pool.Id Alloc(in HOT hot, in COOL cool)
-            {
-                var index = AllocCore(ref this.hotArray);
-                var ret = this.array.Alloc(index, in cool);
-                this.hotArray[index] = hot;
-                return ret;
-            }
-
             /// <summary>Safely releases the slot and resets its associated hot and cool elements using the given identifier.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public new void Free(Pool.Id id)
             {
                 if (!IsValid(id)) { return; }
@@ -564,7 +515,6 @@ namespace Omochaya
             }
 
             /// <summary>Releases the slot at the raw index without validation, resetting its hot and cool data.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public new void UnsafeFree(int index)
             {
                 base.UnsafeFree(index);
@@ -592,7 +542,7 @@ namespace Omochaya
             /// pool.Get(id).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public new ref HOT Get(Pool.Id id)
             {
                 Dev.Assert(IsValid(id));
@@ -620,7 +570,7 @@ namespace Omochaya
             /// pool.UnsafeGet(index).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public new ref HOT UnsafeGet(int index) => ref this.hotArray[index];
 
             /// <summary>Gets a reference to the cool data associated with the specified identifier.</summary>
@@ -644,7 +594,7 @@ namespace Omochaya
             /// pool.Get2(id).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public ref COOL Get2(Pool.Id id) => ref base.Get(id);
 
             /// <summary>Gets a direct reference to the cool data associated at the raw index without identifier validation.</summary>
@@ -668,16 +618,16 @@ namespace Omochaya
             /// pool.UnsafeGet2(index).Value = 20;
             /// </code>
             /// </example>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public ref COOL UnsafeGet2(int index) => ref base.UnsafeGet(index);
-
-            /// <summary>Expands both the hot and cool data arrays to the specified length.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public new void Expand(int length) => ExpandCore(ref this.hotArray, length);
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             protected new int ArraySize => base.ArraySize + Unsafe.SizeOf<COOL>() * (ActiveCount + FreeCount);
+
+            [Obsolete("このメソッドは廃止されました。代わりに var id = Alloc(); Get(id) = hot; Get2(id) = cool; を使用してください。", true)]
+            public Pool.Id Alloc(in HOT hot, in COOL cool)
+                => throw new NotSupportedException();
 #endif
         }
 
@@ -686,102 +636,189 @@ namespace Omochaya
         // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 
+        /// <summary>Don't touch! Only for system.</summary>
         // プールのコア機能。
         // 要素の確保と解放、ロック管理を担当する。
         // IDのうちIndexを管理し、必要に応じてプールの拡張も行う。
-        struct PoolCore
+        internal struct PoolCore
         {
+            // inner classes
+
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly struct Result
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                internal readonly int Need;
+                /// <summary>Don't touch! Only for system.</summary>
+                internal readonly int Index;
+                /// <summary>Don't touch! Only for system.</summary>
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+                internal Result(int need, int index) { this.Need = need; this.Index = index; }
+            }
+
             // fields
 
             int[] nextFree;
             int freeHead;
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             int useCount;
+            int worstCount;
+#endif
 
             // properties
 
-            /// <summary>Gets the total capacity of the internal free-list array.</summary>
-            public int Length
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly bool IsValid
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+                get => this.nextFree != null;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly int Count
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
                 get => this.nextFree?.Length ?? 0;
             }
 
-            /// <summary>Gets a value indicating whether all allocated slots have reached their usage maximum.</summary>
-            public bool IsUsedUp
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => this.nextFree == null || this.freeHead == -1;
-            }
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly int ActiveCount => this.useCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly int WorstCount => this.worstCount;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly int TotalCount => this.nextFree?.Length ?? 0;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal readonly int ArraySize => Unsafe.SizeOf<int>() * TotalCount;
+#endif
 
             // methods
 
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 呼び出し頻度が低いのでインライン化の判断はコンパイラに任せる
-            void MakeLink(int oldLength)
+            // *************************************************************
+            // *** フリーリストをジェネリクスさせずに切り分けているのは、
+            // *** この MakeLinkをブロートさせないため。
+            // *** 切り分けた以上、Core の呼び出しは最小限になるように実装すること。
+            // *************************************************************
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // MakeLink使用メソッドを NoInlining にしているのでここは Aggressive でもいいが...コンパイラに任せる
+            void MakeLink(int oldCount)
             {
-                var newLength = this.nextFree.Length;
-                for (var i = oldLength; i < newLength-1; ++i) { this.nextFree[i] = i + 1; }
-                this.nextFree[newLength - 1] = this.freeHead;
-                this.freeHead = oldLength;
+                var newCount = this.nextFree.Length;
+                for (var i = oldCount; i < newCount-1; ++i) { this.nextFree[i] = i + 1; }
+                this.nextFree[newCount - 1] = this.freeHead;
+                this.freeHead = oldCount;
             }
 
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 呼び出し頻度が低いのでインライン化の判断はコンパイラに任せる
-            void CreateArray(int itemSize)
-            {
-                this.freeHead = -1;
-                Pool.CreateBasedOnItemSize(ref this.nextFree, itemSize);
-                MakeLink(0);
-            }
-
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 呼び出し頻度が低いのでインライン化の判断はコンパイラに任せる
-            void ExpandArrayBasedOnItemSize(int itemSize)
-            {
-                var oldLength = this.nextFree.Length;
-                Pool.ExpandBasedOnItemSize(ref this.nextFree, itemSize);
-                MakeLink(oldLength);
-            }
-
-            /// <summary>Expands the free-list array to the specified capacity.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void ExpandArray(int newLength)
-            {
-                if (this.nextFree == null) { this.freeHead = -1; }
-                var oldLength = Length;
-                Pool.Expand(ref this.nextFree, newLength);
-                MakeLink(oldLength);
-            }
-
-            /// <summary>Expands the free-list array automatically when an allocation occurs and capacity is exhausted.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
-            public void ExpandBasedOnItemSizeAtAlloc(int itemSize)
-            {
-                if (this.nextFree == null) { CreateArray(itemSize); }
-                else { ExpandArrayBasedOnItemSize(itemSize); }
-            }
-
-            /// <summary>Allocates a raw index from the free-list head.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public int Alloc()
-            {
-                var index = this.freeHead;
-                this.freeHead = this.nextFree[index];
-                this.useCount++;
-                return index;
-            }
-
-            /// <summary>Returns the specified index back to the free-list.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Free(int index)
+            /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（メソッド呼び出しと大差ないはず）
+            internal void Free(int index)
             {
                 this.nextFree[index] = this.freeHead;
                 this.freeHead = index;
-                this.useCount--;
-            }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            public readonly int ActiveCount => this.useCount;
-            public readonly int TotalCount => this.nextFree?.Length ?? 0;
-            public readonly int ArraySize => Unsafe.SizeOf<int>() * TotalCount;
+                this.useCount--;
 #endif
+
+            }
+
+#if !STORY_NO_PRE_CAPACITY
+            /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.NoInlining)] // !!! ジェネリクスによるコードブロート防止のため明示的にインライン化しない !!!
+            internal void FirstAlloc(int count)
+            {
+                this.freeHead = -1;
+                this.nextFree = new int[count];
+                MakeLink(0);
+
+                this.freeHead = 1;
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                this.useCount = 1;
+                this.worstCount = 1;
+#endif
+            }
+#endif
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // （速度優先のためこのインライン化だけは許容...）
+            internal bool TryAllocFast(out int index)
+            {
+                index = this.freeHead;
+                if (this.nextFree != null && index != -1)
+                {
+                    this.freeHead = this.nextFree[index];
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                    this.useCount++;
+                    this.worstCount = Mathf.Max(this.worstCount, this.useCount);
+#endif
+                    return true;
+                }
+                return false;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.NoInlining)] // !!! ジェネリクスによるコードブロート防止のため明示的にインライン化しない !!!
+            internal Result ExpandAndAlloc(int itemSize)
+            {
+                int need;
+
+                // expand
+                if (this.nextFree == null)
+                {
+                    need = Pool.GetNeedCountAtCreate(itemSize);
+                    this.freeHead = -1;
+                    this.nextFree = new int[need];
+                    MakeLink(0);
+                }
+                else
+                {
+                    need = Pool.GetNeedCountAtExpand(this.nextFree.Length, itemSize);
+                    var oldCount = this.nextFree.Length;
+                    Dev.Assert(oldCount < need);
+                    System.Array.Resize(ref this.nextFree, need);
+                    MakeLink(oldCount);
+                }
+
+                // alloc
+                var index = this.freeHead;
+                this.freeHead = this.nextFree[index];
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                this.useCount++;
+                this.worstCount = Mathf.Max(this.worstCount, this.useCount);
+#endif
+
+                return new(need, index);
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [MethodImpl(MethodImplOptions.NoInlining)] // !!! ジェネリクスによるコードブロート防止のため明示的にインライン化しない !!!
+            internal bool TryExpand(int count)
+            {
+                Dev.Assert(0 < count);
+                if (this.nextFree == null)
+                {
+                    this.freeHead = -1;
+                    this.nextFree = new int[count];
+                    MakeLink(0);
+                }
+                else
+                {
+                    var oldCount = this.nextFree.Length;
+
+                    if (count <= oldCount)
+                    {
+                        Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, oldCount, count));
+                        return false;
+                    }
+
+                    System.Array.Resize(ref this.nextFree, count);
+                    MakeLink(oldCount);
+                }
+
+                return true;
+            }
         }
 
         // プールのスロット。
@@ -797,24 +834,15 @@ namespace Omochaya
             // methods
 
             /// <summary>Allocates a new identifier at the specified index and increments its generation age.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public Pool.Id Alloc(int index)
             {
                 if (Age == 0) { Age = 1; }
                 return new Pool.Id(index, Age);
             }
 
-            /// <summary>Allocates a new identifier at the specified index, initializes its value, and increments its age.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Pool.Id Alloc(int index, in T value)
-            {
-                if (Age == 0) { Age = 1; }
-                Value = value;
-                return new Pool.Id(index, Age);
-            }
-
             /// <summary>Clears the slot value and advances its age to invalidate existing identifiers.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public void Free()
             {
                 Value = default;
@@ -822,7 +850,7 @@ namespace Omochaya
             }
 
             /// <summary>Forcibly advances the generation age of this slot, skipping zero to ensure continuous validity.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public void Reborn() { if (++Age == 0) { Age = 1; } }
         }
 
@@ -846,20 +874,26 @@ namespace Omochaya
 
             // methods
 
+            /// <summary>Expands the unmanaged　pool capacity to the specified count if it exceeds the current capacity.</summary>
+            public void Expand(int count)
+            {
+                if (this.core.TryExpand(count)) { Pool.Expand(ref this.array, count); }
+            }
+
             /// <summary>Allocates a raw index from the unmanaged pool without age verification.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる（Alloc(in T)で呼ばれるので悩ましい）
             public int Alloc()
             {
-                if (this.core.IsUsedUp)
+                if (!this.core.TryAllocFast(out int index))
                 {
-                    this.core.ExpandBasedOnItemSizeAtAlloc(Unsafe.SizeOf<T>());
-                    Pool.Expand(ref this.array, this.core.Length);
+                    var result = this.core.ExpandAndAlloc(Unsafe.SizeOf<T>());
+                    if (0 < result.Need) { Pool.Expand(ref this.array, result.Need); }
+                    index = result.Index;
                 }
-                return this.core.Alloc();
+                return index;
             }
 
             /// <summary>Allocates a raw index and assigns the specified value without age verification.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)] // 基本的にラップされて呼び出される（つまりT毎に1箇所からしか呼び出されない）のでここはインライン展開のほうがコードサイズ的にも有利になると判断。
             public int Alloc(in T value)
             {
                 var ret = Alloc();
@@ -868,7 +902,7 @@ namespace Omochaya
             }
 
             /// <summary>Releases the unmanaged slot at the specified index back to the pool.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 仮想メソッド
             public void Free(int index)
             {
                 this.array[index] = default;
@@ -876,13 +910,13 @@ namespace Omochaya
             }
 
             /// <summary>Gets a reference to the unmanaged data at the raw index.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
             public ref T Get(int index) => ref this.array[index];
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             public string Name => Dev.Type<T>.Name;
             public int ActiveCount => this.core.ActiveCount;
-            public int WorstCount { get; set; }
+            public int WorstCount => this.core.WorstCount;
             public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
             public string PoolName => Dev.HiddenPool<T>.Name;
             public int TotalBytes => ArraySize + Unsafe.SizeOf<UnsafePool<T>>();
@@ -898,7 +932,6 @@ namespace Omochaya
         }
 
         // やめとこう...
-//         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
 //         public static ref T UnsafeGet<T>(this T[] array, int index) where T : struct
 //         {
 // #if NET_5_0_OR_GREATER || NET_COREAPP // 将来、Unityが CoreCLR（.NETモダンAPI）に完全移行した時のため

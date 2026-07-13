@@ -9,7 +9,7 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
@@ -183,14 +183,6 @@ namespace Omochaya.HiddenStory
             }
 
             // --- これ以降はプレイ中かつ動いている時のみ実行される ---
-
-            foreach (var monitor in IPoolMonitorForDebug.Monitors)
-            {
-                if (monitor != null)
-                {
-                    monitor.WorstCount = Mathf.Max(monitor.WorstCount, monitor.ActiveCount);
-                }
-            }
 
             this.displayList.Clear();
             this.displayList.AddRange(IPoolMonitorForDebug.Monitors.Where(m => m != null));

@@ -36,7 +36,8 @@ namespace Omochaya.HiddenStory
 
         // const
 
-        const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
+        /// <summary>Don't touch! Only for system.</summary>
+        internal const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
 
         /// <summary>Don't touch! Only for system.</summary>
         internal const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
@@ -66,14 +67,17 @@ namespace Omochaya.HiddenStory
         internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
         /// <summary>Don't touch! Only for system.</summary>
         internal bool HasValidResult;
+        Story.CancelMode defaultCancelMode;
+        /// <summary>Don't touch! Only for system.</summary>
+        internal bool IsCanceled;
 
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal bool HasValues
+        internal bool IsPrepared
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.manualBand.HasValues;
+            get => this.manualBand.IsValid;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -87,6 +91,46 @@ namespace Omochaya.HiddenStory
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref this.bandArray[0];
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode DefaultCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.defaultCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(!IsPrepared, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+                Dev.Assert(value != Story.CancelMode.DontThrow, Messages.Exceptions.CannotSetDontThrowAsDefault);
+                this.defaultCancelMode = value;
+            }
+        }
+
+#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR // テストで使用するので STORY_NO_DEBUG でも UNITY_EDITOR なら有効。
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode DefaultCancelModeForDebug
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(value != Story.CancelMode.DontThrow, Messages.Exceptions.CannotSetDontThrowAsDefault);
+                this.defaultCancelMode = value;
+            }
+        }
+#endif
+
+        /// <summary>Don't touch! Only for system.</summary>
+        internal Story.CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetRunningInfo().TaskCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                Dev.Assert(IsRunningValid, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
+                if (IsRunningValid) { GetRunningInfo().TaskCancelMode = value; }
+            }
         }
 
         // constructors
@@ -106,7 +150,7 @@ namespace Omochaya.HiddenStory
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var id = pool.Alloc();
             var offset = this.manualBand.Add(id.Index);
-            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset);
+            pool.UnsafeGet(id.Index).Entry(in stateMachine, offset, this.defaultCancelMode);
             pool.UnsafeGet2(id.Index).Entry(id.Index);
             FrameCheck();
             return new Story.Task(id);
@@ -129,7 +173,7 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Custom(int bandCount, int taskCount , bool warning = true)
         {
-            if (TaskManager.Shared.HasValues)
+            if (TaskManager.Shared.IsPrepared)
             {
                 if (warning) { Dev.LogWarning(Messages.Warnings.CannotCustomizeAfterStart); }
                 return;
@@ -401,8 +445,15 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
                 if (topInfo.ShouldCancel)
                 {
+                    // 即消失
+                    if (topInfo.TaskCancelMode == Story.CancelMode.Drop)
+                    {
+                        // 有効な結果は受け取れない
+                        HasValidResult = false;
+                        CaptureResult();
+                    }
                     // 使用中のみ
-                    if (topInfo.IsStarted)
+                    else if (topInfo.IsStarted)
                     {
                         // キャンセル要求を下ろしてピン留め
                         topInfo.WillCancel = false;
@@ -474,6 +525,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             topInfo.IsRunning = true; // InvokeCore の後で見て下ろす
             var parentIndex = this.runningIndex;
             this.runningIndex = topIndex;
+            IsCanceled = false;
             topInfo.Run();
             this.runningIndex = parentIndex;
             // topInfo.IsRunning / this.runningException != null
@@ -731,7 +783,11 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             {
                 this.runningException = null;
                 // ここで投げた例外は（利用者に握りつぶされなければ）SetException で受け取る
-                if (e == CanceledException.Shared) { throw e; }
+                if (e == CanceledException.Shared)
+                {
+                    IsCanceled = true;
+                    if (TaskCancelMode == Story.CancelMode.Safe) { throw e; }
+                }
                 else { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw(); }
             }
         }
@@ -789,22 +845,17 @@ Dev.LoopBreak.Check(task.ToString());
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
-        internal int ManualTopCount => this.manualBand.Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int AutoTopCount => this.bandArray[0].Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int LateTopCount => this.bandArray[1].Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        internal int FixedTopCount => this.bandArray[2].Count;
+        internal int BandCountForDebug() => this.bandArray.Length;
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal int ManualIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
+        internal int TopCountForDebug() => this.manualBand.Count;
         /// <summary>Don't touch! Only for system.</summary>
-        internal int AutoIndexForDebug(int rawOffset) => this.bandArray[0][rawOffset].Index;
+        internal int TopCountForDebug(int bandNo) => this.bandArray[bandNo].Count;
+
         /// <summary>Don't touch! Only for system.</summary>
-        internal int LateIndexForDebug(int rawOffset) => this.bandArray[1][rawOffset].Index;
+        internal int TopIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
         /// <summary>Don't touch! Only for system.</summary>
-        internal int FixedIndexForDebug(int rawOffset) => this.bandArray[2][rawOffset].Index;
+        internal int TopIndexForDebug(int bandNo, int rawOffset) => this.bandArray[bandNo][rawOffset].Index;
 #endif
     }
 }

@@ -48,6 +48,47 @@ namespace Omochaya
     */
     public static partial class Story
     {
+        /// <summary>Specifies the behavior of a task when a cancellation is requested.</summary>
+        public enum CancelMode
+        {
+            /// <summary>Throws an exception upon cancellation to ensure finally blocks are executed.</summary>
+            // 例外を投げて finally を実行
+            Safe,
+
+            /// <summary>Suppresses the cancellation exception to allow manual branching via the IsCanceled flag.</summary>
+            // 例外を投げず、IsCanceled フラグで分岐
+            DontThrow,
+
+            /// <summary>Silently discards the task without throwing an exception or executing finally blocks.</summary>
+            // 何もせずタスクを消失させる (ForceCancel)
+            Drop
+        }
+
+        /// <summary>Gets or sets the global default cancellation behavior for newly created tasks.</summary>
+        public static CancelMode DefaultCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.DefaultCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => TaskManager.Shared.DefaultCancelMode = value;
+        }
+
+        /// <summary>Gets or sets the cancellation behavior specifically for the currently executing task.</summary>
+        public static CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.TaskCancelMode;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => TaskManager.Shared.TaskCancelMode = value;
+        }
+
+        /// <summary>Gets a value indicating whether the currently executing task has been canceled.</summary>
+        public static bool IsCanceled
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.IsCanceled;
+        }
+
         /// <summary>The default number of execution bands (Auto, Late, and Fixed) allocated for the task manager.</summary>
         public const int DEFAULT_BAND_COUNT = 3;
 
@@ -60,7 +101,14 @@ namespace Omochaya
 
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Custom(int bandCount = DEFAULT_BAND_COUNT, int taskCount = DEFAULT_TASK_COUNT) => TaskManager.Shared.Custom(bandCount, taskCount);
+        public static void Custom(
+            int bandCount = DEFAULT_BAND_COUNT,
+            int taskCount = DEFAULT_TASK_COUNT,
+            Story.CancelMode defaultCancelMode = Story.CancelMode.Safe)
+        {
+            DefaultCancelMode = defaultCancelMode;
+            TaskManager.Shared.Custom(bandCount, taskCount);
+        }
 
         /// <summary>Drives the global task manager loop forward, executing all registered automated tasks for the current frame.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -170,11 +218,11 @@ namespace Omochaya
             }
 
             /// <summary>Registers the task to the automation loop using its pre-assigned owner component.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Start() => TaskManager.Shared.Boot(this);
 
             /// <summary>Explicitly releases and cancels the task, recycling its resources.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Stop()
             {
                 if (IsEmpty) { return; }
@@ -182,7 +230,7 @@ namespace Omochaya
             }
 
             /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.Info().Keep(owner);
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
@@ -194,7 +242,7 @@ namespace Omochaya
             }
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
                 if (IsEmpty) { return false; }
@@ -204,15 +252,6 @@ namespace Omochaya
             /// <summary>Determines whether this task matches the specified task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Matches(Task a) => this.Id.Matches(a.Id);
-
-            /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Warmup(int length = 0)
-            {
-                ref var info = ref this.Info();
-                Dev.Assert(info.IsValid);
-                if (0 < length) { info.Warmup(length); }
-            }
 
             /// <summary>Creates a task handle directly from a raw pool index without validation.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -324,7 +363,7 @@ namespace Omochaya
 
             /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Warmup(int length) => this.rawTask.Warmup(length);
+            public void Warmup(int count = 0) => this.rawTask.Warmup(count);
 
             // for awaiter（利用者による呼び出し禁止）
 
@@ -440,6 +479,7 @@ namespace Omochaya.HiddenStory
     using System;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Text;
     using UnityEngine;
 
     static class Extensions
@@ -486,6 +526,8 @@ namespace Omochaya.HiddenStory
             IsPinned = 1 << 3,
             IsRunning = 1 << 4,
             WillCancel = 1 << 5,
+            CancelMode0 = 1 << 6,
+            CancelMode1 = 1 << 7,
         }
 
         // fields
@@ -560,6 +602,31 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        public Story.CancelMode TaskCancelMode
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            readonly get
+            {
+                switch (this.flags & (Flags.CancelMode0|Flags.CancelMode1))
+                {
+                    case Flags.CancelMode0: return Story.CancelMode.DontThrow;
+                    case Flags.CancelMode1: return Story.CancelMode.Drop;
+                    default: return Story.CancelMode.Safe;
+                }
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                this.flags &= ~(Flags.CancelMode0|Flags.CancelMode1);
+                switch (value)
+                {
+                    case Story.CancelMode.DontThrow: this.flags |= Flags.CancelMode0; break;
+                    case Story.CancelMode.Drop: this.flags |= Flags.CancelMode1; break;
+                }
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
         public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -597,11 +664,12 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Entry(in StateMachine stateMachine, int offset)
+        public void Entry(in StateMachine stateMachine, int offset, Story.CancelMode taskCancelMode)
         {
             this.stateMachine = stateMachine;
             IsValid = true;
             Offset = offset;
+            TaskCancelMode = taskCancelMode;
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -633,11 +701,12 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Warmup(int length) => this.stateMachine.Warmup(length);
+        public void Warmup(int count) => this.stateMachine.Warmup(count);
 
         /// <summary>Don't touch! Only for system.</summary>
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-        public string GetMethodName() => Dev.ToString(this.stateMachine.pool);
+        public StringBuilder GetMethodName(StringBuilder sb) => Dev.ToString(sb, this.stateMachine.pool);
+        public string GetMethodName() => GetMethodName(new StringBuilder()).ToString();
 #else
         public string GetMethodName() => string.Empty;
 #endif
@@ -673,7 +742,7 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public long SortKeyForDebug;
         /// <summary>Don't touch! Only for system.</summary>
-        public string StateForDebug;
+        public string CreationTraceForDebug;
 #endif
 
         // properties
@@ -695,6 +764,54 @@ namespace Omochaya.HiddenStory
         {
             this.IsValid = true;
             this.Next = this.Prev = index;
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            if (Omochaya.HiddenStory.Dev.EnableTaskTracking)
+            {
+                var st = new System.Diagnostics.StackTrace(3, true);
+                var sb = new System.Text.StringBuilder(2048);
+                for (int i = 0; i < st.FrameCount; i++)
+                {
+                    var frame = st.GetFrame(i);
+                    var fileName = frame.GetFileName();
+                    
+                    if (string.IsNullOrEmpty(fileName)) continue;
+
+                    var method = frame.GetMethod();
+                    var typeName = method.DeclaringType != null ? method.DeclaringType.FullName : "Unknown";
+                    var line = frame.GetFileLineNumber();
+
+                    var displayPath = fileName.Replace('\\', '/');
+                    var assetsIndex = displayPath.IndexOf("Assets/");
+                    var packagesIndex = displayPath.IndexOf("Packages/");
+
+                    if (assetsIndex >= 0) displayPath = displayPath.Substring(assetsIndex);
+                    else if (packagesIndex >= 0) displayPath = displayPath.Substring(packagesIndex);
+
+                    // ★ UI Toolkit専用の <link> タグを使用。IDに「絶対パス:行番号」を仕込む
+                    sb.Append("<link=\"")
+                      .Append(fileName)
+                      .Append(":")
+                      .Append(line)
+                      .Append("\"><u>")
+                      .Append(typeName)
+                      .Append(":")
+                      .Append(method.Name)
+                      .Append("() (at ")
+                      .Append(displayPath)
+                      .Append(":")
+                      .Append(line)
+                      .Append(")</u></link>")
+                      .AppendLine();
+                }
+
+                CreationTraceForDebug = sb.ToString();
+            }
+            else
+            {
+                CreationTraceForDebug = null;
+            }
+
+#endif
         }
 
         /// <summary>Don't touch! Only for system.</summary>

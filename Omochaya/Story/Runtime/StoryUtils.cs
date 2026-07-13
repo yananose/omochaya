@@ -45,10 +45,18 @@ namespace Omochaya
         public static Task WaitTime(float seconds) => WaitTimeCore(new WaitTimeHandle(seconds));
 
         /// <summary>Provides the internal asynchronous loop for time-based waiting using a custom wait handle.</summary>
-        public static async Task WaitTimeCore(WaitTimeHandle handle) { while (handle.IsBusy()) { await Yield; } }
+        public static async Task WaitTimeCore(WaitTimeHandle handle)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (handle.IsBusy()) { await Yield; }
+        }
 
         /// <summary>Provides the internal asynchronous loop for time-based waiting until the specified end time is reached.</summary>
-        public static async Task WaitTimeCore(double end) { while (WaitTimeHandle.IsBusy(end)) { await Yield; } }
+        public static async Task WaitTimeCore(double end)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (WaitTimeHandle.IsBusy(end)) { await Yield; }
+        }
 
         /// <summary>Represents a handle used to track a time-based wait operation without allocations.</summary>
         public readonly struct WaitTimeHandle
@@ -92,10 +100,18 @@ namespace Omochaya
         public static Task WaitTimeUnscaled(float seconds) => WaitTimeUnscaledCore(new WaitTimeUnscaledHandle(seconds));
 
         /// <summary>Provides the internal asynchronous loop for unscaled time-based waiting using a custom wait handle.</summary>
-        public static async Task WaitTimeUnscaledCore(WaitTimeUnscaledHandle handle) { while (handle.IsBusy()) { await Yield; } }
+        public static async Task WaitTimeUnscaledCore(WaitTimeUnscaledHandle handle)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (handle.IsBusy()) { await Yield; }
+        }
 
         /// <summary>Provides the internal asynchronous loop for unscaled time-based waiting until the specified unscaled end time is reached.</summary>
-        public static async Task WaitTimeUnscaledCore(double end) { while (WaitTimeUnscaledHandle.IsBusy(end)) { await Yield; } }
+        public static async Task WaitTimeUnscaledCore(double end)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (WaitTimeUnscaledHandle.IsBusy(end)) { await Yield; }
+        }
 
         /// <summary>Represents a handle used to track an unscaled time-based wait operation without allocations.</summary>
         public readonly struct WaitTimeUnscaledHandle
@@ -138,10 +154,18 @@ namespace Omochaya
         public static Task WaitFrame(int frames) => WaitFrameCore(new WaitFrameHandle(frames));
 
         /// <summary>Provides the internal asynchronous loop for frame-based waiting using a custom wait handle.</summary>
-        public static async Task WaitFrameCore(WaitFrameHandle handle) { while (handle.IsBusy()) { await Yield; } }
+        public static async Task WaitFrameCore(WaitFrameHandle handle)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (handle.IsBusy()) { await Yield; }
+        }
 
         /// <summary>Provides the internal asynchronous loop for frame-based waiting until the specified end frame index is reached.</summary>
-        public static async Task WaitFrameCore(int end) { while (Time.frameCount < end) { await Yield; } }
+        public static async Task WaitFrameCore(int end)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (Time.frameCount < end) { await Yield; }
+        }
 
         /// <summary>Represents a handle used to track a frame-based wait operation without allocations.</summary>
         public readonly struct WaitFrameHandle
@@ -180,6 +204,7 @@ namespace Omochaya
         /// </remarks>
         public static async Task WaitUntil<T>(T args, Func<T, bool> condition)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (!condition(args)) { await Yield; }
         }
 
@@ -193,6 +218,7 @@ namespace Omochaya
         /// </remarks>
         public static async Task WaitWhile<T>(T args, Func<T, bool> condition)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (condition(args)) { await Yield; }
         }
 
@@ -204,6 +230,7 @@ namespace Omochaya
         /// </remarks>
         public static async Task With(this Task self, Task other)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (true)
             {
                 if (!self.MoveNext())
@@ -222,6 +249,7 @@ namespace Omochaya
         /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
         public static async Task With(this Task a, Task b, Task c)
         {
+            TaskCancelMode = CancelMode.Drop;
             while ( // 面倒なので終わったタスクへの無駄な IsValid は許容する
                 a.MoveNext() | // || じゃないよ
                 b.MoveNext() |
@@ -231,11 +259,66 @@ namespace Omochaya
         /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
         public static async Task With(this Task a, Task b, Task c, Task d)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (
                 a.MoveNext() |
                 b.MoveNext() |
                 c.MoveNext() |
                 d.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f, Task g)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext() |
+                g.MoveNext()) { await Yield; }
+        }
+
+        /// <summary>Creates a task that will complete when both the current task and the specified task have completed.</summary>
+        public static async Task With(this Task a, Task b, Task c, Task d, Task e, Task f, Task g, Task h)
+        {
+            TaskCancelMode = CancelMode.Drop;
+            while (
+                a.MoveNext() |
+                b.MoveNext() |
+                c.MoveNext() |
+                d.MoveNext() |
+                e.MoveNext() |
+                f.MoveNext() |
+                g.MoveNext() |
+                h.MoveNext()) { await Yield; }
         }
 
         /// <summary>Executes the current task until the specified interrupting task completes.</summary>
@@ -246,6 +329,7 @@ namespace Omochaya
         /// </remarks>
         public static async Task Until(this Task a, Task b)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (true)
             {
                 if (!a.MoveNext()) { b.Stop(); return; }
@@ -257,6 +341,7 @@ namespace Omochaya
         /// <summary>Executes the current task until the specified interrupting task completes.</summary>
         public static async Task Until(this Task a, Task b, Task c)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (true)
             {
                 if (!a.MoveNext()) { b.Stop(); c.Stop(); return; }
@@ -269,6 +354,7 @@ namespace Omochaya
         /// <summary>Executes the current task until the specified interrupting task completes.</summary>
         public static async Task Until(this Task a, Task b, Task c, Task d)
         {
+            TaskCancelMode = CancelMode.Drop;
             while (true)
             {
                 if (!a.MoveNext()) { b.Stop(); c.Stop(); d.Stop(); return; }
@@ -282,12 +368,14 @@ namespace Omochaya
         /// <summary>Suspends the execution until any of the provided tasks complete, returning the result of the first completed task.</summary>
         public static async Task<R> Until<R>(this Task<R> a, Task<R> b)
         {
+            TaskCancelMode = CancelMode.DontThrow;
             var memory = PoolMemory.Alloc<R>();
             try
             {
                 await Until(
                     UntilResult(a, memory),
                     UntilResult(b, memory));
+                if (IsCanceled) { return default; }
                 // ここでは a も b も確実に終わっているハズ
                 return memory.Get<R>();
             }
@@ -298,6 +386,7 @@ namespace Omochaya
         }
         static async Task UntilResult<R>(Task<R> task, PoolMemory weakMemory)
         {
+            TaskCancelMode = CancelMode.Drop;
             var result = await task;
             weakMemory.Get<R>() = result;
         }
@@ -305,6 +394,7 @@ namespace Omochaya
         /// <summary>Suspends the execution until any of the provided tasks complete, returning the result of the first completed task.</summary>
         public static async Task<R> Until<R>(this Task<R> a, Task<R> b, Task<R> c)
         {
+            TaskCancelMode = CancelMode.DontThrow;
             var memory = PoolMemory.Alloc<R>();
             try
             {
@@ -312,6 +402,7 @@ namespace Omochaya
                     UntilResult(a, memory),
                     UntilResult(b, memory),
                     UntilResult(c, memory));
+                if (IsCanceled) { return default; }
                 return memory.Get<R>();
             }
             finally
@@ -323,6 +414,7 @@ namespace Omochaya
         /// <summary>Suspends the execution until any of the provided tasks complete, returning the result of the first completed task.</summary>
         public static async Task<R> Until<R>(this Task<R> a, Task<R> b, Task<R> c, Task<R> d)
         {
+            TaskCancelMode = CancelMode.DontThrow;
             var memory = PoolMemory.Alloc<R>();
             try
             {
@@ -331,6 +423,7 @@ namespace Omochaya
                     UntilResult(b, memory),
                     UntilResult(c, memory),
                     UntilResult(d, memory));
+                if (IsCanceled) { return default; }
                 return memory.Get<R>();
             }
             finally
@@ -353,6 +446,7 @@ namespace Omochaya
         // await other;
         public static async Task Then(this Task self, Task other)
         {
+            TaskCancelMode = CancelMode.Drop;
             TaskManager.Shared.TryKeep(ref other.Info());
             await self;
             await other;
@@ -367,6 +461,7 @@ namespace Omochaya
         // action(args);
         public static async Task Then<T>(this Task self, T args, Action<T> action)
         {
+            TaskCancelMode = CancelMode.Drop;
             await self;
             action(args);
         }

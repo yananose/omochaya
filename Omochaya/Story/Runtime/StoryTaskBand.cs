@@ -14,6 +14,8 @@
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 namespace Omochaya.HiddenStory
 {
+    using System.Runtime.CompilerServices;
+
     // interfaces
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -90,7 +92,7 @@ namespace Omochaya.HiddenStory
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal readonly bool HasValues => this.tops != null;
+        internal readonly bool IsValid => this.tops != null;
 
         /// <summary>Don't touch! Only for system.</summary>
         internal readonly int Count => this.count;
@@ -117,9 +119,19 @@ namespace Omochaya.HiddenStory
         internal int Add(int index)
         {
             var count = this.count;
-            if (this.tops == null) { Story.Pool.Create(ref this.tops); }
+            if (this.tops == null)
+            {
+                Story.Pool.Expand(
+                    ref this.tops,
+                    Story.Pool.GetNeedCountAtCreate(Unsafe.SizeOf<T>()));
+            }
             else if (0 < count && this.tops[count - 1].Index == -1) { count--; } // 最後が空いてたら入れる（頻度次第だが後で詰め直すよりここで判定したほうがマシなはず）
-            else if (count == this.tops.Length) { Story.Pool.Expand(ref this.tops); }
+            else if (count == this.tops.Length)
+            {
+                Story.Pool.Expand(
+                    ref this.tops,
+                    Story.Pool.GetNeedCountAtExpand(count, Unsafe.SizeOf<T>()));
+            }
             this.tops[count] = new T { Index = index };
             this.count = count + 1;
             return count | this.type;

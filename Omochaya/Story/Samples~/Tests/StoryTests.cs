@@ -6,6 +6,7 @@ namespace OmochayaTests
     using UnityEngine;
     using UnityEngine.TestTools;
     using Omochaya;
+    using Omochaya.HiddenStory;
 
     public class StoryTests
     {
@@ -18,8 +19,19 @@ namespace OmochayaTests
             // methods
             void Awake()
             {
-                Story.Warmup(1024); // システムプールの事前確保
-                Story.WaitTime(0f).Warmup(); // 専用プールの事前確保
+                // 【任意】キャンセルモードの指定
+                Story.DefaultCancelMode = Story.CancelMode.Safe;
+
+                // 【任意】一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
+                Story.Warmup(1024);
+
+                // 【任意】各タスクのプールの事前確保
+                using (Story.WarmupMode())
+                {
+                    // 使用するタスクのプールを事前確保する
+                    // ※Capacity属性が設定されていればそのサイズ、引数で上書きも可能
+                    Story.WaitTime(0f).Warmup();
+                }
             }
 
             void Update() 
@@ -74,6 +86,7 @@ namespace OmochayaTests
                 this.ownerObj = null;
                 this.owner = null;
             }
+            TaskManager.Shared.DefaultCancelModeForDebug = Story.CancelMode.Safe;
         }
 
         // ------------------------------------------------------------------------
@@ -84,8 +97,11 @@ namespace OmochayaTests
         public IEnumerator Task_コルーチンとの比較()
         {
             // 【Story専用】各タスクを Warmup することでプールを事前確保できます（任意）
-            StoryMain(null).Warmup();
-            StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
+            using (Story.WarmupMode())
+            {
+                StoryMain(null).Warmup();
+                StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
+            }
 
             // 記録帳
             var coroutineNote = new List<int>(1024);
@@ -400,7 +416,10 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_子タスクをawait中にキャンセルされた場合_親子両方のfinallyが実行されること()
         {
-            ChildTask().Warmup();
+            using (Story.WarmupMode())
+            {
+                ChildTask().Warmup();
+            }
 
             var parentFinally = false;
             var childFinally = false;
@@ -630,7 +649,10 @@ namespace OmochayaTests
         public IEnumerator Task_指定した実行バンドが変更されずに再開されること()
         {
             var executionStep = 0;
-            SubStory().Warmup();
+            using (Story.WarmupMode())
+            {
+                SubStory().Warmup();
+            }
 
             var fixedDeltaTime = Time.fixedDeltaTime;
             Time.fixedDeltaTime = 0.1f; // 検証用に FixedUpdate を 10 fpsにする
@@ -1021,7 +1043,10 @@ namespace OmochayaTests
             var hasCaughtException = false;
             var testException = new System.Exception("ExpectedTestException");
 
-            ThrowChildTask().Warmup(); // testException を参照するのでこの位置
+            using (Story.WarmupMode())
+            {
+                ThrowChildTask().Warmup(); // testException を参照するのでこの位置
+            }
 
             var task = ParentTask();
             task.Start(this.owner);
@@ -1090,7 +1115,7 @@ namespace OmochayaTests
             Assert.IsTrue(hasCaughtException, "キャンセルすると例外が発生しているはず");
             Assert.IsTrue(hasReachedNextLine, "キャンセルを握り潰すと到達しているはず");
 
-            // SIMPLE_CHECK 時に失敗することがある。Story.ThrowIfCancel(e) 内で例外を投げるので。
+            // SIMPLE_CHECK 時に失敗することがある。GoodCancelTask で例外を投げるので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1131,7 +1156,7 @@ namespace OmochayaTests
                     hasCaughtException = true; // 例外発生
                     // 握りつぶす
                     // // キャンセルだったら上に通す
-                    // Story.ThrowIfCancel(e);
+                    // if (Story.IsCanceledException(e)) { throw; }
                 }
 
                 hasReachedNextLine = true; // 握りつぶすとここまで到達してしまう
@@ -1249,7 +1274,10 @@ namespace OmochayaTests
         [UnityTest]
         public IEnumerator Task_親子のキャンセル時に子がfinally内でawaitすると_親の解放は子の完了を待つこと()
         {
-            ChildTask().Warmup();
+            using (Story.WarmupMode())
+            {
+                ChildTask().Warmup();
+            }
 
             var childFinallyCompleted = false;
             var parentFinallyCompleted = false;
@@ -1395,6 +1423,433 @@ namespace OmochayaTests
                     protectedReachedEnd = true; // 多重キャンセルされても必ずここに到達する！
                 }
             }
+        }
+
+        // ------------------------------------------------------------------------
+        // 解析・プロファイリング機能のテスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_ジェネリックタスクのCapacity属性が正しく適用されること()
+        {
+            // ジェネリックタスクを生成してプール（StateMachinePool<S>）の静的コンストラクタを走らせる
+            var task = GenericCapacityTask<int>();
+            task.Start(this.owner);
+
+            var monitors = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors;
+            if (0 < monitors.Count) // モニタがひとつも存在しない = 製品版同等のテスト
+            {
+                // モニターリストから対象のステートマシンプールを探す
+                // コンパイラ生成クラス名（<GenericCapacityTask>d__...）になるため Contains で判定
+                var monitor = monitors.Find(m => m != null && m.PoolName.Contains("GenericCapacityTask"));
+
+                Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+
+                // TotalCount = ActiveCount + FreeCount
+                var totalCapacity = monitor.ActiveCount + monitor.FreeCount;
+                Assert.IsTrue(totalCapacity >= 42, $"Capacity属性で指定したサイズ(42)以上が事前確保されているべき 実測: {totalCapacity}");
+            }
+
+            task.Stop();
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(42)]
+            async Story.Task GenericCapacityTask<T>() { await Story.Yield; }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_WorstCountが1フレーム内の生成スパイクを正確に記録すること()
+        {
+            var tasks = new List<Story.Task>();
+            
+            // 1フレーム内で一気にタスクを生成・起動する（スパイク）
+            for (int i = 0; i < 50; i++)
+            {
+                var t = SpikeTask();
+                t.Start(this.owner);
+                tasks.Add(t);
+            }
+
+            var monitors = Omochaya.HiddenStory.IPoolMonitorForDebug.Monitors;
+            if (0 < monitors.Count) // モニタがひとつも存在しない = 製品版同等のテスト
+            {
+                // エディタウィンドウ側の Update を跨がずに、即座にモニターを確認する
+                var monitor = monitors.Find(m => m != null && m.PoolName.Contains("SpikeTask"));
+                    
+                Assert.IsNotNull(monitor, "対象のプールモニターが見つかること");
+
+                // PoolCore/StateMachine.Core 側でリアルタイムにカウントアップされていれば、即座に最大値が反映されているはず
+                Assert.IsTrue(monitor.WorstCount >= 50, $"WorstCountは瞬間的なスパイク数(50)を正確に記録しているべき 実測: {monitor.WorstCount}");
+            }
+
+            // 後始末
+            foreach (var t in tasks) { t.Stop(); }
+            
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(100)]
+            async Story.Task SpikeTask() { await Story.Yield; }
+        }
+
+        // ------------------------------------------------------------------------
+        // キャンセルモード (CancelMode) の挙動テスト
+        // ------------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_Drop_キャンセル時に処理が消失しfinallyも実行されないこと()
+        {
+            var nextLineReached = false;
+            var finallyReached = false;
+
+            var task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Dropモードではawait以降の処理は実行されないべき");
+            Assert.IsFalse(finallyReached, "Dropモードではfinallyブロックも実行されないべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DropCancelTask()
+            {
+                Story.TaskCancelMode = Story.CancelMode.Drop;
+                try
+                {
+                    await Story.WaitTime(10f);
+                    nextLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_Drop_デフォルトがDropになっていること()
+        {
+            // Dropモードでテスト
+            if (Dev.IsEnableAssert)
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+            }
+            Story.DefaultCancelMode = Story.CancelMode.Drop;
+
+            var nextLineReached = false;
+            var finallyReached = false;
+
+            var task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Dropモードではawait以降の処理は実行されないべき");
+            Assert.IsFalse(finallyReached, "Dropモードではfinallyブロックも実行されないべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            // Safe モードでテスト
+            if (Dev.IsEnableAssert)
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+            }
+            Story.DefaultCancelMode = Story.CancelMode.Safe;
+
+            nextLineReached = false;
+            finallyReached = false;
+
+            task = DropCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsFalse(nextLineReached, "Safeモードではawait以降の処理は実行されないべき");
+            Assert.IsTrue(finallyReached, "Safeモードではfinallyブロックも実行されているべき");
+            Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DropCancelTask()
+            {
+                try
+                {
+                    await Story.WaitTime(10f);
+                    nextLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_DontThrow_例外を出さずにIsCanceledがtrueになり正常なフローで終了できること()
+        {
+            var nextLineReached = false;
+            var endLineReached = false;
+            var finallyReached = false;
+
+            var task = DontThrowCancelTask();
+            task.Start(this.owner);
+
+            yield return null;
+
+            // 外部から強制キャンセル
+            task.Stop();
+
+            yield return null;
+
+            Assert.IsTrue(nextLineReached, "DontThrowモードでは例外がスローされず、awaitの次の行へ進行するべき");
+            Assert.IsFalse(endLineReached, "キャンセルを正常に検知して後の処理は無視されているべき");
+            Assert.IsTrue(finallyReached, "正常なフロー(return)によってfinallyが実行されているべき");
+            Assert.IsFalse(task.IsValid, "完了後は正しく解放されているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task DontThrowCancelTask()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                try
+                {
+                    await Story.WaitTime(10f);
+                    
+                    nextLineReached = true;
+                    
+                    if (Story.IsCanceled) return; // 正常に脱出
+
+                    endLineReached = true;
+                }
+                finally
+                {
+                    finallyReached = true;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Task_CancelMode_DontThrow_キャンセル状態が別のタスクへ汚染されないこと()
+        {
+            var taskB_Counter = 3;
+            var taskC_IsCompleted = true;
+
+            // 冒頭の IsCanceled 確認準備
+            var taskA = TaskA_Canceled();
+            var taskB = TaskB_Survivor();
+
+            // タスクAを開始
+            taskA.Start(this.owner);
+
+            // タスクAをキャンセル (DontThrowモードで処理を抜けさせる)
+            taskA.Stop();
+
+            Assert.IsFalse(taskA.IsValid, "タスクAは終了しているべき");
+
+            // 直後にタスクBを開始（キャンセル直後に開始するようにする）
+            taskB.Start(this.owner);
+            
+            yield return null;
+
+            var tempObj = new GameObject("TempOwner");
+            var tempOwner = tempObj.AddComponent<Story.TaskBehaviour>();
+
+            // await 後の IsCanceled 確認準備
+            taskA = TaskA_Canceled();
+            taskA.Keep(tempOwner);
+            var taskC = TaskC_Survivor(taskA);
+
+            // タスクCを開始
+            taskC.Start(this.owner);
+
+            yield return null;
+
+            // タスクAのオーナーを破棄
+            Object.Destroy(tempObj);
+
+            yield return null;
+
+            Assert.IsFalse(taskA.IsValid, "タスクAは終了しているべき");
+            Assert.IsFalse(taskB.IsValid, "タスクBは終了しているべき");
+            Assert.IsFalse(taskC.IsValid, "タスクCは終了しているべき");
+            Assert.IsTrue(taskB_Counter == 0, "タスクBは最後まで処理されているべき");
+            Assert.IsTrue(taskC_IsCompleted, "タスクCはキャンセルされず完了しているべき");
+
+            Utils.LogGCAlloc();
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+            [Story.Capacity(8)]
+            async Story.Task TaskA_Canceled()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                await Story.WaitTime(10f);
+                if (Story.IsCanceled) return; // ここで true になって終了する
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task TaskB_Survivor()
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+                while (!Story.IsCanceled)
+                {
+                    if (--taskB_Counter <= 0) { break; }
+                    await Story.Yield;
+                }
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task TaskC_Survivor(Story.Task taskA)
+            {
+                Story.TaskCancelMode = Story.CancelMode.DontThrow;
+
+                await taskA;
+                if (Story.IsCanceled) { return; } // taskAではなく自身がキャンセルされた時に true になる
+
+                // キャンセルされずに終了した
+                taskC_IsCompleted = true;
+            }
+        }
+
+        // [Test]
+        public void Task_CancelMode_タスク外からのTaskCancelMode変更は弾かれること()
+        {
+            if (Dev.IsEnableAssert)
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
+                Story.TaskCancelMode = Story.CancelMode.Safe;
+            }
+        }
+
+        [Test]
+        public void Task_CancelMode_DefaultCancelModeに対するDontThrowの設定または開始後の変更は弾かれること()
+        {
+            if (Dev.IsEnableAssert)
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDontThrowAsDefault);
+                Story.DefaultCancelMode = Story.CancelMode.DontThrow;
+            }
+        }
+
+        // ------------------------------------------------------------------------
+        // 事前確保モード (WarmupMode) の挙動テスト
+        // ------------------------------------------------------------------------
+
+        [Test]
+        public void Task_WarmupMode_ネストしたスコープの整合性テスト()
+        {
+            using (var scope1 = Story.WarmupMode())
+            {
+                using (var scope2 = Story.WarmupMode())
+                {
+                    Assert.AreSame(scope2, TaskWarmup.Shared, "内側のスコープが有効であるべき");
+                }
+                Assert.AreSame(scope1, TaskWarmup.Shared, "外側のスコープに正しく復元されるべき");
+            }
+            Assert.IsNull(TaskWarmup.Shared, "すべてのスコープ終了後は無効であるべき");
+        }
+
+        // ------------------------------------------------------------------------
+        // プールの挙動テスト
+        // ------------------------------------------------------------------------
+
+        [Test]
+        public void Pool_境界値での配列拡張テスト()
+        {
+            // 小さなプールを作成
+            var pool = Story.Pool<int>.Shared;
+            pool.Expand(8); // 8個で固定
+
+            // 限界まで使う
+            var ids = new List<Story.Pool.Id>();
+            for (int i = 0; i < 8; i++) ids.Add(pool.Alloc());
+
+            // 9個目を追加した瞬間に Expand が走るか確認
+            Assert.DoesNotThrow(() => pool.Alloc(), "限界値での追加割り当てが例外なく成功すること");
+        }
+
+        [Test]
+        public void Pool_拡張容量計算ロジックの厳密な検証()
+        {
+            // Story.Pool.GetNeedCountAtExpand の計算式:
+            // count + Mathf.Min(count, Mathf.Max(4, limit / itemSize))
+
+            // ケース1: 制限に達していない場合の倍加（countが加算される）
+            // limit = 1000, itemSize = 10 -> 許容増加数(limit / itemSize) = 100
+            // count(10) < 100 のため、Min(10, 100) = 10 が加算される
+            Assert.AreEqual(20, Story.Pool.GetNeedCountAtExpand(10, 10, 1000));
+
+            // ケース2: 制限(limit)による拡張数の頭打ち
+            // limit = 1000, itemSize = 10 -> 許容増加数 = 100
+            // count(200) > 100 のため、Min(200, 100) = 100 が加算される（倍加しない）
+            Assert.AreEqual(300, Story.Pool.GetNeedCountAtExpand(200, 10, 1000));
+
+            // ケース3: 最低保証加算値（4）の適用
+            // limit = 10, itemSize = 10 -> 許容増加数 = 1
+            // Max(4, 1) = 4 となり、count(10) > 4 のため 4 が加算される
+            Assert.AreEqual(14, Story.Pool.GetNeedCountAtExpand(10, 10, 10));
+
+            // ケース4: 最低保証加算値（4）の範囲内でcountが小さい場合
+            // limit = 10, itemSize = 10 -> 許容増加数 = 1 -> Max(4, 1) = 4
+            // count(2) < 4 のため、Min(2, 4) = 2 が加算される（倍加する）
+            Assert.AreEqual(4, Story.Pool.GetNeedCountAtExpand(2, 10, 10));
+        }
+
+        [Test]
+        public void Pool_初期容量計算ロジックの厳密な検証()
+        {
+            // Story.Pool.GetNeedCountAtCreate の計算式:
+            // Mathf.Clamp(limit / itemSize, 8, 32)
+
+            // ケース1: 計算結果が下限（8）を下回る場合
+            // limit = 100, itemSize = 20 -> 許容作成数(limit / itemSize) = 5
+            // 最低保証として 8 に切り上げられること
+            Assert.AreEqual(8, Story.Pool.GetNeedCountAtCreate(20, 100));
+
+            // ケース2: 計算結果が範囲内（8〜32）に収まる場合
+            // limit = 200, itemSize = 10 -> 許容作成数 = 20
+            // 範囲内のためそのまま 20 となること
+            Assert.AreEqual(20, Story.Pool.GetNeedCountAtCreate(10, 200));
+
+            // ケース3: 計算結果が上限（32）を上回る場合
+            // limit = 1000, itemSize = 10 -> 許容作成数 = 100
+            // 初期確保の制限として 32 に切り捨てられること
+            Assert.AreEqual(32, Story.Pool.GetNeedCountAtCreate(10, 1000));
         }
 
     }

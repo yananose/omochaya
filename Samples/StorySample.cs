@@ -26,6 +26,18 @@ public class StorySample : MonoBehaviour
         // 気にしない場合は省略しても問題ありません。
         Story.Warmup(10);
 
+        // タスク別に使用するプールサイズを事前確保します。
+        // 事前確保した数を超えても動作しますが、プールがリサイズされてアロケートが発生します。
+        // 気にしない場合は省略しても問題ありません。
+        using (Story.WarmupMode())
+        {
+            RootTask().Warmup();
+            SubTask(null).Warmup();
+            MoveTask(null, 0f).Warmup();
+            SubTaskLeft(null).Warmup();
+            BlueTask(null).Warmup();
+        }
+
         // タスクを起動します。
         // ここではテスト用のルートタスクを起動しています。
         // タスク外で起動する場合は、誰に所属するか指定する必要があります。
@@ -163,7 +175,7 @@ Debug.Log(7);
 
     // サブタスク：往復移動させる
     [Story.Capacity(5)]
-    async Story.Task SubTask(RectTransform rt)
+    async Story.Task<int> SubTask(RectTransform rt)
     {
         var position = rt.anchoredPosition;
         while (true)

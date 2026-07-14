@@ -241,6 +241,14 @@ namespace Omochaya
                 Keep(TaskManager.Shared.GetRunningInfo().Owner);
             }
 
+            /// <summary>The await version of the method that anchors the task to a specific owner component to govern its lifecycle.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Task At(Component owner)
+            {
+                Keep(owner);
+                return this;
+            }
+
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
@@ -345,13 +353,21 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Stop() => this.rawTask.Stop();
 
-            /// <summary>Anchors the task to the currently running task's owner component.</summary>
+            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.rawTask.Keep(owner);
 
-            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
+            /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep() => this.rawTask.Keep();
+
+            /// <summary>The await version of the method that anchors the task to a specific owner component to govern its lifecycle.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Task<R> At(Component owner)
+            {
+                this.rawTask.Keep(owner);
+                return this;
+            }
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

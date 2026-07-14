@@ -469,6 +469,94 @@ namespace OmochayaTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Task_await時に子タスクのオーナーを指定できること()
+        {
+            var state = 0;
+
+            // テスト用の一時的なオーナーを作成
+            var tempObjA = new GameObject("TempOwnerA");
+            var tempOwnerA = tempObjA.AddComponent<Story.TaskBehaviour>();
+            var tempObjB = new GameObject("TempOwnerB");
+            var tempOwnerB = tempObjB.AddComponent<Story.TaskBehaviour>();
+            var tempObjC = new GameObject("TempOwnerC");
+            var tempOwnerC = tempObjC.AddComponent<TempOwner>();
+
+            using (Story.WarmupMode())
+            {
+                ChildTaskA().Warmup();
+                ChildTaskB().Warmup();
+                tempOwnerC.Task().Warmup();
+            }
+
+            // 開始
+            var parentTask = ParentTask(tempOwnerA, tempOwnerB, tempOwnerC);
+            parentTask.Start(this.owner);
+
+            yield return null;
+
+            Object.Destroy(tempObjA);
+
+            yield return null;
+            yield return null; // 次がすぐに終了していないことを保証するため
+
+            Assert.IsTrue(state == 1, "引数ありの子タスクが終了していること");
+
+            Object.Destroy(tempObjB);
+
+            yield return null;
+            yield return null; // 次がすぐに終了していないことを保証するため
+
+            Assert.IsTrue(state == 2, "引数なしの子タスクが終了していること");
+
+            Object.Destroy(tempObjC);
+
+            yield return null;
+
+            Assert.IsTrue(state == 3, "タスク内で指定した子タスクが終了していること");
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task ParentTask(Story.TaskBehaviour ownerA, Story.TaskBehaviour ownerB, TempOwner ownerC)
+            {
+                state = 0;
+                await ChildTaskA().At(ownerA);
+                state = 1;
+                await ChildTaskB().At(ownerB);
+                state = 2;
+                await ownerC.Task();
+                state = 3;
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task ChildTaskA()
+            {
+                await Story.WaitTime(10f);
+            }
+
+            [Story.Capacity(8)]
+            async Story.Task<int> ChildTaskB()
+            {
+                await Story.WaitTime(10f);
+                return 0;
+            }
+        }
+        class TempOwner : Story.TaskBehaviour
+        {
+            [Story.Capacity(8)]
+            public async Story.Task Task()
+            {
+                Story.At(this);
+                await Story.WaitTime(10f);
+            }
+        }
+
         // ------------------------------------------------------------------------
         // 特殊なコンビネータ（With / Until）の仕様テスト
         // ------------------------------------------------------------------------

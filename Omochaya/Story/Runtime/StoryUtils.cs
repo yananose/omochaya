@@ -28,6 +28,14 @@ namespace Omochaya
             return self.Start(owner);
         }
 
+        /// <summary>Anchors the current task to a specific owner component to govern its lifecycle.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void At(Component owner)
+        {
+            Dev.Assert(TaskManager.Shared.IsRunningValid);
+            if (TaskManager.Shared.IsRunningValid) { TaskManager.Shared.GetRunningInfo().Keep(owner); }
+        }
+
         /// <summary>Suspends the execution for the specified amount of seconds.</summary>
         /// <remarks>
         /// 標準の <c>Task.Delay</c> とは異なり、メインスレッドのフレーム更新（<c>UnityEngine.Time</c>）に依存して時間を計測します。

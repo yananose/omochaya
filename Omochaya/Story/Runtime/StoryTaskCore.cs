@@ -158,7 +158,7 @@ namespace Omochaya.HiddenStory
         // creators
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい（Alloc が NoInlining）
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         internal static StateMachine Alloc<S>(in S value) where S : struct, IAsyncStateMachine
         {
             var pool = StateMachinePool<S>.Shared;
@@ -168,54 +168,35 @@ namespace Omochaya.HiddenStory
         // inner classes
 
         /// <summary>Don't touch! Only for system.</summary>
-        internal class StateMachinePool<S> : IStateMachinePool
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            , IPoolMonitorForDebug
-#endif
+        internal class StateMachinePool<S> : UnsafePoolBase<UnsafePoolMeta, S>, IStateMachinePool
             where S : struct, IAsyncStateMachine
         {
             /// <summary>Don't touch! Only for system.</summary>
             internal static readonly StateMachinePool<S> Shared = new();
+            StateMachinePool() {}
 
-            // fields
-            Story.PoolCore core;
-            S[] array;
-
-            // constructors
-            StateMachinePool() => Dev.PoolMonitorRegister(this);
-
-            // methods
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+            /// <summary>Don't touch! Only for system.</summary>
+            public override string PoolName => Dev.StateMachinePool<S>.Name;
+            /// <summary>Don't touch! Only for system.</summary>
+            public override int TotalBytes => ArraySize + Unsafe.SizeOf<StateMachinePool<S>>();
+#endif
 
             /// <summary>Don't touch! Only for system.</summary>
-            [MethodImpl(MethodImplOptions.NoInlining)] // !!! ジェネリクスによるコードブロート防止のため明示的にインライン化しない !!!
+            [MethodImpl(MethodImplOptions.AggressiveInlining)] // StateMachine.Alloc からしか呼ばれないので
             internal int Alloc(in S value)
             {
-                int index;
-                var need = 0;
-
 #if !STORY_NO_PRE_CAPACITY
-                if (this.array == null) { need = TaskWarmup.GetCapacity(typeof(S)); }
-
-                if (0 < need)
+                if (this.array == null)
                 {
-                    index = 0;
-                    this.core.FirstAlloc(need);
+                    var count = TaskWarmup.GetCapacity(typeof(S));
+                    if (0 < count) { Expand(count); }
                 }
-                else
 #endif
-                if (!this.core.TryAllocFast(out index))
-                {
-                    var result = this.core.ExpandAndAlloc(Unsafe.SizeOf<S>());
-                    index = result.Index;
-                    need = result.Need;
-                }
-
-                if (0 < need) { Story.Pool.Expand(ref this.array, need); }
-                this.array[index] = value;
+                var index = Alloc();
+                this.array[index].Value = value;
                 return index;
             }
-
-            // for IStateMachinePool
 
             /// <summary>Don't touch! Only for system.</summary>
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 仮想メソッド
@@ -224,14 +205,13 @@ namespace Omochaya.HiddenStory
                 switch (funcType)
                 {
                     case FuncType.Expand:
-                        if (this.core.TryExpand(param)) { Story.Pool.Expand(ref this.array, param); }
+                        Expand(param);
                         return true;
                     case FuncType.Free:
-                        this.core.Free(param);
-                        this.array[param] = default;
+                        UnsafeFree(param);
                         return true;
                     default:
-                        return this.core.IsValid;
+                        return this.array != null;
                 }
             }
 
@@ -240,22 +220,9 @@ namespace Omochaya.HiddenStory
             public void MoveNext(int index)
             {
                 var array = this.array;
-                array[index].MoveNext();
+                array[index].Value.MoveNext();
                 if (this.array != array) { this.array[index] = array[index]; } // 配列拡張時に新しい配列へ情報を反映
             }
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            /// <summary>Don't touch! Only for system.</summary>
-            public string PoolName => Dev.StateMachinePool<S>.Name;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int ActiveCount => this.core.ActiveCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int WorstCount => this.core.WorstCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int FreeCount => this.core.TotalCount - this.core.ActiveCount;
-            /// <summary>Don't touch! Only for system.</summary>
-            public int TotalBytes => this.core.ArraySize + Unsafe.SizeOf<S>() * (this.array?.Length ?? 0) + Unsafe.SizeOf<StateMachinePool<S>>();
-#endif
         }
 
 // ↑↑↑↑↑↑ ここまでステートマシンのジェネリクスによるコードブロート対象 ↑↑↑↑↑↑

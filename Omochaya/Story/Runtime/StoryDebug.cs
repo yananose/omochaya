@@ -207,7 +207,7 @@ Dev.LoopBreak.Check(index.ToString());
         }
 
         /// <summary>Extracts the formatted bracketed name prefix of the specified state machine pool monitor.</summary>
-        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool)
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool)
         {
             if (pool is IPoolMonitorForDebug monitor)
             {

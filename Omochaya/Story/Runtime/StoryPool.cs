@@ -61,8 +61,11 @@ namespace Omochaya
                 public override int GetHashCode() => HashCode.Combine(Index, Age);
             }
 
-            const int CREATE_LIMIT_SIZE = 1024 * 1;
-            const int EXPAND_LIMIT_SIZE = 1024 * 128;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal const int CREATE_LIMIT_SIZE = 1024 * 1;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            internal const int EXPAND_LIMIT_SIZE = 1024 * 128;
 
             /// <summary>Expands the specified raw array to the exact capacity, logging a diagnostic warning upon resizing.</summary>
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
@@ -88,8 +91,6 @@ namespace Omochaya
                 => count + Mathf.Min(count, Mathf.Max(4, limit / itemSize));
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            // ※ GetNeedCountAtCreate を public に変更したと仮定したメッセージです。
-            // 変更しない場合はメッセージの実装指示を書き換えてください。
             [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。", true)]
             public static void Create<T>(ref T[] array)
                 => throw new NotSupportedException();
@@ -121,7 +122,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public override string PoolName => Dev.Pool<T>.Name;
             /// <summary>Don't touch! Only for system.</summary>
-            public override int TotalBytes => ArraySize + Unsafe.SizeOf<Pool<T>>();
+            public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<Pool<T>>();
 #endif
         }
 
@@ -136,40 +137,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public override string PoolName => Dev.Pool<HOT, COOL>.Name;
             /// <summary>Don't touch! Only for system.</summary>
-            public override int TotalBytes => ArraySize + Unsafe.SizeOf<Pool<HOT, COOL>>();
-#endif
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        class UnsafePool<T> : UnsafePoolBase<UnsafePoolMeta, T>, IUnsafePool
-        {
-            /// <summary>Don't touch! Only for system.</summary>
-            internal static readonly UnsafePool<T> Shared = new();
-            UnsafePool() {}
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            /// <summary>Don't touch! Only for system.</summary>
-            public override string PoolName => Dev.HiddenPool<T>.Name;
-            /// <summary>Don't touch! Only for system.</summary>
-            public override int TotalBytes => ArraySize + Unsafe.SizeOf<UnsafePool<T>>();
-#endif
-
-            /// <summary>Don't touch! Only for system.</summary>
-            public void Free(int index) => UnsafeFree(index);
-
-            /// <summary>Don't touch! Only for system.</summary>
-            internal int Alloc(in T value)
-            {
-                var ret = Alloc();
-                this.array[ret].Value = value;
-                return ret;
-            }
-        }
-        interface IUnsafePool // 型消去用
-        {
-            void Free(int index);
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            string Name { get; }
+            public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<Pool<HOT, COOL>>();
 #endif
         }
 
@@ -182,9 +150,26 @@ namespace Omochaya
         // その場合は強参照と弱参照の関係になるので、主体ではない方は主体が解放していないことが保証されている場合にのみ使用すること。
         public readonly struct PoolMemory : IDisposable
         {
+            // inner classes
+
+            /// <summary>Don't touch! Only for system.</summary>
+            class HiddenPool<T> : UnsafePoolBase<UnsafePoolMeta, T>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                internal static readonly HiddenPool<T> Shared = new();
+                HiddenPool() {}
+
+#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+                /// <summary>Don't touch! Only for system.</summary>
+                public override string PoolName => Dev.HiddenPool<T>.Name;
+                /// <summary>Don't touch! Only for system.</summary>
+                public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<HiddenPool<T>>();
+#endif
+            }
+
             // fields
 
-            readonly IUnsafePool pool;
+            readonly PoolCore pool;
             readonly int index;
 
             // properties
@@ -199,32 +184,38 @@ namespace Omochaya
             // constructors
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-            PoolMemory(IUnsafePool pool, int index) { this.pool = pool; this.index = index; }
+            PoolMemory(PoolCore pool, int index) { this.pool = pool; this.index = index; }
 
             // methods
 
             /// <summary>Expands the underlying unmanaged pool capacity for the specified type to the exact count.</summary>
-            public void Expand<T>(int count)
-                => UnsafePool<T>.Shared.Expand(count);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static void Expand<T>(int count)
+                => HiddenPool<T>.Shared.Expand(count);
 
             /// <summary>Allocates a lightweight memory handle from the hidden global shared pool without generation tracking.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static PoolMemory Alloc<T>()
             {
-                var pool = UnsafePool<T>.Shared;
+                var pool = HiddenPool<T>.Shared;
                 return new PoolMemory(pool, pool.Alloc());
             }
 
             /// <summary>Allocates a lightweight memory handle initialized with a value from the hidden global shared pool without generation tracking.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static PoolMemory Alloc<T>(in T value)
             {
-                var pool = UnsafePool<T>.Shared;
-                return new PoolMemory(pool, pool.Alloc(value));
+                var pool = HiddenPool<T>.Shared;
+                var ret = new PoolMemory(pool, pool.Alloc());
+                pool.UnsafeGet(ret.index) = value;
+                return ret;
             }
 
             /// <summary>Explicitly releases the unmanaged memory slot handle back to its originating pool.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Free()
             {
-                if (IsValid) { this.pool.Free(this.index); }
+                if (IsValid) { this.pool.UnsafeFree(this.index); }
             }
 
             /// <summary>Gets a reference to the unmanaged value from the hidden global shared pool.</summary>
@@ -248,23 +239,65 @@ namespace Omochaya
             /// memory.Get().Value = 20;
             /// </code>
             /// </example>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref T Get<T>()
             {
-                Dev.Assert(UnsafePool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", UnsafePool<T>.Shared, this.pool, typeof(T)));
-                return ref UnsafePool<T>.Shared.UnsafeGet(this.index);
+                Dev.Assert(HiddenPool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", HiddenPool<T>.Shared, this.pool, typeof(T)));
+                return ref HiddenPool<T>.Shared.UnsafeGet(this.index);
             }
 
             /// <summary>Determines whether the allocated memory type does not match the specified type.</summary>
             // 型が一致しない
-            public bool IsMissType<T>() => UnsafePool<T>.Shared != this.pool;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool IsMissType<T>() => HiddenPool<T>.Shared != this.pool;
 
             /// <summary>Disposes of the unmanaged memory handle, safely recycling its index slot.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Dispose() => Free();
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-            public override string ToString() => this.pool != null ? this.pool.Name : "(empty)";
-#endif
         }
+
+        // 型によっては使わないジェネリッククラスのメソッドを拡張メソッドとすることでコードブロートを抑制
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref M UnsafeGetMeta<M, V>(this UnsafePoolBase<M, V> self, int index)
+            where M : struct, IUnsafePoolMeta
+            => ref self.Array[index].Meta;
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref M GetMeta<M, V>(this PoolBase<M, V> self, Pool.Id id)
+            where M : struct, IPoolMeta
+        {
+            Dev.Assert(self.IsValid(id));
+            return ref self.UnsafeGetMeta(id.Index);
+            
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void UnsafeReborn<M, V>(this PoolBase<M, V> self, int index)
+            where M : struct, IPoolMeta
+        {
+            ref var meta = ref self.UnsafeGetMeta(index);
+            var age = meta.Age;
+            if (++age == 0) { age = 1; }
+            meta.Age = age;
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Reborn<M, V>(this PoolBase<M, V> self, Pool.Id id)
+            where M : struct, IPoolMeta
+        {
+            if (self.IsValid(id)) { self.UnsafeReborn(id.Index); }
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Pool.Id UnsafeGetId<M, V>(this PoolBase<M, V> self, int index)
+            where M : struct, IPoolMeta
+            => new Pool.Id(index, self.UnsafeGetMeta(index).Age);
     }
 }
 
@@ -277,13 +310,13 @@ namespace Omochaya.HiddenStory
     using System.Runtime.CompilerServices;
     using UnityEngine;
 
-   /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
+    /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public interface IUnsafePoolMeta { }
 
     struct UnsafePoolMeta : IUnsafePoolMeta { }
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
-    public interface IPoolMeta : IUnsafePoolMeta{ int Age { get; set; } }
+    public interface IPoolMeta : IUnsafePoolMeta { int Age { get; set; } }
 
     /// <summary>Don't touch! Only for system.</summary>
     public struct PoolMeta : IPoolMeta
@@ -300,11 +333,13 @@ namespace Omochaya.HiddenStory
     {
         // fields
         int[] nextFree;
-        protected int freeHead;
+        int freeHead;
+        int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE;
+        int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE;
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-        protected int useCount;
-        protected int worstCount;
+        int useCount;
+        int worstCount;
 
         // properties
 
@@ -313,62 +348,67 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public int WorstCount => this.worstCount;
         /// <summary>Don't touch! Only for system.</summary>
-        public abstract int FreeCount { get; }
+        public int FreeCount => Length - ActiveCount;
         /// <summary>Don't touch! Only for system.</summary>
         public abstract string PoolName { get; }
         /// <summary>Don't touch! Only for system.</summary>
         public abstract int TotalBytes { get; }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        protected int ArraySize => (Unsafe.SizeOf<int>() + ItemSize) * Length;
 #endif
 
-        public int Length => this.nextFree?.Length ?? 0;
+        public bool IsValid
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.nextFree != null;
+        }
 
-        protected abstract int ItemSize { get; }
+        public int Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.nextFree?.Length ?? 0;
+        }
+
+        protected int ItemSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Unsafe.SizeOf<int>();
+        }
 
         // constructors
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected PoolCore() => Dev.PoolMonitorRegister(this);
 
         // methods
 
-        protected abstract void ExpandArray(int count);
+        protected abstract int ExpandArray(int count);
+
+        [MethodImpl(MethodImplOptions.NoInlining)] // 派生クラスから呼ばれるのでコードブロート防止
+        protected int GetNeedCount(int itemSize)
+            => this.nextFree == null ?
+                Story.Pool.GetNeedCountAtCreate(itemSize, this.createLimitSize):
+                Story.Pool.GetNeedCountAtExpand(this.nextFree.Length, itemSize, this.expandLimitSize);
 
         /// <summary>Expands the pool capacity to the specified count if it exceeds the current capacity.</summary>
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         public void Expand(int newCount)
         {
             var oldCount = Length;
-            if (newCount <= oldCount)
+            if (0 < newCount && newCount <= oldCount)
             {
                 Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, oldCount, newCount));
                 return;
             }
-            ExpandArray(newCount);
+            newCount = ExpandArray(newCount);
             Story.Pool.Expand(ref this.nextFree, newCount);
             for (var i = oldCount; i < newCount-1; ++i) { this.nextFree[i] = i + 1; }
             this.nextFree[newCount - 1] = oldCount == 0 ? -1 : this.freeHead;
             this.freeHead = oldCount;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        protected void ExpandBasedOnItemSize()
-        {
-            var itemSize = ItemSize;
-            var oldCount = Length;
-            var newCount = oldCount == 0 ?
-                Story.Pool.GetNeedCountAtCreate(itemSize):
-                Story.Pool.GetNeedCountAtExpand(oldCount, itemSize);
-            Expand(newCount);
-        }
-
         /// <summary>Allocates an empty slot from the pool and returns its unique identifier.</summary>
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-        public int Alloc()
+        internal int Alloc()
         {
-            if (this.nextFree == null || this.freeHead == -1)
-            {
-                ExpandBasedOnItemSize();
-            }
+            if (this.nextFree == null || this.freeHead == -1) { Expand(0); }
 
             var index = this.freeHead;
             this.freeHead = this.nextFree[index];
@@ -383,7 +423,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Releases the slot at the raw index back to the pool without identifier validation.</summary>
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-        public void UnsafeFree(int index)
+        public virtual void UnsafeFree(int index)
         {
             this.nextFree[index] = this.freeHead;
             this.freeHead = index;
@@ -391,6 +431,14 @@ namespace Omochaya.HiddenStory
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             this.useCount--;
 #endif
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Custom(int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE, int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE)
+        {
+            this.createLimitSize = createLimitSize;
+            this.expandLimitSize = expandLimitSize;
         }
     }
 
@@ -403,30 +451,40 @@ namespace Omochaya.HiddenStory
         where M : struct, IUnsafePoolMeta
     {
         // inner classes
-        protected struct PoolSlot
+        internal struct PoolSlot
         {
             public M Meta;
             public V Value;
         }
 
         // fields
-        protected PoolSlot[] array;
+        internal PoolSlot[] Array; // private にしたい...
 
         // properties
 
         /// <summary></summary>
-        protected override int ItemSize => Unsafe.SizeOf<PoolSlot>();
+        protected new int ItemSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => base.ItemSize + Unsafe.SizeOf<PoolSlot>();
+        }
 
         // methods
 
-        protected override void ExpandArray(int count) => Story.Pool.Expand(ref this.array, count);
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+        protected override int ExpandArray(int count)
+        {
+            if (count <= 0) { count = GetNeedCount(ItemSize); }
+            Story.Pool.Expand(ref this.Array, count);
+            return count;
+        }
 
         /// <summary>Releases the slot at the raw index back to the pool without identifier validation.</summary>
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-        public new void UnsafeFree(int index)
+        public override void UnsafeFree(int index)
         {
             base.UnsafeFree(index);
-            this.array[index] = default;
+            this.Array[index].Value = default;
         }
 
         /// <summary>Gets a direct reference to the element at the raw index without identifier validation.</summary>
@@ -451,18 +509,9 @@ namespace Omochaya.HiddenStory
         /// </code>
         /// </example>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-        public ref V UnsafeGet(int index) => ref this.array[index].Value;
-
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-        /// <summary>Don't touch! Only for system.</summary>
-        public string Name => Dev.Type<V>.Name;
-        /// <summary>Don't touch! Only for system.</summary>
-        public override int FreeCount => Length - this.ActiveCount;
-#endif
-
+        public ref V UnsafeGet(int index) => ref this.Array[index].Value;
     }
 
-    /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     // プールの基底クラス。IDによる要素へのアクセスを実現する。
     // IdにAgeをもちIdの最終的な有効性を IsValid により判定する。
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
@@ -474,34 +523,33 @@ namespace Omochaya.HiddenStory
         public new Story.Pool.Id Alloc()
         {
             var index = base.Alloc();
-            ref var meta = ref this.array[index].Meta;
+            ref var meta = ref this.Array[index].Meta;
             if (meta.Age == 0) { meta.Age = 1; }
             return new Story.Pool.Id(index, meta.Age);
         }
 
         /// <summary>Safely releases the slot associated with the specified identifier back to the pool.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         public void Free(Story.Pool.Id id)
         {
-            IsValid(id);
-            UnsafeFree(id.Index);
+            if (IsValid(id)) { UnsafeFree(id.Index); }
         }
 
         /// <summary>Releases the slot at the raw index back to the pool without identifier validation.</summary>
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-        public new void UnsafeFree(int index)
+        public override void UnsafeFree(int index)
         {
-            ref var meta = ref this.array[index].Meta;
+            base.UnsafeFree(index);
+            ref var meta = ref this.Array[index].Meta;
             var age = meta.Age;
             if (++age == 0) { age = 1; }
-            base.UnsafeFree(index);
             meta.Age = age;
         }
 
         /// <summary>Determines whether the specified identifier is valid within the underlying slot array.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-        public bool IsValid(Story.Pool.Id id)
-            => this.array != null && (uint)id.Index < this.array.Length && this.array[id.Index].Meta.Age == id.Age;
+        public new bool IsValid(Story.Pool.Id id)
+            => this.Array != null && (uint)id.Index < this.Array.Length && this.Array[id.Index].Meta.Age == id.Age;
 
         /// <summary>Gets a reference to the element associated with the valid identifier.</summary>
         /// <remarks>
@@ -536,18 +584,6 @@ namespace Omochaya.HiddenStory
         public Story.Pool.Id Alloc(in V value)
             => throw new NotSupportedException();
 #endif
-
-        /// <summary>Advances the generation age of the slot associated with the specified identifier.</summary>
-        public void UnsafeReborn(int index)
-        {
-            ref var meta = ref this.array[index].Meta;
-            if (++meta.Age == 0) { meta.Age = 1; }
-        }
-
-        /// <summary>Retrieves the identifier corresponding to the raw index from the underlying slot array.</summary>
-        public Story.Pool.Id UnsafeGetId(int index)
-            => new Story.Pool.Id(index, this.array[index].Meta.Age);
-
     }
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
@@ -557,22 +593,28 @@ namespace Omochaya.HiddenStory
         where M : struct, IPoolMeta
     {
         // fields
-        protected HOT[] hotArray;
+        HOT[] hotArray;
 
         // properties
-        protected override int ItemSize => Unsafe.SizeOf<PoolSlot>() + Unsafe.SizeOf<HOT>();
+        protected new int ItemSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => base.ItemSize + Unsafe.SizeOf<HOT>();
+        }
 
         // methods
 
-        /// <summary>Expands both the hot and cool data arrays to the specified count.</summary>
-        protected override void ExpandArray(int count)
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+        protected override int ExpandArray(int count)
         {
-            Story.Pool.Expand(ref this.array, count);
+            count = base.ExpandArray(count);
             Story.Pool.Expand(ref this.hotArray, count);
+            return count;
         }
 
         /// <summary>Releases the slot at the raw index without validation, resetting its hot and cool data.</summary>
-        public new void UnsafeFree(int index)
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+        public override void UnsafeFree(int index)
         {
             base.UnsafeFree(index);
             this.hotArray[index] = default;

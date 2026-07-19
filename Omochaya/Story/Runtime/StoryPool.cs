@@ -333,7 +333,8 @@ namespace Omochaya.HiddenStory
     {
         // fields
         int[] nextFree;
-        int freeHead;
+        int count;
+        int freeHead = -1;
         int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE;
         int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE;
 
@@ -364,7 +365,7 @@ namespace Omochaya.HiddenStory
         public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this.nextFree?.Length ?? 0;
+            get => this.count;
         }
 
         protected int ItemSize
@@ -399,8 +400,9 @@ namespace Omochaya.HiddenStory
             }
             newCount = ExpandArray(newCount);
             Story.Pool.Expand(ref this.nextFree, newCount);
+            this.count = newCount;
             for (var i = oldCount; i < newCount-1; ++i) { this.nextFree[i] = i + 1; }
-            this.nextFree[newCount - 1] = oldCount == 0 ? -1 : this.freeHead;
+            this.nextFree[newCount - 1] = this.freeHead;
             this.freeHead = oldCount;
         }
 
@@ -408,7 +410,7 @@ namespace Omochaya.HiddenStory
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         internal int Alloc()
         {
-            if (this.nextFree == null || this.freeHead == -1) { Expand(0); }
+            if (this.freeHead == -1) { Expand(0); }
 
             var index = this.freeHead;
             this.freeHead = this.nextFree[index];

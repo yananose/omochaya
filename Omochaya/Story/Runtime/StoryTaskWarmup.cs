@@ -21,7 +21,7 @@ namespace Omochaya
 
         /// <summary>Configures and expands the capacity of the global task pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Warmup(int taskCount) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, taskCount);
+        public static void Warmup(int count) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, count);
 
         /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
         public static void Warmup(this Task self, int count = 0)
@@ -58,18 +58,14 @@ namespace Omochaya.HiddenStory
     using System.Reflection;
     using System.Runtime.CompilerServices;
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal static class TaskWarmup
     {
         static TaskWarmupper shared;
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static TaskWarmupper Shared => TaskWarmup.shared;
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static bool IsValid => TaskWarmup.shared != null;
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static TaskWarmupper Create()
         {
             var ret = new TaskWarmupper();
@@ -78,14 +74,12 @@ namespace Omochaya.HiddenStory
             return ret;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static void Destroy(this TaskWarmupper self)
         {
             Dev.Assert(TaskWarmup.shared == self);
             if (self != null) { TaskWarmup.shared = self.Parent; }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static int GetCapacity(Type stateMachineType)
         {
             var count = GetCapacityCore(stateMachineType);
@@ -165,7 +159,6 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public void Dispose() => this.Destroy();
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal void Setup<S>() where S : struct, IAsyncStateMachine
         {
             Dev.Assert(this.pool == null, string.Format(Messages.Exceptions.MustWarmupImmediately, this.type));
@@ -174,7 +167,6 @@ namespace Omochaya.HiddenStory
             this.size = Unsafe.SizeOf<S>();
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal void Warmup(int count)
         {
             Dev.Assert(this.pool != null, Messages.Exceptions.MustSpecifyTaskInWarmupMode);
@@ -192,7 +184,6 @@ namespace Omochaya.HiddenStory
             this.pool = null;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal void Custom(int createLimitSize, int expandLimitSize)
         {
             Dev.Assert(this.pool != null, Messages.Exceptions.MustSpecifyTaskInWarmupMode);

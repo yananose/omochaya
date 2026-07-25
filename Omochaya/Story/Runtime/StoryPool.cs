@@ -17,6 +17,7 @@ namespace Omochaya
 
     public static partial class Story
     {
+        /// <summary></summary>
         public static class Pool
         {
             /// <summary>Represents a unique identifier for a pooled resource, combining an array index and a generation age to ensure safe access.</summary>
@@ -61,10 +62,8 @@ namespace Omochaya
                 public override int GetHashCode() => HashCode.Combine(Index, Age);
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal const int CREATE_LIMIT_SIZE = 1024 * 1;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal const int EXPAND_LIMIT_SIZE = 1024 * 128;
 
             /// <summary>Expands the specified raw array to the exact capacity, logging a diagnostic warning upon resizing.</summary>
@@ -152,10 +151,10 @@ namespace Omochaya
         {
             // inner classes
 
-            /// <summary>Don't touch! Only for system.</summary>
+            struct UnsafePoolMeta : IUnsafePoolMeta { }
+
             class HiddenPool<T> : UnsafePoolBase<UnsafePoolMeta, T>
             {
-                /// <summary>Don't touch! Only for system.</summary>
                 internal static readonly HiddenPool<T> Shared = new();
                 HiddenPool() {}
 
@@ -299,21 +298,21 @@ namespace Omochaya
             where M : struct, IPoolMeta
             => new Pool.Id(index, self.UnsafeGetMeta(index).Age);
     }
-}
+
+// }
 
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 // これ以降は間接的に使用されます。利用者が直接使用することは想定していません
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-namespace Omochaya.HiddenStory
-{
-    using System;
-    using System.Runtime.CompilerServices;
-    using UnityEngine;
+
+// namespace Omochaya.HiddenStory
+// {
+//     using System;
+//     using System.Runtime.CompilerServices;
+//     using UnityEngine;
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public interface IUnsafePoolMeta { }
-
-    struct UnsafePoolMeta : IUnsafePoolMeta { }
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public interface IPoolMeta : IUnsafePoolMeta { int Age { get; set; } }
@@ -356,12 +355,14 @@ namespace Omochaya.HiddenStory
         public abstract int TotalBytes { get; }
 #endif
 
+        /// <summary></summary>
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => this.nextFree != null;
         }
 
+        /// <summary></summary>
         public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -406,7 +407,6 @@ namespace Omochaya.HiddenStory
             this.freeHead = oldCount;
         }
 
-        /// <summary>Allocates an empty slot from the pool and returns its unique identifier.</summary>
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         internal int Alloc()
         {
@@ -446,8 +446,6 @@ namespace Omochaya.HiddenStory
 
 // ↓↓↓↓↓↓ ここからジェネリクスによるコードブロート対象 ↓↓↓↓↓↓
 
-    // 世代管理しないプール。indexの有効性を検証するためのオーバーヘッドがないぶん高速。
-    // 何らかの手段でindexの有効性が保証されている場合に使用できるが、使用には細心の注意を払うこと！
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public abstract class UnsafePoolBase<M, V> : PoolCore
         where M : struct, IUnsafePoolMeta
@@ -455,8 +453,8 @@ namespace Omochaya.HiddenStory
         // inner classes
         internal struct PoolSlot
         {
-            public M Meta;
-            public V Value;
+            internal M Meta;
+            internal V Value;
         }
 
         // fields
@@ -464,7 +462,6 @@ namespace Omochaya.HiddenStory
 
         // properties
 
-        /// <summary></summary>
         protected new int ItemSize
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -514,8 +511,6 @@ namespace Omochaya.HiddenStory
         public ref V UnsafeGet(int index) => ref this.Array[index].Value;
     }
 
-    // プールの基底クラス。IDによる要素へのアクセスを実現する。
-    // IdにAgeをもちIdの最終的な有効性を IsValid により判定する。
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public abstract class PoolBase<M, V> : UnsafePoolBase<M, V>
         where M : struct, IPoolMeta
@@ -730,24 +725,5 @@ namespace Omochaya.HiddenStory
     }
 
 // ↑↑↑↑↑↑ ここまでジェネリクスによるコードブロート対象 ↑↑↑↑↑↑
-
-    // やめとこう...
-//     public static ref T UnsafeGet<T>(this T[] array, int index) where T : struct
-//     {
-// #if NET_5_0_OR_GREATER || NET_COREAPP // 将来、Unityが CoreCLR（.NETモダンAPI）に完全移行した時のため
-//         return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);
-// #else // iOS / Android / WebGL（.NET Standard 2.1 / IL2CPP環境）
-//         // 参照が含まれている場合は、安全のために通常の配列アクセス
-//         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>()) { return ref array[index]; }
-
-//         // 参照が含まれない純粋な値型配列なら、配列ヘッダを飛ばして直接アクセス
-//         return ref Unsafe.Add(ref Unsafe.As<UnsafeDummy<T>>(array).Data, index);
-//     }
-//     class UnsafeDummy<T>
-//     {
-//         public IntPtr header;
-//         public T Data;
-// #endif
-//     }
 
 }

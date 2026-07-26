@@ -40,7 +40,7 @@ namespace Omochaya
             }
         }
 
-        /// <summary></summary>
+        /// <summary>Configures the capacity limits for the state machine pool associated with this task during the warmup phase.</summary>
         public static void Custom(this Task self, int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE, int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE)
         {
             Dev.Assert(TaskWarmup.IsValid);

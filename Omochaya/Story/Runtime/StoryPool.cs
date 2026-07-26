@@ -17,7 +17,7 @@ namespace Omochaya
 
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>Provides global configurations, identifier structures, and capacity calculation utilities for the unified pooling system.</summary>
         public static class Pool
         {
             /// <summary>Represents a unique identifier for a pooled resource, combining an array index and a generation age to ensure safe access.</summary>
@@ -257,13 +257,13 @@ namespace Omochaya
 
         // 型によっては使わないジェネリッククラスのメソッドを拡張メソッドとすることでコードブロートを抑制
 
-        /// <summary></summary>
+        /// <summary>Gets a direct reference to the metadata at the raw index without identifier validation.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref M UnsafeGetMeta<M, V>(this UnsafePoolBase<M, V> self, int index)
             where M : struct, IUnsafePoolMeta
             => ref self.Array[index].Meta;
 
-        /// <summary></summary>
+        /// <summary>Gets a reference to the metadata associated with the specified valid identifier.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref M GetMeta<M, V>(this PoolBase<M, V> self, Pool.Id id)
             where M : struct, IPoolMeta
@@ -273,7 +273,7 @@ namespace Omochaya
             
         }
 
-        /// <summary></summary>
+        /// <summary>Forcibly advances the generation age of the metadata at the raw index without validation.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void UnsafeReborn<M, V>(this PoolBase<M, V> self, int index)
             where M : struct, IPoolMeta
@@ -284,7 +284,7 @@ namespace Omochaya
             meta.Age = age;
         }
 
-        /// <summary></summary>
+        /// <summary>Advances the generation age of the metadata associated with the specified identifier.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Reborn<M, V>(this PoolBase<M, V> self, Pool.Id id)
             where M : struct, IPoolMeta
@@ -292,7 +292,7 @@ namespace Omochaya
             if (self.IsValid(id)) { self.UnsafeReborn(id.Index); }
         }
 
-        /// <summary></summary>
+        /// <summary>Retrieves the current identifier for the raw index using its active generation age.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Pool.Id UnsafeGetId<M, V>(this PoolBase<M, V> self, int index)
             where M : struct, IPoolMeta
@@ -355,14 +355,14 @@ namespace Omochaya
         public abstract int TotalBytes { get; }
 #endif
 
-        /// <summary></summary>
+        /// <summary>Gets a value indicating whether the internal pool structures have been initialized and are valid.</summary>
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => this.nextFree != null;
         }
 
-        /// <summary></summary>
+        /// <summary>Gets the current total allocated capacity of the underlying pool array.</summary>
         public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -435,7 +435,7 @@ namespace Omochaya
 #endif
         }
 
-        /// <summary></summary>
+        /// <summary>Configures the memory limit thresholds for initial creation and subsequent expansions of the pool capacity.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Custom(int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE, int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE)
         {

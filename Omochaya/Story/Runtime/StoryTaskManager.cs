@@ -568,7 +568,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             nextTopInfo.Offset = INVALID_OFFSET;
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeFreeCore を呼ぶので
+        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafePop を呼ぶので
         void UnsafeFreeCore(int index)
         {
             UnsafePop(index);
@@ -700,7 +700,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafeLink を呼ぶので
+        [MethodImpl(MethodImplOptions.NoInlining)] // UnsafePushChain を呼ぶので
         internal bool IsNotCompleted(Story.Task task)
         {
             Dev.Assert(IsRunningValid);

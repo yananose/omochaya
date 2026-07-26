@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-26
+
+### Added
+- `await` 時やタスク実行中にオーナーコンポーネントを動的に指定（または再指定）できる `At()` メソッド（`Story.At(owner)`、`Task.At(owner)`、`Task<R>.At(owner)`）を追加。
+
+### Changed
+- プール管理のコアシステムをリファクタリング。安全な参照管理（`PoolMemory` 等の整備）や階層構造の見直しにより、メモリ管理の保守性向上と処理コストの削減（パフォーマンス改善）を実施。
+
 ## [1.1.1] - 2026-07-13
 
 ### Fixed

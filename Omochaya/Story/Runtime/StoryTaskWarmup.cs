@@ -11,12 +11,17 @@
 
 namespace Omochaya
 {
+    using System.Runtime.CompilerServices;
     using HiddenStory;
 
     public static partial class Story
     {
         /// <summary>Enters a disposable warmup scope to safely pre-allocate pool capacities for tasks initialized within the block.</summary>
-        public static TaskWarmuper WarmupMode() => TaskWarmup.Create();
+        public static TaskWarmupper WarmupMode() => TaskWarmup.Create();
+
+        /// <summary>Configures and expands the capacity of the global task pools.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Warmup(int count) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, count);
 
         /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this task.</summary>
         public static void Warmup(this Task self, int count = 0)
@@ -24,7 +29,7 @@ namespace Omochaya
             if (TaskWarmup.IsValid)
             {
                 Dev.Assert(!self.IsValid, string.Format(Messages.Exceptions.CannotWarmupAllocatedPool, self));
-                TaskWarmup.Shared.Complete(count);
+                TaskWarmup.Shared.Warmup(count);
             }
             else
             {
@@ -33,6 +38,13 @@ namespace Omochaya
                 Dev.LogWarning(string.Format(Messages.Warnings.ResizingAllocatedPool, self));
                 info.Warmup(count);
             }
+        }
+
+        /// <summary>Configures the capacity limits for the state machine pool associated with this task during the warmup phase.</summary>
+        public static void Custom(this Task self, int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE, int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE)
+        {
+            Dev.Assert(TaskWarmup.IsValid);
+            TaskWarmup.Shared.Custom(createLimitSize, expandLimitSize);
         }
     }
 }
@@ -46,34 +58,28 @@ namespace Omochaya.HiddenStory
     using System.Reflection;
     using System.Runtime.CompilerServices;
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal static class TaskWarmup
     {
-        static TaskWarmuper shared;
+        static TaskWarmupper shared;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        internal static TaskWarmuper Shared => TaskWarmup.shared;
+        internal static TaskWarmupper Shared => TaskWarmup.shared;
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static bool IsValid => TaskWarmup.shared != null;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        internal static TaskWarmuper Create()
+        internal static TaskWarmupper Create()
         {
-            var ret = new TaskWarmuper();
+            var ret = new TaskWarmupper();
             ret.Parent = TaskWarmup.shared;
             TaskWarmup.shared = ret;
             return ret;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        internal static void Destroy(this TaskWarmuper self)
+        internal static void Destroy(this TaskWarmupper self)
         {
             Dev.Assert(TaskWarmup.shared == self);
             if (self != null) { TaskWarmup.shared = self.Parent; }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static int GetCapacity(Type stateMachineType)
         {
             var count = GetCapacityCore(stateMachineType);
@@ -139,13 +145,13 @@ namespace Omochaya.HiddenStory
     }
 
     /// <summary>Don't touch! Only for system.</summary>
-    public class TaskWarmuper : IDisposable
+    public class TaskWarmupper : IDisposable
     {
 
         // fields
-        StateMachine.IStateMachinePool pool;
+        PoolCore pool;
         Type type;
-        internal TaskWarmuper Parent;
+        internal TaskWarmupper Parent;
         int size;
 
         // methods
@@ -153,7 +159,6 @@ namespace Omochaya.HiddenStory
         /// <summary>Don't touch! Only for system.</summary>
         public void Dispose() => this.Destroy();
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal void Setup<S>() where S : struct, IAsyncStateMachine
         {
             Dev.Assert(this.pool == null, string.Format(Messages.Exceptions.MustWarmupImmediately, this.type));
@@ -162,11 +167,10 @@ namespace Omochaya.HiddenStory
             this.size = Unsafe.SizeOf<S>();
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        internal void Complete(int count)
+        internal void Warmup(int count)
         {
             Dev.Assert(this.pool != null, Messages.Exceptions.MustSpecifyTaskInWarmupMode);
-            if (this.pool.Func(StateMachine.FuncType.IsValid, 0))
+            if (this.pool.IsValid)
             {
                 Dev.LogWarning(string.Format(Messages.Warnings.IgnoredWarmupForAllocatedPool, this.type));
             }
@@ -175,9 +179,15 @@ namespace Omochaya.HiddenStory
 // #if !STORY_NO_PRE_CAPACITY // コメントアウト（避けたいのはタスク開始時のコストのはずなので事前確保時は残す）
                 if (count <= 0) { count = TaskWarmup.GetCapacity(this.type); }
 // #endif
-                if (count <= 0) { count = Story.Pool.GetNeedCountAtCreate(this.size); }
-                this.pool.Func(StateMachine.FuncType.Expand, count);
+                this.pool.Expand(count);
             }
+            this.pool = null;
+        }
+
+        internal void Custom(int createLimitSize, int expandLimitSize)
+        {
+            Dev.Assert(this.pool != null, Messages.Exceptions.MustSpecifyTaskInWarmupMode);
+            this.pool.Custom(createLimitSize, expandLimitSize);
             this.pool = null;
         }
     }

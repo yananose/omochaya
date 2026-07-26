@@ -29,101 +29,71 @@ namespace Omochaya.HiddenStory
 // エディタ向け機能
 #if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal interface IPoolMonitorForDebug
     {
-        /// <summary>Don't touch! Only for system.</summary>
         string PoolName { get; }
 
-        /// <summary>Don't touch! Only for system.</summary>
         int ActiveCount { get; }
 
-        /// <summary>Don't touch! Only for system.</summary>
         int WorstCount { get; }
 
-        /// <summary>Don't touch! Only for system.</summary>
         int FreeCount { get; }
 
-        /// <summary>Don't touch! Only for system.</summary>
         int TotalBytes { get; }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static readonly List<IPoolMonitorForDebug> Monitors = new();
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static void Register(IPoolMonitorForDebug monitor) => Monitors.Add(monitor);
     }
 
 #if STORY_NO_DEBUG
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal static class DevForEditor
     {
-        /// <summary>Don't touch! Only for system.</summary>
         internal static string FormatMemorySize(int bytes) => Dev.FormatMemorySize(bytes);
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class TaskMonitorAPI
         {
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void FetchAutoCount(ref int count) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void FetchManualCount(ref int count) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void FetchLateCount(ref int count) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void FetchFixedCount(ref int count) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void ExtractOwner(ref Component owner, Story.Task task) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void GetOrder(ref long offset, Story.Task task) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void ExtractCreationTrace(ref string trace, Story.Task task) {}
 
-            /// <summary>Don't touch! Only for system.</summary>
             [Conditional("DUMMY")] internal static void GetTaskList(List<Story.Task> outTasks) {}
         }
     }
 
 #else // (STORY_NO_DEBUG) == false
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal static class DevForEditor
     {
-        /// <summary>Don't touch! Only for system.</summary>
         internal static string FormatMemorySize(int bytes) => Dev.FormatMemorySize(bytes);
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class TaskMonitorAPI
         {
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void FetchAutoCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(0);
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void FetchManualCount(ref int count) => count = TaskManager.Shared.TopCountForDebug();
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void FetchLateCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(1);
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void FetchFixedCount(ref int count) => count = TaskManager.Shared.TopCountForDebug(2);
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void ExtractOwner(ref Component owner, Story.Task task) => owner = task.Info().Owner;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void GetOrder(ref long offset, Story.Task task) => offset = task.Info2().SortKeyForDebug;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void ExtractCreationTrace(ref string trace, Story.Task task) => trace = task.Info2().CreationTraceForDebug;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void GetTaskList(List<Story.Task> outTasks)
             {
                 var self = TaskManager.Shared;
@@ -175,39 +145,31 @@ Dev.LoopBreak.Check(index.ToString());
 
     internal class Dev : UnityEngine.Debug
     {
-        /// <summary></summary>
         internal static bool IsEnableAssert = true;
 
-        /// <summary>Enables recording of task creation stack traces for debugging.</summary>
         internal static bool EnableTaskTracking = false;
 
-        /// <summary>Registers a diagnostic pool monitor instance to the global debug registry.</summary>
         internal static void PoolMonitorRegister(IPoolMonitorForDebug monitor)
             => IPoolMonitorForDebug.Register(monitor);
 
-        /// <summary>Validates whether the awaited task type is supported natively inside the story task loop.</summary>
         internal static void ValidateAwaiter<T>()
         {
             if (!AwaiterValidator<T>.IsValid) { throw new NotSupportedException(string.Format(Messages.Exceptions.NotSupportedAwait, Type<T>.Name)); }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class LoopBreak
         {
             static int count;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void Init() => count = 0;
 
-            /// <summary>Don't touch! Only for system.</summary>
             internal static void Check(string str = "")
             {
                 if (255 < ++count) { throw new InvalidOperationException(string.Format(Messages.Exceptions.InfiniteLoop, str, TaskManager.Shared.GetRunningInfo().GetMethodName())); }
             }
         }
 
-        /// <summary>Extracts the formatted bracketed name prefix of the specified state machine pool monitor.</summary>
-        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool)
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool)
         {
             if (pool is IPoolMonitorForDebug monitor)
             {
@@ -223,7 +185,6 @@ Dev.LoopBreak.Check(index.ToString());
             return sb.Append(Messages.DebugInfo.TypeUnknown);
         }
 
-        /// <summary>Formats the entire active or historical state configuration of a task handle into a comprehensive debug string.</summary>
         internal static string ToString(Story.Task self)
         {
             ref var info = ref self.Info();
@@ -252,22 +213,16 @@ Dev.LoopBreak.Check(index.ToString());
             return sb.ToString();
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class Type<T> { internal static string Name = GetTypeName(new StringBuilder(256), typeof(T)).ToString(); }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class Pool<T> { internal static string Name = string.Format("[Pool] {0}", Type<T>.Name); }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class Pool<HOT, COOL> { internal static string Name = string.Format("[Pool2] {0} / {1}", Type<HOT>.Name, Type<COOL>.Name); }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class HiddenPool<T> { internal static string Name = string.Format("[Hidden] {0}", Type<T>.Name); }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static class StateMachinePool<S> { internal static string Name = string.Format("[StateMachine] {0}", Type<S>.Name); }
 
-        /// <summary>Formats a raw byte count into a human-readable string representation with appropriate binary units.</summary>
         internal static string FormatMemorySize(int bytes)
         {
             string[] units = { "B", "KB", "MB", "GB", "TB" };
@@ -281,14 +236,12 @@ Dev.LoopBreak.Check(index.ToString());
             return $"{ret:F2} {units[i]}";
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         internal static void ValidateManualTask(ref TaskInfo rootInfo, ref TaskInfo topInfo, string message)
         {
             Assert(topInfo.IsTop, string.Format(Messages.Exceptions.AlreadyAwaited, rootInfo.GetMethodName()));
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
         [Conditional("DUMMY")] internal static void AssertIsTrue(bool condition, string message) {}
 
         // for debug only
@@ -392,7 +345,6 @@ Dev.LoopBreak.Check("bad");
 
 #else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG == false
 
-    /// <summary>Don't touch! Only for system.</summary>
     internal class Dev : Debug
     {
         internal static bool IsEnableAssert = false;
@@ -407,7 +359,7 @@ Dev.LoopBreak.Check("bad");
             [Conditional("DUMMY")] internal static void Check(string str) {}
         }
 
-        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool) => null;
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool) => null;
 
 #if FOR_DEBUG || UNITY_EDITOR
 

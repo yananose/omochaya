@@ -95,10 +95,6 @@ namespace Omochaya
         /// <summary>The default initial capacity allocated for task pools and execution band arrays.</summary>
         public const int DEFAULT_TASK_COUNT = 1024;
 
-        /// <summary>Configures and expands the capacity of the global task pools.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Warmup(int taskCount) => TaskManager.Shared.Custom(DEFAULT_BAND_COUNT, taskCount);
-
         /// <summary>Configures and expands the capacity of the global task execution bands and pools.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Custom(
@@ -241,6 +237,14 @@ namespace Omochaya
                 Keep(TaskManager.Shared.GetRunningInfo().Owner);
             }
 
+            /// <summary>The await version of the method that anchors the task to a specific owner component to govern its lifecycle.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Task At(Component owner)
+            {
+                Keep(owner);
+                return this;
+            }
+
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
@@ -345,13 +349,21 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Stop() => this.rawTask.Stop();
 
-            /// <summary>Anchors the task to the currently running task's owner component.</summary>
+            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep(Component owner) => this.rawTask.Keep(owner);
 
-            /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
+            /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Keep() => this.rawTask.Keep();
+
+            /// <summary>The await version of the method that anchors the task to a specific owner component to govern its lifecycle.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Task<R> At(Component owner)
+            {
+                this.rawTask.Keep(owner);
+                return this;
+            }
 
             /// <summary>Drives the task state machine forward manually by one step.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -482,7 +494,7 @@ namespace Omochaya.HiddenStory
     using System.Text;
     using UnityEngine;
 
-    static class Extensions
+    static partial class Extensions
     {
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -491,6 +503,7 @@ namespace Omochaya.HiddenStory
             if (Story.Pool<TaskInfo, TaskInfo2>.Shared.IsValid(self.Id)) { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(self.Id.Index); }
             else { return ref TaskInfo.Invalid; }
         }
+
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref TaskInfo2 Info2(this Story.Task self)

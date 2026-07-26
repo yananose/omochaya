@@ -359,7 +359,7 @@ Dev.LoopBreak.Check("bad");
             [Conditional("DUMMY")] internal static void Check(string str) {}
         }
 
-        internal static StringBuilder ToString(StringBuilder sb, StateMachine.IStateMachinePool pool) => null;
+        internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool) => null;
 
 #if FOR_DEBUG || UNITY_EDITOR
 

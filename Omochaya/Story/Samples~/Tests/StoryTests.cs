@@ -1918,6 +1918,10 @@ namespace OmochayaTests
             Assert.AreEqual(4, Story.Pool.GetNeedCountAtExpand(2, 10, 10));
         }
 
+        // ------------------------------------------------------------------------
+        // Tweenの挙動テスト
+        // ------------------------------------------------------------------------
+
         [Test]
         public void Pool_初期容量計算ロジックの厳密な検証()
         {
@@ -1940,5 +1944,28 @@ namespace OmochayaTests
             Assert.AreEqual(32, Story.Pool.GetNeedCountAtCreate(10, 1000));
         }
 
+        [Test]
+        public void Ease_CurveImplが正確に評価されアロケーションが発生しないこと()
+        {
+            // テスト用の直線カーブ（時間 0〜1、値 0〜1）を生成
+            var linearCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+            var ease = linearCurve.ToEase();
+
+            // 1. アロケーションと評価のテスト
+            using (Utils.Check())
+            {
+                // 0.0, 0.5, 1.0 の評価が正確か
+                Assert.AreEqual(0.0f, ease.Calc(0.0f), "進行度0での評価が間違っています");
+                Assert.AreEqual(0.5f, ease.Calc(0.5f), "進行度0.5での評価が間違っています");
+                Assert.AreEqual(1.0f, ease.Calc(1.0f), "進行度1での評価が間違っています");
+                
+                // （任意）オーバーシュートのテストが必要な場合は、1を超えるカーブで検証
+            }
+
+            // 2. Nullフォールバックのテスト
+            var nullEase = Story.Ease.Curve(null);
+            Assert.DoesNotThrow(() => nullEase.Calc(0.5f), "Nullのカーブが渡された場合に例外が発生してはいけません");
+            Assert.AreEqual(0.5f, nullEase.Calc(0.5f), "Null時は進行度がそのまま返却されるべきです");
+        }
     }
 }

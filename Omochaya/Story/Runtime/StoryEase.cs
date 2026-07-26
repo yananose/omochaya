@@ -250,6 +250,25 @@ namespace Omochaya
             }
 
             /// <summary></summary>
+            public readonly struct CurveImpl : IEase
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public float Calc(float now)
+                {
+                    return this.curve != null ? this.curve.Evaluate(now) : now;
+                }
+
+                readonly AnimationCurve curve;
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public CurveImpl(AnimationCurve curve)
+                {
+                    this.curve = curve;
+                }
+            }
+
+            /// <summary></summary>
             public readonly struct NoneImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -406,6 +425,9 @@ namespace Omochaya
 
             /// <summary></summary>
             public static readonly SineImpl SineDec = new();
+
+            /// <summary></summary>
+            public static CurveImpl Curve(AnimationCurve curve) => new(curve);
 
             /// <summary></summary>
             public static readonly QuadImpl QuadAcc = new();
@@ -579,6 +601,10 @@ namespace Omochaya
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.DirectImpl<E, Ease.BounceImpl> BounceDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.CurveImpl ToEase(this AnimationCurve self) => new Ease.CurveImpl(self);
     }
 }
 

@@ -206,7 +206,10 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static async Task ImmediateTask<U>(U updater, float end)
             where U : struct, IUpdater
-            => updater.Update(end);
+        {
+            updater.Update(end);
+            await Void;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static Task TweenTask<U, E>(float interval, in U updater, in E ease, ref double start)

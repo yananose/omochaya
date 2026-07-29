@@ -228,7 +228,7 @@ namespace Omochaya
             while (passer.Bundle(updater, ease)) { await Yield; }
         }
 
-        struct Passer
+        internal struct Passer
         {
             // fields
             double prev;

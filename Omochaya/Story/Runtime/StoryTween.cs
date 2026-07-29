@@ -11,6 +11,9 @@ namespace Omochaya
     using System;
     using System.Runtime.CompilerServices;
     using UnityEngine;
+    using UnityEngine.LowLevel;
+    using UnityEngine.PlayerLoop;
+    using HiddenStory;
 
     public static partial class Story
     {
@@ -261,9 +264,9 @@ namespace Omochaya
                 if (diff <= 0)
                 {
 #if UNITY_EDITOR
-                    if (diff == 0f) { Debug.Log($"巻き戻ってるので実行しない(interrupt？)：{diff}"); }
-                    else if (timeAsDouble <= this.start) { Debug.Log($"巻き戻ってるので実行しない(SetStart で遅延起動？)：{diff}"); }
-                    else { Debug.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
+                    if (diff == 0f) { Dev.Log($"巻き戻ってるので実行しない(interrupt？)：{diff}"); }
+                    else if (timeAsDouble <= this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動？)：{diff}"); }
+                    else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
 #endif
                     this.seek = -1f;
                     return;
@@ -273,14 +276,14 @@ namespace Omochaya
                 if (delta * 1.25 < diff)
                 {
                     diff -= delta;
-                    Debug.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
+                    Dev.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
                     this.start += diff;
                 }
                 prev = timeAsDouble;
 
                 var seek = (float)(timeAsDouble - this.start);
 #if UNITY_EDITOR
-                if (seek < 0f) { Debug.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
+                if (seek < 0f) { Dev.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
 #endif
                 this.seek = seek;
                 return;
@@ -304,6 +307,70 @@ namespace Omochaya
                 return true;
             }
         }
+
+#if STORY_TIME_CACHE
+
+        static class Time
+        {
+            public static double timeAsDouble;
+            public static double unscaledTimeAsDouble;
+            public static float deltaTime;
+            public static int frameCount;
+            public static void UpdateCache()
+            {
+                timeAsDouble = UnityEngine.Time.timeAsDouble;
+                unscaledTimeAsDouble = UnityEngine.Time.unscaledTimeAsDouble;
+                deltaTime = UnityEngine.Time.deltaTime;
+                frameCount = UnityEngine.Time.frameCount;
+            }
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            static void RegisterTimeCache()
+            {
+                var defaultLoop = PlayerLoop.GetCurrentPlayerLoop();
+                var customLoop = new PlayerLoopSystem { type = typeof(Time), updateDelegate = Time.UpdateCache };
+
+                if (PlayerLoopUtility.AppendToPhase<EarlyUpdate>(ref defaultLoop, customLoop)) { PlayerLoop.SetPlayerLoop(defaultLoop); }
+                else { Dev.LogError("[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
+            }
+        }
+
+        static class PlayerLoopUtility
+        {
+            /// <summary>
+            /// 指定したメインフェーズの「一番最後」にカスタムループを追加します。
+            /// </summary>
+            public static bool AppendToPhase<TTargetPhase>(ref PlayerLoopSystem rootLoop, PlayerLoopSystem customLoop)
+                where TTargetPhase : struct
+            {
+                if (rootLoop.subSystemList == null) return false;
+
+                for (int i = 0; i < rootLoop.subSystemList.Length; i++)
+                {
+                    if (rootLoop.subSystemList[i].type == typeof(TTargetPhase))
+                    {
+                        var subSystems = rootLoop.subSystemList[i].subSystemList ?? new PlayerLoopSystem[0];
+                        var newSubSystems = new PlayerLoopSystem[subSystems.Length + 1];
+
+                        // 既存のものをすべてコピー
+                        System.Array.Copy(subSystems, 0, newSubSystems, 0, subSystems.Length);
+                        // 最後尾にカスタムループを配置
+                        newSubSystems[subSystems.Length] = customLoop;
+
+                        rootLoop.subSystemList[i].subSystemList = newSubSystems;
+                        return true;
+                    }
+
+                    if (AppendToPhase<TTargetPhase>(ref rootLoop.subSystemList[i], customLoop))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+#endif
+
     }
 }
 

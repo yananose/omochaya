@@ -372,6 +372,42 @@ namespace Omochaya
         /// <summary></summary>
         public static Carrier7 MoveOrthoSize(this Camera self) => new(self);
 
+        // Carrier8:Image.fillAmount -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier8 : ICarrier
+        {
+            readonly Image self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier8(Image self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.fillAmount;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.fillAmount = value; 
+        }
+
+        /// <summary></summary>
+        public static Carrier8 MoveFillAmount(this Image self) => new(self);
+
+        // Carrier9:Slider.value -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier9 : ICarrier
+        {
+            readonly Slider self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier9(Slider self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.value;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.value = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier9 MoveValue(this Slider self) => new(self);
+
         // changer ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -888,7 +924,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.r = Mathf.Clamp01(prm.P0);
+                    current.r = prm.P0;
                     return current;
                 }
             }
@@ -900,7 +936,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.g = Mathf.Clamp01(prm.P0);
+                    current.g = prm.P0;
                     return current;
                 }
             }
@@ -912,7 +948,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.b = Mathf.Clamp01(prm.P0);
+                    current.b = prm.P0;
                     return current;
                 }
             }
@@ -924,7 +960,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.a = Mathf.Clamp01(prm.P0);
+                    current.a = prm.P0;
                     return current;
                 }
             }
@@ -936,8 +972,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.r = Mathf.Clamp01(prm.P0);
-                    current.g = Mathf.Clamp01(prm.P1);
+                    current.r = prm.P0;
+                    current.g = prm.P1;
                     return current;
                 }
             }
@@ -949,8 +985,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.g = Mathf.Clamp01(prm.P0);
-                    current.b = Mathf.Clamp01(prm.P1);
+                    current.g = prm.P0;
+                    current.b = prm.P1;
                     return current;
                 }
             }
@@ -962,8 +998,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.b = Mathf.Clamp01(prm.P0);
-                    current.r = Mathf.Clamp01(prm.P1);
+                    current.b = prm.P0;
+                    current.r = prm.P1;
                     return current;
                 }
             }
@@ -975,8 +1011,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.r = Mathf.Clamp01(prm.P0);
-                    current.a = Mathf.Clamp01(prm.P1);
+                    current.r = prm.P0;
+                    current.a = prm.P1;
                     return current;
                 }
             }
@@ -988,8 +1024,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.g = Mathf.Clamp01(prm.P0);
-                    current.a = Mathf.Clamp01(prm.P1);
+                    current.g = prm.P0;
+                    current.a = prm.P1;
                     return current;
                 }
             }
@@ -1001,8 +1037,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.b = Mathf.Clamp01(prm.P0);
-                    current.a = Mathf.Clamp01(prm.P1);
+                    current.b = prm.P0;
+                    current.a = prm.P1;
                     return current;
                 }
             }
@@ -1014,9 +1050,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.r = Mathf.Clamp01(prm.P0);
-                    current.g = Mathf.Clamp01(prm.P1);
-                    current.b = Mathf.Clamp01(prm.P2);
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    current.b = prm.P2;
                     return current;
                 }
             }
@@ -1028,9 +1064,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.g = Mathf.Clamp01(prm.P0);
-                    current.b = Mathf.Clamp01(prm.P1);
-                    current.a = Mathf.Clamp01(prm.P2);
+                    current.g = prm.P0;
+                    current.b = prm.P1;
+                    current.a = prm.P2;
                     return current;
                 }
             }
@@ -1042,9 +1078,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.b = Mathf.Clamp01(prm.P0);
-                    current.a = Mathf.Clamp01(prm.P1);
-                    current.r = Mathf.Clamp01(prm.P2);
+                    current.b = prm.P0;
+                    current.a = prm.P1;
+                    current.r = prm.P2;
                     return current;
                 }
             }
@@ -1056,9 +1092,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.a = Mathf.Clamp01(prm.P0);
-                    current.r = Mathf.Clamp01(prm.P1);
-                    current.g = Mathf.Clamp01(prm.P2);
+                    current.a = prm.P0;
+                    current.r = prm.P1;
+                    current.g = prm.P2;
                     return current;
                 }
             }
@@ -1070,10 +1106,10 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param4 prm)
                 {
-                    current.r = Mathf.Clamp01(prm.P0);
-                    current.g = Mathf.Clamp01(prm.P1);
-                    current.b = Mathf.Clamp01(prm.P2);
-                    current.a = Mathf.Clamp01(prm.P3);
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    current.b = prm.P2;
+                    current.a = prm.P3;
                     return current;
                 }
             }

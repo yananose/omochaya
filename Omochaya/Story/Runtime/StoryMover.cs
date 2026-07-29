@@ -9,6 +9,7 @@
 namespace Omochaya
 {
     using UnityEngine;
+    using UnityEngine.UI;
     using TMPro;
     using Omochaya.HiddenStory;
 
@@ -290,7 +291,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public float Current => this.self.maxVisibleCharacters;
             /// <summary>Don't touch! Only for system.</summary>
-            public void SetCurrent(float value) => this.self.maxVisibleCharacters = Mathf.FloorToInt(value);
+            public void SetCurrent(float value) => this.self.maxVisibleCharacters = Mathf.CeilToInt(value);
         }
 
         /// <summary></summary>
@@ -791,12 +792,395 @@ namespace Omochaya
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
-    // ToDo...
     static class StoryColor
     {
+        // carrier ===============================================================================================
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public interface ICarrier : Mover.ICarrier<Color> {}
+
         // Carrier0:Graphic.color -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier0 : ICarrier
+        {
+            readonly Graphic self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier0(Graphic self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Color Current => this.self.color;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Color value) => this.self.color = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier0 MoveColor(this Graphic self)
+            => new(self);
+
         // Carrier1:TMP_Text.color -------------------------------------------------
-        // Carrier2:Camera.color -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier1 : ICarrier
+        {
+            readonly TMP_Text self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier1(TMP_Text self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Color Current => this.self.color;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Color value) => this.self.color = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier1 MoveColor(this TMP_Text self)
+            => new(self);
+
+        // Carrier2:Camera.backgroundColor -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier2 : ICarrier
+        {
+            readonly Camera self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier2(Camera self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Color Current => this.self.backgroundColor;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Color value) => this.self.backgroundColor = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier2 MoveColor(this Camera self)
+            => new(self);
+
+        // changer ===============================================================================================
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Changer
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct RTo : Mover.IChanger<Color, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param1 Get(Color current) => new(current.r);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param1 prm)
+                {
+                    current.r = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct GTo : Mover.IChanger<Color, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param1 Get(Color current) => new(current.g);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param1 prm)
+                {
+                    current.g = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct BTo : Mover.IChanger<Color, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param1 Get(Color current) => new(current.b);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param1 prm)
+                {
+                    current.b = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct ATo : Mover.IChanger<Color, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param1 Get(Color current) => new(current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param1 prm)
+                {
+                    current.a = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct RGTo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.r, current.g);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct GBTo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.g, current.b);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.g = prm.P0;
+                    current.b = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct BRTo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.b, current.r);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.b = prm.P0;
+                    current.r = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct RATo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.r, current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.r = prm.P0;
+                    current.a = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct GATo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.g, current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.g = prm.P0;
+                    current.a = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct BATo : Mover.IChanger<Color, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param2 Get(Color current) => new(current.b, current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param2 prm)
+                {
+                    current.b = prm.P0;
+                    current.a = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct RGBTo : Mover.IChanger<Color, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param3 prm)
+                {
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    current.b = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct GBATo : Mover.IChanger<Color, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param3 Get(Color current) => new(current.g, current.b, current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param3 prm)
+                {
+                    current.g = prm.P0;
+                    current.b = prm.P1;
+                    current.a = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct BARTo : Mover.IChanger<Color, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param3 Get(Color current) => new(current.b, current.a, current.r);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param3 prm)
+                {
+                    current.b = prm.P0;
+                    current.a = prm.P1;
+                    current.r = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct ARGTo : Mover.IChanger<Color, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param3 Get(Color current) => new(current.a, current.r, current.g);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param3 prm)
+                {
+                    current.a = prm.P0;
+                    current.r = prm.P1;
+                    current.g = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct To : Mover.IChanger<Color, Mover.Param4>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.Param4 Get(Color current) => new(current.r, current.g, current.b, current.a);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Color Set(Color current, Mover.Param4 prm)
+                {
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    current.b = prm.P2;
+                    current.a = prm.P3;
+                    return current;
+                }
+            }
+        }
+
+        // plan ==================================================================================================
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.RTo, Mover.Param1> RTo<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.RTo, Mover.Param1> RAdd<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.GTo, Mover.Param1> GTo<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.GTo, Mover.Param1> GAdd<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.BTo, Mover.Param1> BTo<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.BTo, Mover.Param1> BAdd<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.ATo, Mover.Param1> ATo<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.ATo, Mover.Param1> AAdd<C>(this C carrier, float to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.RGTo, Mover.Param2> RGTo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.RGTo, Mover.Param2> RGAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.GBTo, Mover.Param2> GBTo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.GBTo, Mover.Param2> GBAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.BRTo, Mover.Param2> BRTo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.BRTo, Mover.Param2> BRAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.RATo, Mover.Param2> RATo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.RATo, Mover.Param2> RAAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.GATo, Mover.Param2> GATo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.GATo, Mover.Param2> GAAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.BATo, Mover.Param2> BATo<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.BATo, Mover.Param2> BAAdd<C>(this C carrier, float to0, float to1)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.RGBTo, Mover.Param3> RGBTo<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.RGBTo, Mover.Param3> RGBAdd<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.GBATo, Mover.Param3> GBATo<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.GBATo, Mover.Param3> GBAAdd<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.BARTo, Mover.Param3> BARTo<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.BARTo, Mover.Param3> BARAdd<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.ARGTo, Mover.Param3> ARGTo<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.ARGTo, Mover.Param3> ARGAdd<C>(this C carrier, float to0, float to1, float to2)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1, to2));
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Color, C, Changer.To, Mover.Param4> To<C>(this C carrier, Color to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Color, C, Changer.To, Mover.Param4> Add<C>(this C carrier, Color to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
     // ToDo...
@@ -943,6 +1327,8 @@ namespace Omochaya.HiddenStory
         public static Param2 CreateParam(Vector2 p) => new Param2(p.x, p.y);
         /// <summary>Don't touch! Only for system.</summary>
         public static Param3 CreateParam(Vector3 p) => new Param3(p.x, p.y, p.z);
+        /// <summary>Don't touch! Only for system.</summary>
+        public static Param4 CreateParam(Color p) => new Param4(p.r, p.g, p.b, p.a);
         /// <summary>Don't touch! Only for system.</summary>
         public static Param4 CreateParam(Rect p) => new Param4(p.x, p.y, p.width, p.height);
         /// <summary>Don't touch! Only for system.</summary>

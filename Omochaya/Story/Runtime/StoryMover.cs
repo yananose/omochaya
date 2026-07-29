@@ -794,17 +794,16 @@ namespace Omochaya
     // ToDo...
     static class StoryColor
     {
-        // ToDo. SpriteRenderer.color
-
-        // ToDo. TextMeshPro.color
-        // ToDo. TextMeshProUGUI.color
+        // Carrier0:Graphic.color -------------------------------------------------
+        // Carrier1:TMP_Text.color -------------------------------------------------
+        // Carrier2:Camera.color -------------------------------------------------
     }
 
     // ToDo...
     static class StoryQuaternion
     {
-        // ToDo. Transform.localRotation
-        // ToDo. Transform.rotation
+        // Carrier0:Transform.localRotation -------------------------------------------------
+        // Carrier1:Transform.rotation -------------------------------------------------
     }
 
     // ToDo...（たぶん非公開にする）

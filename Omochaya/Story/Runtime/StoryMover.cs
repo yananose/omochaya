@@ -16,13 +16,15 @@ namespace Omochaya
 #if UNITY_EDITOR
     static class StorySample
     {
-        public static async Story.Task Main(RectTransform rt, CanvasGroup cg)
+        public static async Story.Task Main(RectTransform rt, CanvasGroup cg, SpriteRenderer sr)
         {
             var start = Story.GetStart();
             await rt.MoveLocalPosition().XTo(1f).Interval(2f, Story.Ease.None, ref start);
             await rt.MoveLocalPosition().YZAdd(10f, 30f).Speed(2f);
             await rt.MoveAnchoredPosition().To(Vector2.up * 10f).Speed(2f);
             await cg.MoveAlpha().To(0.5f).Interval(2f);
+            await sr.MoveColor().To(Color.red).Interval(2f);
+            await rt.MoveLocalRotation().Add(Quaternion.FromToRotation(rt.forward, Vector3.right)).Speed(30f);
         }
     }
 #endif
@@ -477,8 +479,6 @@ namespace Omochaya
                     current.x = prm.P0;
                     return current;
                 }
-                /// <summary>Don't touch! Only for system.</summary>
-                public Mover.Param1 To(float p0) => new(p0);
             }
             /// <summary>Don't touch! Only for system.</summary>
             public readonly struct YTo : Mover.IChanger<Vector2, Mover.Param1>
@@ -837,15 +837,34 @@ namespace Omochaya
         public static Carrier1 MoveColor(this TMP_Text self)
             => new(self);
 
-        // Carrier2:Camera.backgroundColor -------------------------------------------------
+        // Carrier2:SpriteRenderer.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Carrier2 : ICarrier
+        {
+            readonly SpriteRenderer self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier2(SpriteRenderer self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Color Current => this.self.color;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Color value) => this.self.color = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier2 MoveColor(this SpriteRenderer self)
+            => new(self);
+
+        // Carrier3:Camera.backgroundColor -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier3 : ICarrier
         {
             readonly Camera self;
             /// <summary>Don't touch! Only for system.</summary>
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
-            internal Carrier2(Camera self) => this.self = self;
+            internal Carrier3(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             public Color Current => this.self.backgroundColor;
             /// <summary>Don't touch! Only for system.</summary>
@@ -853,7 +872,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier2 MoveColor(this Camera self)
+        public static Carrier3 MoveBackgroundColor(this Camera self)
             => new(self);
 
         // changer ===============================================================================================
@@ -869,7 +888,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.r = prm.P0;
+                    current.r = Mathf.Clamp01(prm.P0);
                     return current;
                 }
             }
@@ -881,7 +900,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.g = prm.P0;
+                    current.g = Mathf.Clamp01(prm.P0);
                     return current;
                 }
             }
@@ -893,7 +912,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.b = prm.P0;
+                    current.b = Mathf.Clamp01(prm.P0);
                     return current;
                 }
             }
@@ -905,7 +924,7 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param1 prm)
                 {
-                    current.a = prm.P0;
+                    current.a = Mathf.Clamp01(prm.P0);
                     return current;
                 }
             }
@@ -917,8 +936,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
+                    current.r = Mathf.Clamp01(prm.P0);
+                    current.g = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -930,8 +949,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.g = prm.P0;
-                    current.b = prm.P1;
+                    current.g = Mathf.Clamp01(prm.P0);
+                    current.b = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -943,8 +962,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.b = prm.P0;
-                    current.r = prm.P1;
+                    current.b = Mathf.Clamp01(prm.P0);
+                    current.r = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -956,8 +975,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.r = prm.P0;
-                    current.a = prm.P1;
+                    current.r = Mathf.Clamp01(prm.P0);
+                    current.a = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -969,8 +988,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.g = prm.P0;
-                    current.a = prm.P1;
+                    current.g = Mathf.Clamp01(prm.P0);
+                    current.a = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -982,8 +1001,8 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param2 prm)
                 {
-                    current.b = prm.P0;
-                    current.a = prm.P1;
+                    current.b = Mathf.Clamp01(prm.P0);
+                    current.a = Mathf.Clamp01(prm.P1);
                     return current;
                 }
             }
@@ -995,9 +1014,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.b = prm.P2;
+                    current.r = Mathf.Clamp01(prm.P0);
+                    current.g = Mathf.Clamp01(prm.P1);
+                    current.b = Mathf.Clamp01(prm.P2);
                     return current;
                 }
             }
@@ -1009,9 +1028,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.g = prm.P0;
-                    current.b = prm.P1;
-                    current.a = prm.P2;
+                    current.g = Mathf.Clamp01(prm.P0);
+                    current.b = Mathf.Clamp01(prm.P1);
+                    current.a = Mathf.Clamp01(prm.P2);
                     return current;
                 }
             }
@@ -1023,9 +1042,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.b = prm.P0;
-                    current.a = prm.P1;
-                    current.r = prm.P2;
+                    current.b = Mathf.Clamp01(prm.P0);
+                    current.a = Mathf.Clamp01(prm.P1);
+                    current.r = Mathf.Clamp01(prm.P2);
                     return current;
                 }
             }
@@ -1037,9 +1056,9 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param3 prm)
                 {
-                    current.a = prm.P0;
-                    current.r = prm.P1;
-                    current.g = prm.P2;
+                    current.a = Mathf.Clamp01(prm.P0);
+                    current.r = Mathf.Clamp01(prm.P1);
+                    current.g = Mathf.Clamp01(prm.P2);
                     return current;
                 }
             }
@@ -1051,10 +1070,10 @@ namespace Omochaya
                 /// <summary>Don't touch! Only for system.</summary>
                 public Color Set(Color current, Mover.Param4 prm)
                 {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.b = prm.P2;
-                    current.a = prm.P3;
+                    current.r = Mathf.Clamp01(prm.P0);
+                    current.g = Mathf.Clamp01(prm.P1);
+                    current.b = Mathf.Clamp01(prm.P2);
+                    current.a = Mathf.Clamp01(prm.P3);
                     return current;
                 }
             }
@@ -1183,11 +1202,75 @@ namespace Omochaya
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
-    // ToDo...
     static class StoryQuaternion
     {
+        // carrier ===============================================================================================
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public interface ICarrier : Mover.ICarrier<Quaternion> {}
+
         // Carrier0:Transform.localRotation -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier0 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier0(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Quaternion Current => this.self.localRotation;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Quaternion value) => this.self.localRotation = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier0 MoveLocalRotation(this Transform self) => new(self);
+
         // Carrier1:Transform.rotation -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier1 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier1(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Quaternion Current => this.self.rotation;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Quaternion value) => this.self.rotation = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier1 MoveRotation(this Transform self) => new(self);
+
+
+        // changer ===============================================================================================
+
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Changer
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            public readonly struct To : Mover.IChanger<Quaternion, Mover.ParamQ>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                public Mover.ParamQ Get(Quaternion current) => new(current);
+                /// <summary>Don't touch! Only for system.</summary>
+                public Quaternion Set(Quaternion current, Mover.ParamQ prm)
+                    => prm.Q;
+            }
+        }
+
+        // plan ==================================================================================================
+
+        /// <summary></summary>
+        public static Mover.PlanTo<Quaternion, C, Changer.To, Mover.ParamQ> To<C>(this C carrier, Quaternion to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
+
+        /// <summary></summary>
+        public static Mover.PlanAdd<Quaternion, C, Changer.To, Mover.ParamQ> Add<C>(this C carrier, Quaternion to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
     // ToDo...（たぶん非公開にする）
@@ -1201,7 +1284,6 @@ namespace Omochaya
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 namespace Omochaya.HiddenStory
 {
-    using System;
     using UnityEngine;
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -1314,31 +1396,41 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             public Param4 Sub(in Param4 b) => new(this.P0 - b.P0, this.P1 - b.P1, this.P2 - b.P2, this.P3 - b.P3);
         }
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct ParamQ : IParam<ParamQ>
+        {
+            internal readonly Quaternion Q;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Length => Quaternion.Angle(Quaternion.identity, this.Q); // 角度にしておく
+            /// <summary>Don't touch! Only for system.</summary>
+            internal ParamQ(Quaternion q) => this.Q = q;
+            /// <summary>Don't touch! Only for system.</summary>
+            public ParamQ Lerp(in ParamQ b, float t) 
+                => new(Quaternion.SlerpUnclamped(this.Q, b.Q, t));
+            /// <summary>Don't touch! Only for system.</summary>
+            public ParamQ Add(in ParamQ b) => new(this.Q * b.Q); // 乗算にしておく
+            /// <summary>Don't touch! Only for system.</summary>
+            public ParamQ Sub(in ParamQ b) => new(this.Q * Quaternion.Inverse(b.Q)); // 除算にしておく
+        }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param1 CreateParam(float p0) => new Param1(p0);
+        public static Param1 CreateParam(float p0) => new(p0);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param2 CreateParam(float p0, float p1) => new Param2(p0, p1);
+        public static Param2 CreateParam(float p0, float p1) => new(p0, p1);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param3 CreateParam(float p0, float p1, float p2) => new Param3(p0, p1, p2);
+        public static Param3 CreateParam(float p0, float p1, float p2) => new(p0, p1, p2);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param4 CreateParam(float p0, float p1, float p2, float p3) => new Param4(p0, p1, p2, p3);
+        public static Param4 CreateParam(float p0, float p1, float p2, float p3) => new(p0, p1, p2, p3);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param2 CreateParam(Vector2 p) => new Param2(p.x, p.y);
+        public static Param2 CreateParam(Vector2 p) => new(p.x, p.y);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param3 CreateParam(Vector3 p) => new Param3(p.x, p.y, p.z);
+        public static Param3 CreateParam(Vector3 p) => new(p.x, p.y, p.z);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param4 CreateParam(Color p) => new Param4(p.r, p.g, p.b, p.a);
+        public static Param4 CreateParam(Color p) => new(p.r, p.g, p.b, p.a);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param4 CreateParam(Rect p) => new Param4(p.x, p.y, p.width, p.height);
+        public static Param4 CreateParam(Rect p) => new(p.x, p.y, p.width, p.height);
         /// <summary>Don't touch! Only for system.</summary>
-        public static Param4 CreateParam(Quaternion p) => new Param4(p.x, p.y, p.z, p.w);
-        /// <summary>Don't touch! Only for system.</summary>
-        public static Param2 CreateParam(ValueTuple<float, float> p) => new Param2(p.Item1, p.Item2);
-        /// <summary>Don't touch! Only for system.</summary>
-        public static Param3 CreateParam(ValueTuple<float, float, float> p) => new Param3(p.Item1, p.Item2, p.Item3);
-        /// <summary>Don't touch! Only for system.</summary>
-        public static Param4 CreateParam(ValueTuple<float, float, float, float> p) => new Param4(p.Item1, p.Item2, p.Item3, p.Item4);
+        public static ParamQ CreateParam(Quaternion p) => new(p);
 
         // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

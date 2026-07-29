@@ -31,193 +31,193 @@ namespace Omochaya
     {
         internal static Component GetOwner(Component self)  => self.GetComponent<Story.ITaskOwner>() as Component ?? self;
 
-        // InfoTo - interval ===================================================================================
+        // PlanTo - interval ===================================================================================
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float interval, in E ease, ref double start)
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float interval, in E ease, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f, ref start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f, ref start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float interval, in E ease, double start)
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float interval, in E ease, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f, start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f, start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float interval, in E ease)
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float interval, in E ease)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float interval, ref double start)
+        public static Task Interval<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float interval, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f, ref start).GetTask(Ease.None);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f, ref start).GetTask(Ease.None);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float interval, double start)
+        public static Task Interval<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float interval, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f, start).GetTask(Ease.None);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f, start).GetTask(Ease.None);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float interval)
+        public static Task Interval<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float interval)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, interval, 0f).GetTask(Ease.None);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, interval, 0f).GetTask(Ease.None);
 
-        // InfoTo - speed ======================================================================================
-
-        /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float speed, in E ease, ref double start)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed, ref start).GetTask(ease);
+        // PlanTo - speed ======================================================================================
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float speed, in E ease, double start)
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float speed, in E ease, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed, start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed, ref start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoTo<T, C, H, P> info, float speed, in E ease)
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float speed, in E ease, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed, start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float speed, ref double start)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed, ref start).GetTask(Ease.None);
-
-        /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float speed, double start)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed, start).GetTask(Ease.None);
-
-        /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoTo<T, C, H, P> info, float speed)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoTo<T, C, H, P>, T, C, H, P>(info, 0f, speed).GetTask(Ease.None);
-
-        // InfoAdd - interval ===================================================================================
-
-        /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float interval, in E ease, ref double start)
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanTo<T, C, H, P> plan, float speed, in E ease)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f, ref start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float interval, in E ease, double start)
+        public static Task Speed<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float speed, ref double start)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed, ref start).GetTask(Ease.None);
+
+        /// <summary></summary>
+        public static Task Speed<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float speed, double start)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed, start).GetTask(Ease.None);
+
+        /// <summary></summary>
+        public static Task Speed<T, C, H, P>(this in Mover.PlanTo<T, C, H, P> plan, float speed)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanTo<T, C, H, P>, T, C, H, P>(plan, 0f, speed).GetTask(Ease.None);
+
+        // PlanAdd - interval ===================================================================================
+
+        /// <summary></summary>
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float interval, in E ease, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f, start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f, ref start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float interval, in E ease)
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float interval, in E ease, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f).GetTask(ease);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f, start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float interval, ref double start)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f, ref start).GetTask(Ease.None);
-
-        /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float interval, double start)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f, start).GetTask(Ease.None);
-
-        /// <summary></summary>
-        public static Task Interval<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float interval)
-            where C : struct, Mover.ICarrier<T>
-            where H : struct, Mover.IChanger<T, P>
-            where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, interval, 0f).GetTask(Ease.None);
-
-        // InfoAdd - speed ======================================================================================
-
-        /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float speed, in E ease, ref double start)
+        public static Task Interval<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float interval, in E ease)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed, ref start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float speed, in E ease, double start)
+        public static Task Interval<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float interval, ref double start)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f, ref start).GetTask(Ease.None);
+
+        /// <summary></summary>
+        public static Task Interval<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float interval, double start)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f, start).GetTask(Ease.None);
+
+        /// <summary></summary>
+        public static Task Interval<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float interval)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, interval, 0f).GetTask(Ease.None);
+
+        // PlanAdd - speed ======================================================================================
+
+        /// <summary></summary>
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float speed, in E ease, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed, start).GetTask(ease);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed, ref start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P, E>(this in Mover.InfoAdd<T, C, H, P> info, float speed, in E ease)
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float speed, in E ease, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
             where E : struct, IEase
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed).GetTask(ease);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed, start).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float speed, ref double start)
+        public static Task Speed<T, C, H, P, E>(this in Mover.PlanAdd<T, C, H, P> plan, float speed, in E ease)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed, ref start).GetTask(Ease.None);
+            where E : struct, IEase
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed).GetTask(ease);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float speed, double start)
+        public static Task Speed<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float speed, ref double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed, start).GetTask(Ease.None);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed, ref start).GetTask(Ease.None);
 
         /// <summary></summary>
-        public static Task Speed<T, C, H, P>(this in Mover.InfoAdd<T, C, H, P> info, float speed)
+        public static Task Speed<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float speed, double start)
             where C : struct, Mover.ICarrier<T>
             where H : struct, Mover.IChanger<T, P>
             where P : struct, Mover.IParam<P>
-            => new Mover.Builder<Mover.InfoAdd<T, C, H, P>, T, C, H, P>(info, 0f, speed).GetTask(Ease.None);
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed, start).GetTask(Ease.None);
+
+        /// <summary></summary>
+        public static Task Speed<T, C, H, P>(this in Mover.PlanAdd<T, C, H, P> plan, float speed)
+            where C : struct, Mover.ICarrier<T>
+            where H : struct, Mover.IChanger<T, P>
+            where P : struct, Mover.IParam<P>
+            => new Mover.Builder<Mover.PlanAdd<T, C, H, P>, T, C, H, P>(plan, 0f, speed).GetTask(Ease.None);
     }
 
     static class StoryFloat
@@ -264,11 +264,11 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Mover.InfoTo<float, C, Changer.To, Mover.Param1> To<C>(this C carrier, float to)
+        public static Mover.PlanTo<float, C, Changer.To, Mover.Param1> To<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<float, C, Changer.To, Mover.Param1> Add<C>(this C carrier, float to)
+        public static Mover.PlanAdd<float, C, Changer.To, Mover.Param1> Add<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
@@ -348,27 +348,27 @@ namespace Omochaya
         // Mover ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector2, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
+        public static Mover.PlanTo<Vector2, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector2, C, Changer.XTo, Mover.Param1> XAdd<C>(this C carrier, float to)
+        public static Mover.PlanAdd<Vector2, C, Changer.XTo, Mover.Param1> XAdd<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector2, C, Changer.YTo, Mover.Param1> YTo<C>(this C carrier, float to)
+        public static Mover.PlanTo<Vector2, C, Changer.YTo, Mover.Param1> YTo<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector2, C, Changer.YTo, Mover.Param1> YAdd<C>(this C carrier, float to)
+        public static Mover.PlanAdd<Vector2, C, Changer.YTo, Mover.Param1> YAdd<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector2, C, Changer.To, Mover.Param2> To<C>(this C carrier, Vector2 to)
+        public static Mover.PlanTo<Vector2, C, Changer.To, Mover.Param2> To<C>(this C carrier, Vector2 to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector2, C, Changer.To, Mover.Param2> Add<C>(this C carrier, Vector2 to)
+        public static Mover.PlanAdd<Vector2, C, Changer.To, Mover.Param2> Add<C>(this C carrier, Vector2 to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
@@ -504,60 +504,60 @@ namespace Omochaya
         // Mover ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
+        public static Mover.PlanTo<Vector3, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.XTo, Mover.Param1> XAdd<C>(this C carrier, float to)
+        public static Mover.PlanAdd<Vector3, C, Changer.XTo, Mover.Param1> XAdd<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.YTo, Mover.Param1> YTo<C>(this C carrier, float to)
+        public static Mover.PlanTo<Vector3, C, Changer.YTo, Mover.Param1> YTo<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.YTo, Mover.Param1> YAdd<C>(this C carrier, float to)
+        public static Mover.PlanAdd<Vector3, C, Changer.YTo, Mover.Param1> YAdd<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.ZTo, Mover.Param1> ZTo<C>(this C carrier, float to)
+        public static Mover.PlanTo<Vector3, C, Changer.ZTo, Mover.Param1> ZTo<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.ZTo, Mover.Param1> ZAdd<C>(this C carrier, float to)
+        public static Mover.PlanAdd<Vector3, C, Changer.ZTo, Mover.Param1> ZAdd<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.XYTo, Mover.Param2> XYTo<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanTo<Vector3, C, Changer.XYTo, Mover.Param2> XYTo<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.XYTo, Mover.Param2> XYAdd<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanAdd<Vector3, C, Changer.XYTo, Mover.Param2> XYAdd<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.YZTo, Mover.Param2> YZTo<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanTo<Vector3, C, Changer.YZTo, Mover.Param2> YZTo<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.YZTo, Mover.Param2> YZAdd<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanAdd<Vector3, C, Changer.YZTo, Mover.Param2> YZAdd<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.ZXTo, Mover.Param2> ZXTo<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanTo<Vector3, C, Changer.ZXTo, Mover.Param2> ZXTo<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.ZXTo, Mover.Param2> ZXAdd<C>(this C carrier, float to0, float to1)
+        public static Mover.PlanAdd<Vector3, C, Changer.ZXTo, Mover.Param2> ZXAdd<C>(this C carrier, float to0, float to1)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to0, to1));
 
         /// <summary></summary>
-        public static Mover.InfoTo<Vector3, C, Changer.To, Mover.Param3> To<C>(this C carrier, Vector3 to)
+        public static Mover.PlanTo<Vector3, C, Changer.To, Mover.Param3> To<C>(this C carrier, Vector3 to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
 
         /// <summary></summary>
-        public static Mover.InfoAdd<Vector3, C, Changer.To, Mover.Param3> Add<C>(this C secarrierf, Vector3 to)
-            where C : struct, ICarrier => new(secarrierf, new(), Mover.CreateParam(to));
+        public static Mover.PlanAdd<Vector3, C, Changer.To, Mover.Param3> Add<C>(this C carrier, Vector3 to)
+            where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
     }
 
     // ToDo...
@@ -749,10 +749,10 @@ namespace Omochaya.HiddenStory
             T Set(T current, P prm);
         }
 
-        // info ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // plan ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
-        public interface IInfo<T, C, H, P>
+        public interface IPlan<T, C, H, P>
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
@@ -766,7 +766,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly struct InfoTo<T, C, H, P> : IInfo<T, C, H, P>
+        public readonly struct PlanTo<T, C, H, P> : IPlan<T, C, H, P>
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
@@ -777,7 +777,7 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             public Component Owner => this.carrier.Owner;
             /// <summary>Don't touch! Only for system.</summary>
-            internal InfoTo(C carrier, H changer, in P to)
+            internal PlanTo(C carrier, H changer, in P to)
             {
                 this.carrier = carrier;
                 this.changer = changer;
@@ -795,7 +795,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
-        public readonly struct InfoAdd<T, C, H, P> : IInfo<T, C, H, P>
+        public readonly struct PlanAdd<T, C, H, P> : IPlan<T, C, H, P>
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
@@ -806,7 +806,7 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             public Component Owner => this.carrier.Owner;
             /// <summary>Don't touch! Only for system.</summary>
-            internal InfoAdd(C carrier, H changer, in P delta)
+            internal PlanAdd(C carrier, H changer, in P delta)
             {
                 this.carrier = carrier;
                 this.changer = changer;
@@ -847,7 +847,9 @@ namespace Omochaya.HiddenStory
 
             /// <summary>Don't touch! Only for system.</summary>
             public void Update(float now)
-                => this.carrier.SetCurrent(this.changer.Set(this.carrier.Current, this.from.Lerp(this.to, now))); // 防御的コピー発生しない...ハズ
+                => this.carrier.SetCurrent(this.changer.Set(this.carrier.Current, this.from.Lerp(this.to, now)));
+                // 防御的コピー発生するが carrier が持つ参照に対する操作なので問題にならない
+                // というか問題にならないように参照に対する操作になるように実装すること！
         }
 
 
@@ -855,21 +857,21 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         internal readonly struct Builder<I, T, C, H, P>
-            where I : struct, IInfo<T, C, H, P>
+            where I : struct, IPlan<T, C, H, P>
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
         {
-            readonly I info;
+            readonly I plan;
             readonly double start;
             readonly float interval;
             readonly float speed;
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal Builder(in I info, float interval, float speed)
+            internal Builder(in I plan, float interval, float speed)
             {
                 Dev.Assert((float.Epsilon < interval) != (float.Epsilon < speed));
-                this.info = info;
+                this.plan = plan;
                 this.start = Story.GetStart();
 
                 this.interval = interval;
@@ -877,10 +879,10 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal Builder(in I info, float interval, float speed, double start)
+            internal Builder(in I plan, float interval, float speed, double start)
             {
                 Dev.Assert((float.Epsilon < interval) != (float.Epsilon < speed));
-                this.info = info;
+                this.plan = plan;
                 this.start = start;
 
                 this.interval = interval;
@@ -888,13 +890,13 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
-            internal Builder(in I info, float interval, float speed, ref double start)
+            internal Builder(in I plan, float interval, float speed, ref double start)
             {
                 Dev.Assert((float.Epsilon < interval) != (float.Epsilon < speed));
-                this.info = info;
+                this.plan = plan;
                 this.start = start;
 
-                if (float.Epsilon < speed) { interval = info.GetInterval(speed); }
+                if (float.Epsilon < speed) { interval = plan.GetInterval(speed); }
                 start += interval;
 
                 this.interval = interval;
@@ -911,7 +913,7 @@ namespace Omochaya.HiddenStory
                 var interval = this.interval;
                 if (float.Epsilon < speed)
                 {
-                    interval = info.GetInterval(this.speed);
+                    interval = plan.GetInterval(this.speed);
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
@@ -921,7 +923,7 @@ namespace Omochaya.HiddenStory
                 }
                 var start = this.start;
                 var passer = new Story.Passer(interval, ref start);
-                var updater = this.info.CreateUpdater();
+                var updater = this.plan.CreateUpdater();
                 while (passer.Bundle(updater, ease)) { await Story.Yield; }
             }
         }

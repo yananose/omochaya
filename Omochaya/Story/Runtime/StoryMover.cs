@@ -9,8 +9,8 @@
 namespace Omochaya
 {
     using UnityEngine;
+    using TMPro;
     using Omochaya.HiddenStory;
-
 
 #if UNITY_EDITOR
     static class StorySample
@@ -26,11 +26,8 @@ namespace Omochaya
     }
 #endif
 
-
     public static partial class Story
     {
-        internal static Component GetOwner(Component self)  => self.GetComponent<Story.ITaskOwner>() as Component ?? self;
-
         // PlanTo - interval ===================================================================================
 
         /// <summary></summary>
@@ -222,17 +219,18 @@ namespace Omochaya
 
     static class StoryFloat
     {
-        // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // carrier ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public interface ICarrier : Mover.ICarrier<float> {}
 
+        // Carrier0:CanvasGroup.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Carrier0 : ICarrier
         {
             readonly CanvasGroup self;
             /// <summary>Don't touch! Only for system.</summary>
-            public Component Owner => Story.GetOwner(this.self); // 重いので後で考える
+            public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
             internal Carrier0(CanvasGroup self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
@@ -244,10 +242,134 @@ namespace Omochaya
         /// <summary></summary>
         public static Carrier0 MoveAlpha(this CanvasGroup self) => new(self);
 
-        // ToDo. TextMeshPro.alpha
-        // ToDo. TextMeshProUGUI.alpha
+        // Carrier1:TMP_Text.alpha -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier1 : ICarrier
+        {
+            readonly TMP_Text self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier1(TMP_Text self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.alpha;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.alpha = Mathf.Clamp01(value);
+        }
 
-        // changer ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        /// <summary></summary>
+        public static Carrier1 MoveAlpha(this TMP_Text self) => new(self);
+
+        // Carrier2:TMP_Text.fontSize -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier2 : ICarrier
+        {
+            readonly TMP_Text self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier2(TMP_Text self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.fontSize;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.fontSize = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier2 MoveFontSize(this TMP_Text self) => new(self);
+
+        // Carrier3:TMP_Text.maxVisibleCharacters -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier3 : ICarrier
+        {
+            readonly TMP_Text self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier3(TMP_Text self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.maxVisibleCharacters;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.maxVisibleCharacters = Mathf.FloorToInt(value);
+        }
+
+        /// <summary></summary>
+        public static Carrier3 MoveVisibleCount(this TMP_Text self) => new(self);
+
+        // Carrier4:AudioSource.volume -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier4 : ICarrier
+        {
+            readonly AudioSource self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier4(AudioSource self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.volume;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.volume = Mathf.Clamp01(value);
+        }
+
+        /// <summary></summary>
+        public static Carrier4 MoveVolume(this AudioSource self) => new(self);
+
+
+        // Carrier5:AudioSource.pitch -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier5 : ICarrier
+        {
+            readonly AudioSource self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier5(AudioSource self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.pitch;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.pitch = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier5 MovePitch(this AudioSource self) => new(self);
+
+        // Carrier6:Camera.fieldOfView -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier6 : ICarrier
+        {
+            readonly Camera self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier6(Camera self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.fieldOfView;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
+        }
+
+        /// <summary></summary>
+        public static Carrier6 MoveFov(this Camera self) => new(self);
+
+        // Carrier7:Camera.orthographicSize -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier7 : ICarrier
+        {
+            readonly Camera self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier7(Camera self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public float Current => this.self.orthographicSize;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(float value) => this.self.orthographicSize = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier7 MoveOrthoSize(this Camera self) => new(self);
+
+        // changer ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Changer
@@ -263,6 +385,8 @@ namespace Omochaya
             }
         }
 
+        // plan ==================================================================================================
+
         /// <summary></summary>
         public static Mover.PlanTo<float, C, Changer.To, Mover.Param1> To<C>(this C carrier, float to)
             where C : struct, ICarrier => new(carrier, new(), Mover.CreateParam(to));
@@ -274,17 +398,18 @@ namespace Omochaya
 
     static class StoryVector2
     {
-        // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // carrier ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public interface ICarrier : Mover.ICarrier<Vector2> {}
 
+        // Carrier0:RectTransform.anchoredPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Carrier0 : ICarrier
         {
             readonly RectTransform self;
             /// <summary>Don't touch! Only for system.</summary>
-            public Component Owner => Story.GetOwner(this.self); // 重いので後で考える
+            public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
             internal Carrier0(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
@@ -297,9 +422,45 @@ namespace Omochaya
         public static Carrier0 MoveAnchoredPosition(this RectTransform self)
             => new(self);
 
-        // ToDo. RectTransform.pivot
+        // Carrier1:RectTransform.sizeDelta -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier1 : ICarrier
+        {
+            readonly RectTransform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier1(RectTransform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector2 Current => this.self.sizeDelta;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector2 value) => this.self.sizeDelta = value;
+        }
 
-        // changer ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        /// <summary></summary>
+        public static Carrier1 MoveSizeDelta(this RectTransform self)
+            => new(self);
+
+        // Carrier2:RectTransform.pivot -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier2 : ICarrier
+        {
+            readonly RectTransform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier2(RectTransform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector2 Current => this.self.pivot;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector2 value) => this.self.pivot = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier2 MovePivot(this RectTransform self)
+            => new(self);
+
+        // changer ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Changer
@@ -345,7 +506,7 @@ namespace Omochaya
             }
         }
 
-        // Mover ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // plan ==================================================================================================
 
         /// <summary></summary>
         public static Mover.PlanTo<Vector2, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
@@ -375,17 +536,18 @@ namespace Omochaya
     static class StoryVector3
     {
 
-        // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // carrier ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public interface ICarrier : Mover.ICarrier<Vector3> {}
 
+        // Carrier0:Transform.localPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Carrier0 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
-            public Component Owner => Story.GetOwner(this.self); // 重いので後で考える
+            public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
             internal Carrier0(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
@@ -398,14 +560,83 @@ namespace Omochaya
         public static Carrier0 MoveLocalPosition(this Transform self)
             => new(self);
 
-        // ToDo. Transform.localScale
-        // ToDo. Transform.localEulerAngles
+        // Carrier1:Transform.localScale -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier1 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier1(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector3 Current => this.self.localScale;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector3 value) => this.self.localScale = value;
+        }
 
-        // ToDo. Transform.position
-        // ToDo. Transform.scale
-        // ToDo. Transform.eulerAngles
+        /// <summary></summary>
+        public static Carrier1 MoveLocalScale(this Transform self)
+            => new(self);
 
-        // changer ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // Carrier2:Transform.localEulerAngles -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier2 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier2(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector3 Current => this.self.localEulerAngles;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector3 value) => this.self.localEulerAngles = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier2 MoveLocalEulerAngles(this Transform self)
+            => new(self);
+
+        // Carrier3:Transform.position -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier3 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier3(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector3 Current => this.self.position;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector3 value) => this.self.position = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier3 MovePosition(this Transform self)
+            => new(self);
+
+        // Carrier4:Transform.eulerAngles -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        public readonly struct Carrier4 : ICarrier
+        {
+            readonly Transform self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Component Self => this.self;
+            /// <summary>Don't touch! Only for system.</summary>
+            internal Carrier4(Transform self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            public Vector3 Current => this.self.eulerAngles;
+            /// <summary>Don't touch! Only for system.</summary>
+            public void SetCurrent(Vector3 value) => this.self.eulerAngles = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier4 MoveEulerAngles(this Transform self)
+            => new(self);
+
+        // changer ===============================================================================================
 
         /// <summary>Don't touch! Only for system.</summary>
         public readonly struct Changer
@@ -501,7 +732,7 @@ namespace Omochaya
             }
         }
 
-        // Mover ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // plan ==================================================================================================
 
         /// <summary></summary>
         public static Mover.PlanTo<Vector3, C, Changer.XTo, Mover.Param1> XTo<C>(this C carrier, float to)
@@ -730,7 +961,7 @@ namespace Omochaya.HiddenStory
         public interface ICarrier<T>
         {
             /// <summary>Don't touch! Only for system.</summary>
-            Component Owner { get; }
+            Component Self { get; }
             /// <summary>Don't touch! Only for system.</summary>
             T Current { get; }
             /// <summary>Don't touch! Only for system.</summary>
@@ -758,7 +989,7 @@ namespace Omochaya.HiddenStory
             where P : struct, IParam<P>
         {
             /// <summary>Don't touch! Only for system.</summary>
-            Component Owner { get; }
+            Component Self { get; }
             /// <summary>Don't touch! Only for system.</summary>
             Updater<T, C, H, P> CreateUpdater();
             /// <summary>Don't touch! Only for system.</summary>
@@ -775,7 +1006,7 @@ namespace Omochaya.HiddenStory
             readonly H changer;
             readonly P to;
             /// <summary>Don't touch! Only for system.</summary>
-            public Component Owner => this.carrier.Owner;
+            public Component Self => this.carrier.Self;
             /// <summary>Don't touch! Only for system.</summary>
             internal PlanTo(C carrier, H changer, in P to)
             {
@@ -804,7 +1035,7 @@ namespace Omochaya.HiddenStory
             readonly H changer;
             readonly P delta;
             /// <summary>Don't touch! Only for system.</summary>
-            public Component Owner => this.carrier.Owner;
+            public Component Self => this.carrier.Self;
             /// <summary>Don't touch! Only for system.</summary>
             internal PlanAdd(C carrier, H changer, in P delta)
             {
@@ -910,10 +1141,11 @@ namespace Omochaya.HiddenStory
             async Story.Task Task<E>(E ease)
                 where E : struct, Story.IEase
             {
+                TryKeep(this.plan.Self);
                 var interval = this.interval;
-                if (float.Epsilon < speed)
+                if (float.Epsilon < this.speed)
                 {
-                    interval = plan.GetInterval(this.speed);
+                    interval = this.plan.GetInterval(this.speed);
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
@@ -925,6 +1157,14 @@ namespace Omochaya.HiddenStory
                 var passer = new Story.Passer(interval, ref start);
                 var updater = this.plan.CreateUpdater();
                 while (passer.Bundle(updater, ease)) { await Story.Yield; }
+            }
+        }
+        static void TryKeep(Component self)
+        {
+            if (Story.IsTryKeeped)
+            {
+                var owner = self.GetComponent<Story.ITaskOwner>() as Component ?? self;
+                if (owner != null) { Story.At(owner); }
             }
         }
     }

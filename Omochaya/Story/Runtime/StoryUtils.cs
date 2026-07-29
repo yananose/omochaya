@@ -36,6 +36,17 @@ namespace Omochaya
             if (TaskManager.Shared.IsRunningValid) { TaskManager.Shared.GetRunningInfo().Keep(owner); }
         }
 
+        /// <summary></summary>
+        public static bool IsTryKeeped
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                Dev.Assert(TaskManager.Shared.IsRunningValid);
+                return TaskManager.Shared.GetRunningInfo().IsTryKeeped;
+            }
+        }
+
         /// <summary>Suspends the execution for the specified amount of seconds.</summary>
         /// <remarks>
         /// 標準の <c>Task.Delay</c> とは異なり、メインスレッドのフレーム更新（<c>UnityEngine.Time</c>）に依存して時間を計測します。

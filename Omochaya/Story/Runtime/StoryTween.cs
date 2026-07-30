@@ -588,7 +588,7 @@ namespace Omochaya.HiddenStory
             Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start) where E : struct, Story.IEase;
         }
 
-        public static Story.Task CreateTaskCore<T, C, H, P, E>(H changer, P dummy, T to, C carrier, bool isDelta, float interval, float speed, E ease, ref double start)
+        public static Story.Task CreateTaskCore<T, C, H, P, E>(H changer, P _, T to, C carrier, bool isDelta, float interval, float speed, E ease, ref double start)
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
@@ -638,8 +638,8 @@ namespace Omochaya.HiddenStory
         {
             if (Story.IsTryKeeped)
             {
-                var owner = self.GetComponent<Story.ITaskOwner>() as Component ?? self;
-                if (owner != null) { Story.At(owner); }
+                if (self.TryGetComponent<Story.ITaskOwner>(out var owner)) { Story.At((Component)owner); }
+                else { Story.At(self); }
             }
         }
 

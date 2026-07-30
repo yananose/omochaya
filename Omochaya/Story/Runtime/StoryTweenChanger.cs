@@ -58,12 +58,12 @@ namespace Omochaya
     static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
-        public static Plan<C> To<C>(this C self, bool isDelta = false, float? x = null, float? y = null)
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
             where C : struct, ICarrier
             => new(self, false, x, y);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool isDelta = true, float? x=null, float? y=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x=null, float? y=null)
             where C : struct, ICarrier
             => new(self, true, x, y);
 
@@ -125,6 +125,7 @@ namespace Omochaya
             if (x != null && y == null) { return (Comb.X_, new((float)x, default)); }
             if (x == null && y != null) { return (Comb._Y, new(default, (float)y)); }
             if (x != null && y != null) { return (Comb.XY, new((float)x, (float)y)); }
+            Dev.LogError("引数の指定が不正です");
             return default;
         }
 
@@ -182,12 +183,12 @@ namespace Omochaya
     static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
-        public static Plan<C> To<C>(this C self, bool isDelta = false, float? x = null, float? y = null, float? z = null)
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
             where C : struct, ICarrier
             => new(self, false, x, y, z);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool isDelta = true, float? x=null, float? y=null, float? z=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x=null, float? y=null, float? z=null)
             where C : struct, ICarrier
             => new(self, true, x, y, z);
 
@@ -257,6 +258,7 @@ namespace Omochaya
             if (x != null && y == null && z != null) { return (Comb.X_Z, new((float)x, default, (float)z)); }
             if (x != null && y != null && z == null) { return (Comb.XY_, new((float)x, (float)y, default)); }
             if (x != null && y != null && z != null) { return (Comb.XYZ, new((float)x, (float)y, (float)z)); }
+            Dev.LogError("引数の指定が不正です");
             return default;
         }
 
@@ -367,12 +369,12 @@ namespace Omochaya
     static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
-        public static Plan<C> To<C>(this C self, bool isDelta = false, float? r = null, float? g = null, float? b = null, float? a = null)
+        public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
             where C : struct, ICarrier
             => new(self, false, r, g, b, a);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool isDelta = true, float? r=null, float? g=null, float? b=null, float? a=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? r=null, float? g=null, float? b=null, float? a=null)
             where C : struct, ICarrier
             => new(self, true, r, g, b, a);
 
@@ -458,6 +460,7 @@ namespace Omochaya
             if (r != null && g != null && b == null && a != null) { return (Comb.RG_A, new((float)r, (float)g, default, (float)a)); }
             if (r != null && g != null && b != null && a == null) { return (Comb.RGB_, new((float)r, (float)g, (float)b, default)); }
             if (r != null && g != null && b != null && a != null) { return (Comb.RGBA, new((float)r, (float)g, (float)b, (float)a)); }
+            Dev.LogError("引数の指定が不正です");
             return default;
         }
 

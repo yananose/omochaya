@@ -46,7 +46,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
-            public void SetCurrent(float value) => this.self.alpha = Mathf.Clamp01(value);
+            public void SetCurrent(float value) => this.self.alpha = value;
         }
 
         /// <summary></summary>
@@ -64,7 +64,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
-            public void SetCurrent(float value) => this.self.alpha = Mathf.Clamp01(value);
+            public void SetCurrent(float value) => this.self.alpha = value;
         }
 
         /// <summary></summary>
@@ -118,7 +118,7 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             public float Current => this.self.volume;
             /// <summary>Don't touch! Only for system.</summary>
-            public void SetCurrent(float value) => this.self.volume = Mathf.Clamp01(value);
+            public void SetCurrent(float value) => this.self.volume = value;
         }
 
         /// <summary></summary>

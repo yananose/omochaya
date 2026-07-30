@@ -29,7 +29,7 @@ namespace Omochaya
 //     }
 // #endif
 
-    static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -266,7 +266,7 @@ namespace Omochaya
         public static Carrier9 MoveValue(this Slider self) => new(self);
     }
 
-    static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -345,7 +345,7 @@ namespace Omochaya
             => new(self);
     }
 
-    static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -472,7 +472,7 @@ namespace Omochaya
             => new(self);
     }
 
-    static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -575,7 +575,7 @@ namespace Omochaya
             => new(self);
     }
 
-    static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -629,7 +629,7 @@ namespace Omochaya
     }
 
     // ToDo...（たぶん非公開にする）
-    static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
     }
 }

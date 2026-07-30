@@ -11,7 +11,7 @@ namespace Omochaya
     using UnityEngine;
     using Omochaya.HiddenStory;
 
-    static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
         public static Plan<C> To<C>(this C self, float p)
@@ -61,7 +61,7 @@ namespace Omochaya
         }
     }
 
-    static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
         public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
@@ -202,7 +202,7 @@ namespace Omochaya
         }
     }
 
-    static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
         public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
@@ -416,7 +416,7 @@ namespace Omochaya
         }
     }
 
-    static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
         public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
@@ -781,7 +781,7 @@ namespace Omochaya
         }
     }
 
-    static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
         public static Plan<C> To<C>(this C self, in Quaternion p)
@@ -831,7 +831,7 @@ namespace Omochaya
         }
     }
 
-    static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
+    public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
     }
 }

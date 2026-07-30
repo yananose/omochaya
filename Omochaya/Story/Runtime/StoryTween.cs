@@ -372,7 +372,7 @@ namespace Omochaya
 #endif
 
         /// <summary></summary>
-        public static Task Interval<P, E>(this ref P plan, float interval, in E ease, ref double start)
+        public static Task Interval<P, E>(this P plan, float interval, in E ease, ref double start)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
@@ -380,7 +380,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Interval<P>(this ref P plan, float interval, ref double start)
+        public static Task Interval<P>(this P plan, float interval, ref double start)
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
@@ -388,7 +388,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Interval<P>(this ref P plan, float interval)
+        public static Task Interval<P>(this P plan, float interval)
             where P : struct, Mover.IPlan
         {
             var start = GetStart();
@@ -397,7 +397,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Speed<P, E>(this ref P plan, float speed, in E ease, ref double start)
+        public static Task Speed<P, E>(this P plan, float speed, in E ease, ref double start)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
@@ -405,7 +405,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Speed<P>(this ref P plan, float speed, ref double start)
+        public static Task Speed<P>(this P plan, float speed, ref double start)
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
@@ -413,7 +413,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Speed<P>(this ref P plan, float speed)
+        public static Task Speed<P>(this P plan, float speed)
             where P : struct, Mover.IPlan
         {
             var start = GetStart();

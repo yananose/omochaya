@@ -177,6 +177,7 @@ namespace Omochaya
         public interface IUpdater
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             void Update(float now);
         }
@@ -200,6 +201,7 @@ namespace Omochaya
             // methods
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Update(float now) => this.action(this.args, now);
         }
@@ -431,73 +433,97 @@ namespace Omochaya.HiddenStory
     using UnityEngine;
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static class Mover
     {
         // param ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IParam<P>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             float Length { get; }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             P Lerp(in P b, float now);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             P Add(in P b);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             P Sub(in P b);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param1 : IParam<Param1>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => Mathf.Abs(this.P0);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param1(float p0)
             {
                 this.P0 = p0;
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param1 Lerp(in Param1 b, float t) => new(
                 Mathf.LerpUnclamped(this.P0, b.P0, t));
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param1 Add(in Param1 b) => new(this.P0 + b.P0);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param1 Sub(in Param1 b) => new(this.P0 - b.P0);
         }
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param2 : IParam<Param2>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector2(this.P0, this.P1).magnitude; // 記述量減らしたいので（重くもないはず）
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param2(float p0, float p1)
             {
                 this.P0 = p0;
                 this.P1 = p1;
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param2 Lerp(in Param2 b, float t) => new(
                 Mathf.LerpUnclamped(this.P0, b.P0, t),
                 Mathf.LerpUnclamped(this.P1, b.P1, t));
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param2 Add(in Param2 b) => new(this.P0 + b.P0, this.P1 + b.P1);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param2 Sub(in Param2 b) => new(this.P0 - b.P0, this.P1 - b.P1);
         }
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param3 : IParam<Param3>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1, P2;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector3(this.P0, this.P1, this.P2).magnitude;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param3(float p0, float p1, float p2)
             {
                 this.P0 = p0;
@@ -505,23 +531,30 @@ namespace Omochaya.HiddenStory
                 this.P2 = p2;
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param3 Lerp(in Param3 b, float t) => new(
                 Mathf.LerpUnclamped(this.P0, b.P0, t),
                 Mathf.LerpUnclamped(this.P1, b.P1, t),
                 Mathf.LerpUnclamped(this.P2, b.P2, t));
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param3 Add(in Param3 b) => new(this.P0 + b.P0, this.P1 + b.P1, this.P2 + b.P2);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param3 Sub(in Param3 b) => new(this.P0 - b.P0, this.P1 - b.P1, this.P2 - b.P2);
         }
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param4 : IParam<Param4>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1, P2, P3;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector4(this.P0, this.P1, this.P2, this.P3).magnitude;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param4(float p0, float p1, float p2, float p3)
             {
                 this.P0 = p0;
@@ -530,55 +563,71 @@ namespace Omochaya.HiddenStory
                 this.P3 = p3;
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param4 Lerp(in Param4 b, float t) => new(
                 Mathf.LerpUnclamped(this.P0, b.P0, t),
                 Mathf.LerpUnclamped(this.P1, b.P1, t),
                 Mathf.LerpUnclamped(this.P2, b.P2, t),
                 Mathf.LerpUnclamped(this.P3, b.P3, t));
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param4 Add(in Param4 b) => new(this.P0 + b.P0, this.P1 + b.P1, this.P2 + b.P2, this.P3 + b.P3);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Param4 Sub(in Param4 b) => new(this.P0 - b.P0, this.P1 - b.P1, this.P2 - b.P2, this.P3 - b.P3);
         }
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct ParamQ : IParam<ParamQ>
         {
             internal readonly Quaternion Q;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => Quaternion.Angle(Quaternion.identity, this.Q); // 角度にしておく
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal ParamQ(Quaternion q) => this.Q = q;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public ParamQ Lerp(in ParamQ b, float t) 
                 => new(Quaternion.SlerpUnclamped(this.Q, b.Q, t));
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public ParamQ Add(in ParamQ b) => new(this.Q * b.Q); // 順変換にしておく
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public ParamQ Sub(in ParamQ b) => new(this.Q * Quaternion.Inverse(b.Q)); // 逆変換にしておく
         }
 
         // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier<T>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             Component Self { get; }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             T Current { get; }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             void SetCurrent(T current);
         }
 
         // changer ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IChanger<T, P>
             where P : struct, IParam<P>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             P Get(T current);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             T Set(T current, P prm);
         }
 
@@ -644,6 +693,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Updater<T, C, H, P> : Story.IUpdater
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
@@ -654,6 +704,7 @@ namespace Omochaya.HiddenStory
             readonly P from, to;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Updater(C carrier, H changer, in P from, in P to)
             {
                 this.carrier = carrier;
@@ -663,6 +714,7 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void Update(float now)
                 => this.carrier.SetCurrent(this.changer.Set(this.carrier.Current, this.from.Lerp(this.to, now)));
                 // 防御的コピー発生するが carrier が持つ参照に対する操作なので問題にならない

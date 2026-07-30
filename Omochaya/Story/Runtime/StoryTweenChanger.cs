@@ -24,6 +24,7 @@ namespace Omochaya
             => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -32,6 +33,7 @@ namespace Omochaya
             readonly float p;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float p)
             {
                 this.carrier = carrier;
@@ -40,17 +42,21 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
                 => Mover.CreateTaskCore(new Changer(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Changer : Mover.IChanger<float, Mover.Param1>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Mover.Param1 Get(float current) => new(current);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Set(float current, Mover.Param1 prm) => prm.P0;
         }
     }
@@ -78,6 +84,7 @@ namespace Omochaya
             => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -87,6 +94,7 @@ namespace Omochaya
             readonly Vector2 p;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y)
             {
                 this.carrier = carrier;
@@ -97,6 +105,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, Vector2 p)
             {
                 this.carrier = carrier;
@@ -106,6 +115,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
             {
@@ -120,6 +130,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static (Comb, Vector2) Analyze(float? x, float? y)
         {
             if (x != null && y == null) { return (Comb.X_, new((float)x, default)); }
@@ -130,6 +141,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         enum Comb
         {
             None,
@@ -138,14 +150,18 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Changer
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct X_ : Mover.IChanger<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Vector2 current) => new(current.x);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector2 Set(Vector2 current, Mover.Param1 prm)
                 {
                     current.x = prm.P0;
@@ -153,11 +169,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _Y : Mover.IChanger<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Vector2 current) => new(current.y);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector2 Set(Vector2 current, Mover.Param1 prm)
                 {
                     current.y = prm.P0;
@@ -165,11 +184,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XY : Mover.IChanger<Vector2, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Vector2 current) => new(current.x, current.y);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector2 Set(Vector2 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -203,6 +225,7 @@ namespace Omochaya
             => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -212,6 +235,7 @@ namespace Omochaya
             readonly Vector3 p;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? z)
             {
                 this.carrier = carrier;
@@ -222,6 +246,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, in Vector3 p)
             {
                 this.carrier = carrier;
@@ -231,6 +256,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
             {
@@ -249,6 +275,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static (Comb, Vector3) Analyze(float? x, float? y, float? z)
         {
             if (x != null && y == null && z == null) { return (Comb.X__, new((float)x, default, default)); }
@@ -263,6 +290,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         enum Comb
         {
             None,
@@ -272,14 +300,18 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static class Changer
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct X__ : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Vector3 current) => new(current.x);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.x = prm.P0;
@@ -287,11 +319,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _Y_ : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Vector3 current) => new(current.y);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.y = prm.P0;
@@ -299,11 +334,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct __Z : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Vector3 current) => new(current.z);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.z = prm.P0;
@@ -311,11 +349,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _YZ : Mover.IChanger<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Vector3 current) => new(current.y, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.y = prm.P0;
@@ -324,11 +365,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct X_Z : Mover.IChanger<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Vector3 current) => new(current.x, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -337,11 +381,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XY_ : Mover.IChanger<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Vector3 current) => new(current.x, current.y);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -350,11 +397,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XYZ : Mover.IChanger<Vector3, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param3 Get(Vector3 current) => new(current.x, current.y, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Vector3 Set(Vector3 current, Mover.Param3 prm)
                 {
                     current.x = prm.P0;
@@ -389,6 +439,7 @@ namespace Omochaya
             => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -398,6 +449,7 @@ namespace Omochaya
             readonly Color p;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? r, float? g, float? b, float? a)
             {
                 this.carrier = carrier;
@@ -408,6 +460,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, Color p)
             {
                 this.carrier = carrier;
@@ -417,6 +470,7 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
             {
@@ -443,6 +497,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static (Comb, Color) Analyze(float? r, float? g, float? b, float? a)
         {
             if (r != null && g == null && b == null && a == null) { return (Comb.R___, new((float)r, default, default, default)); }
@@ -465,6 +520,7 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public enum Comb
         {
             None,
@@ -477,14 +533,18 @@ namespace Omochaya
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static class Changer
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct R___ : Mover.IChanger<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Color current) => new(current.r);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.r = prm.P0;
@@ -492,11 +552,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct _G__ : Mover.IChanger<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Color current) => new(current.g);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.g = prm.P0;
@@ -504,11 +567,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct __B_ : Mover.IChanger<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Color current) => new(current.b);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.b = prm.P0;
@@ -516,11 +582,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct ___A : Mover.IChanger<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param1 Get(Color current) => new(current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.a = prm.P0;
@@ -528,11 +597,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct RG__ : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.g);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -541,11 +613,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct __BA : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.b = prm.P0;
@@ -554,11 +629,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct R_B_ : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -567,11 +645,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct _G_A : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.g, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.g = prm.P0;
@@ -580,11 +661,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct R__A : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -593,11 +677,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct _GB_ : Mover.IChanger<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param2 Get(Color current) => new(current.g, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.g = prm.P0;
@@ -606,11 +693,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct RGB_ : Mover.IChanger<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -620,11 +710,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct _GBA : Mover.IChanger<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param3 Get(Color current) => new(current.g, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.g = prm.P0;
@@ -634,11 +727,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct R_BA : Mover.IChanger<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -648,11 +744,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct RG_A : Mover.IChanger<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.g, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -662,11 +761,14 @@ namespace Omochaya
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct RGBA : Mover.IChanger<Color, Mover.Param4>
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Mover.Param4 Get(Color current) => new(current.r, current.g, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Color Set(Color current, Mover.Param4 prm)
                 {
                     current.r = prm.P0;
@@ -692,6 +794,7 @@ namespace Omochaya
             => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -700,6 +803,7 @@ namespace Omochaya
             readonly Quaternion p;
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, in Quaternion p)
             {
                 this.carrier = carrier;
@@ -708,17 +812,21 @@ namespace Omochaya
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
                 => Mover.CreateTaskCore(new Changer(), new Mover.ParamQ(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Changer : Mover.IChanger<Quaternion, Mover.ParamQ>
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Mover.ParamQ Get(Quaternion current) => new(current);
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Quaternion Set(Quaternion current, Mover.ParamQ prm) => prm.Q;
         }
     }

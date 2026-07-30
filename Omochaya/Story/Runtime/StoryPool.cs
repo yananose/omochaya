@@ -53,12 +53,15 @@ namespace Omochaya
                 // for collection（ユーザによる呼び出し禁止）
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public bool Equals(Id other) => Matches(other);
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public override bool Equals(object obj) => obj is Id other && Equals(other);
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public override int GetHashCode() => HashCode.Combine(Index, Age);
             }
 
@@ -119,8 +122,10 @@ namespace Omochaya
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.Pool<T>.Name;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<Pool<T>>();
 #endif
         }
@@ -134,8 +139,10 @@ namespace Omochaya
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.Pool<HOT, COOL>.Name;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<Pool<HOT, COOL>>();
 #endif
         }
@@ -160,8 +167,10 @@ namespace Omochaya
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public override string PoolName => Dev.HiddenPool<T>.Name;
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public override int TotalBytes => ItemSize * Length + Unsafe.SizeOf<HiddenPool<T>>();
 #endif
             }
@@ -318,9 +327,11 @@ namespace Omochaya
     public interface IPoolMeta : IUnsafePoolMeta { int Age { get; set; } }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public struct PoolMeta : IPoolMeta
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public int Age { get; set; }
     }
 
@@ -344,14 +355,19 @@ namespace Omochaya
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public int ActiveCount => this.useCount;
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public int WorstCount => this.worstCount;
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public int FreeCount => Length - ActiveCount;
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public abstract string PoolName { get; }
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public abstract int TotalBytes { get; }
 #endif
 

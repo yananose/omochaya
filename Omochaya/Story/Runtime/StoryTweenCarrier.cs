@@ -32,20 +32,26 @@ namespace Omochaya
     static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier : Mover.ICarrier<float> {}
 
         // Carrier0:CanvasGroup.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier0 : ICarrier
         {
             readonly CanvasGroup self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(CanvasGroup self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.alpha = value;
         }
 
@@ -54,16 +60,21 @@ namespace Omochaya
 
         // Carrier1:TMP_Text.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
         {
             readonly TMP_Text self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.alpha = value;
         }
 
@@ -72,16 +83,21 @@ namespace Omochaya
 
         // Carrier2:TMP_Text.fontSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier2 : ICarrier
         {
             readonly TMP_Text self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.fontSize;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.fontSize = value;
         }
 
@@ -90,16 +106,21 @@ namespace Omochaya
 
         // Carrier3:TMP_Text.maxVisibleCharacters -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier3 : ICarrier
         {
             readonly TMP_Text self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.maxVisibleCharacters;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.maxVisibleCharacters = Mathf.CeilToInt(value);
         }
 
@@ -108,16 +129,21 @@ namespace Omochaya
 
         // Carrier4:AudioSource.volume -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier4 : ICarrier
         {
             readonly AudioSource self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier4(AudioSource self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.volume;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.volume = value;
         }
 
@@ -126,16 +152,21 @@ namespace Omochaya
 
         // Carrier5:AudioSource.pitch -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier5 : ICarrier
         {
             readonly AudioSource self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier5(AudioSource self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.pitch;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.pitch = value;
         }
 
@@ -144,16 +175,21 @@ namespace Omochaya
 
         // Carrier6:Camera.fieldOfView -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier6 : ICarrier
         {
             readonly Camera self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier6(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.fieldOfView;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
         }
 
@@ -162,16 +198,21 @@ namespace Omochaya
 
         // Carrier7:Camera.orthographicSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier7 : ICarrier
         {
             readonly Camera self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier7(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.orthographicSize;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.orthographicSize = value;
         }
 
@@ -180,16 +221,21 @@ namespace Omochaya
 
         // Carrier8:Image.fillAmount -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier8 : ICarrier
         {
             readonly Image self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier8(Image self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.fillAmount;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.fillAmount = value; 
         }
 
@@ -198,16 +244,21 @@ namespace Omochaya
 
         // Carrier9:Slider.value -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier9 : ICarrier
         {
             readonly Slider self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier9(Slider self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.value;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(float value) => this.self.value = value;
         }
 
@@ -218,20 +269,26 @@ namespace Omochaya
     static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier : Mover.ICarrier<Vector2> {}
 
         // Carrier0:RectTransform.anchoredPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier0 : ICarrier
         {
             readonly RectTransform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector2 Current => this.self.anchoredPosition;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector2 value) => this.self.anchoredPosition = value;
         }
 
@@ -241,16 +298,21 @@ namespace Omochaya
 
         // Carrier1:RectTransform.sizeDelta -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
         {
             readonly RectTransform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector2 Current => this.self.sizeDelta;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector2 value) => this.self.sizeDelta = value;
         }
 
@@ -260,16 +322,21 @@ namespace Omochaya
 
         // Carrier2:RectTransform.pivot -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier2 : ICarrier
         {
             readonly RectTransform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector2 Current => this.self.pivot;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector2 value) => this.self.pivot = value;
         }
 
@@ -281,20 +348,26 @@ namespace Omochaya
     static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier : Mover.ICarrier<Vector3> {}
 
         // Carrier0:Transform.localPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier0 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector3 Current => this.self.localPosition;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector3 value) => this.self.localPosition = value;
         }
 
@@ -304,16 +377,21 @@ namespace Omochaya
 
         // Carrier1:Transform.localScale -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector3 Current => this.self.localScale;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector3 value) => this.self.localScale = value;
         }
 
@@ -323,16 +401,21 @@ namespace Omochaya
 
         // Carrier2:Transform.localEulerAngles -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier2 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector3 Current => this.self.localEulerAngles;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector3 value) => this.self.localEulerAngles = value;
         }
 
@@ -342,16 +425,21 @@ namespace Omochaya
 
         // Carrier3:Transform.position -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier3 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector3 Current => this.self.position;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector3 value) => this.self.position = value;
         }
 
@@ -361,16 +449,21 @@ namespace Omochaya
 
         // Carrier4:Transform.eulerAngles -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier4 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier4(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Vector3 Current => this.self.eulerAngles;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Vector3 value) => this.self.eulerAngles = value;
         }
 
@@ -382,20 +475,26 @@ namespace Omochaya
     static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier : Mover.ICarrier<Color> {}
 
         // Carrier0:Graphic.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier0 : ICarrier
         {
             readonly Graphic self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Graphic self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Color Current => this.self.color;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Color value) => this.self.color = value;
         }
 
@@ -405,16 +504,21 @@ namespace Omochaya
 
         // Carrier1:TMP_Text.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
         {
             readonly TMP_Text self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Color Current => this.self.color;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Color value) => this.self.color = value;
         }
 
@@ -424,16 +528,21 @@ namespace Omochaya
 
         // Carrier2:SpriteRenderer.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier2 : ICarrier
         {
             readonly SpriteRenderer self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(SpriteRenderer self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Color Current => this.self.color;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Color value) => this.self.color = value;
         }
 
@@ -443,16 +552,21 @@ namespace Omochaya
 
         // Carrier3:Camera.backgroundColor -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier3 : ICarrier
         {
             readonly Camera self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Color Current => this.self.backgroundColor;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Color value) => this.self.backgroundColor = value;
         }
 
@@ -464,20 +578,26 @@ namespace Omochaya
     static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier : Mover.ICarrier<Quaternion> {}
 
         // Carrier0:Transform.localRotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier0 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Quaternion Current => this.self.localRotation;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Quaternion value) => this.self.localRotation = value;
         }
 
@@ -486,16 +606,21 @@ namespace Omochaya
 
         // Carrier1:Transform.rotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
         {
             readonly Transform self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Quaternion Current => this.self.rotation;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void SetCurrent(Quaternion value) => this.self.rotation = value;
         }
 

@@ -21,15 +21,18 @@ namespace Omochaya.HiddenStory
     // builder
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public struct TaskMethodBuilder
     {
         // fields
         Story.Task task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public static TaskMethodBuilder Create() => default;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void Start<S>(ref S s)
             where S : struct, IAsyncStateMachine
         {
@@ -38,15 +41,19 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public Story.Task Task => this.task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetResult() => TaskManager.Shared.SetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetException(Exception e) => TaskManager.Shared.SetException(e);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitOnCompleted<A, S>(ref A a, ref S s)
             where A : INotifyCompletion
@@ -54,6 +61,7 @@ namespace Omochaya.HiddenStory
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
             where A : ICriticalNotifyCompletion
@@ -61,19 +69,23 @@ namespace Omochaya.HiddenStory
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetStateMachine(IAsyncStateMachine s) { }
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public struct TaskMethodBuilder<R>
     {
         // fields
         Story.Task<R> task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public static TaskMethodBuilder<R> Create() => default;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void Start<S>(ref S s)
             where S : struct, IAsyncStateMachine
         {
@@ -82,15 +94,19 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public Story.Task<R> Task => this.task;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetResult(R result) => TaskManager.Shared.SetResult(result);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetException(Exception e) => TaskManager.Shared.SetException(e);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitOnCompleted<A, S>(ref A a, ref S s)
             where A : INotifyCompletion
@@ -98,6 +114,7 @@ namespace Omochaya.HiddenStory
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // 消してほしいので
         public void AwaitUnsafeOnCompleted<A, S>(ref A a, ref S s)
             where A : ICriticalNotifyCompletion
@@ -105,6 +122,7 @@ namespace Omochaya.HiddenStory
             => Dev.ValidateAwaiter<A>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void SetStateMachine(IAsyncStateMachine s) { }
     }
 
@@ -190,6 +208,7 @@ namespace Omochaya.HiddenStory
             }
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public override void UnsafeFree(int index)
             {
@@ -207,8 +226,10 @@ namespace Omochaya.HiddenStory
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.StateMachinePool<S>.Name;
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override int TotalBytes => (base.ItemSize + Unsafe.SizeOf<S>()) * Length + Unsafe.SizeOf<StateMachinePool<S>>();
 #endif
 
@@ -222,6 +243,7 @@ namespace Omochaya.HiddenStory
     // awaiter
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public readonly struct Awaiter : INotifyCompletion
     {
         readonly Story.Task task;
@@ -232,6 +254,7 @@ namespace Omochaya.HiddenStory
         // for INotifyCompletion
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsCompleted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -242,15 +265,18 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void OnCompleted(Action continuation) { }
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public readonly struct Awaiter<R> : INotifyCompletion
     {
         readonly Story.Task task;
@@ -261,6 +287,7 @@ namespace Omochaya.HiddenStory
         // for INotifyCompletion
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsCompleted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -271,10 +298,12 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public R GetResult() => TaskManager.Shared.GetResult<R>();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
     }
@@ -283,6 +312,7 @@ namespace Omochaya.HiddenStory
     // yield
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public readonly struct YieldCore : INotifyCompletion
     {
         readonly int bandNo;
@@ -291,6 +321,7 @@ namespace Omochaya.HiddenStory
         internal YieldCore(int bandNo) { this.bandNo = bandNo; }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsCompleted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -303,22 +334,27 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() => TaskManager.Shared.GetResult();
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public YieldCore GetAwaiter() => this;
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public readonly struct VoidCore : INotifyCompletion
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsCompleted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -330,14 +366,17 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult() { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation) { }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VoidCore GetAwaiter() => this;
     }
@@ -346,6 +385,7 @@ namespace Omochaya.HiddenStory
     // enumerator
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public struct TaskEnumerator
     {
         Story.Task task;
@@ -357,6 +397,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly object Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -364,10 +405,12 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() => TaskManager.Shared.MoveNext(this.task);
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose() => this.task.Stop();
     }

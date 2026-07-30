@@ -17,6 +17,7 @@ namespace Omochaya
         public interface IEase
         {
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             float Calc(float now);
         }
@@ -34,6 +35,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -62,6 +64,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -90,6 +93,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -119,6 +123,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => Mathf.LerpUnclamped(this.from, this.to, now);
 
@@ -142,6 +147,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -178,6 +184,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -253,6 +260,7 @@ namespace Omochaya
             public readonly struct CurveImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public float Calc(float now)
                 {
@@ -272,6 +280,7 @@ namespace Omochaya
             public readonly struct NoneImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => now;
             }
@@ -280,6 +289,7 @@ namespace Omochaya
             public readonly struct ReverseImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => 1f - now;
             }
@@ -288,6 +298,7 @@ namespace Omochaya
             public readonly struct SineImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => Mathf.Sin(now * Mathf.PI * 0.5f);
             }
@@ -296,6 +307,7 @@ namespace Omochaya
             public readonly struct QuadImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => now * now;
             }
@@ -304,6 +316,7 @@ namespace Omochaya
             public readonly struct CubicImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => now * now * now;
             }
@@ -314,6 +327,7 @@ namespace Omochaya
                 // for iease
 
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -336,6 +350,7 @@ namespace Omochaya
             public readonly struct ExpoImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now) => now == 0f ? 0f : Mathf.Pow(2f, 10f * now - 10f);
             }
@@ -344,6 +359,7 @@ namespace Omochaya
             public readonly struct CircImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -359,6 +375,7 @@ namespace Omochaya
             public readonly struct BackImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -373,6 +390,7 @@ namespace Omochaya
             public readonly struct ElasticImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {
@@ -388,6 +406,7 @@ namespace Omochaya
             public readonly struct BounceImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public readonly float Calc(float now)
                 {

@@ -145,6 +145,7 @@ namespace Omochaya.HiddenStory
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public class TaskWarmupper : IDisposable
     {
 
@@ -157,6 +158,7 @@ namespace Omochaya.HiddenStory
         // methods
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void Dispose() => this.Destroy();
 
         internal void Setup<S>() where S : struct, IAsyncStateMachine

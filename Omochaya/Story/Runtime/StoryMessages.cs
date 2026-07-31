@@ -14,9 +14,7 @@
 
 namespace Omochaya.HiddenStory
 {
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal static class Messages
+    static class Messages
     {
 #if true
         // ------------------------------------------------------------------------

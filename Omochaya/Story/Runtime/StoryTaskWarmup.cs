@@ -58,7 +58,7 @@ namespace Omochaya.HiddenStory
     using System.Reflection;
     using System.Runtime.CompilerServices;
 
-    internal static class TaskWarmup
+    static class TaskWarmup
     {
         static TaskWarmupper shared;
 

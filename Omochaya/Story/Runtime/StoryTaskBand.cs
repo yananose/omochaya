@@ -18,9 +18,7 @@ namespace Omochaya.HiddenStory
 
     // interfaces
 
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal interface ITaskTop
+    interface ITaskTop
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -33,9 +31,7 @@ namespace Omochaya.HiddenStory
 
     // inner classes
 
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal struct TaskTop : ITaskTop
+    struct TaskTop : ITaskTop
     {
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -46,14 +42,10 @@ namespace Omochaya.HiddenStory
         public bool CheckInvalid() => Index < 0;
     }
 
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal struct ManualTaskTop : ITaskTop
+    struct ManualTaskTop : ITaskTop
     {
         // fields
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal Story.Task Caller;
 
         // for itop
@@ -83,9 +75,7 @@ namespace Omochaya.HiddenStory
         }
     }
 
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal struct TaskBand<T>
+    struct TaskBand<T>
         where T : struct, ITaskTop
     {
         // inner classes
@@ -97,28 +87,18 @@ namespace Omochaya.HiddenStory
 
         // overrides
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal ref T this[int index] => ref this.tops[index];
 
         // properties
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal readonly bool IsValid => this.tops != null;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal readonly int Count => this.count;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal readonly int Type => this.type;
 
         // constructors
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal TaskBand(int type)
         {
             this.tops = null;
@@ -128,12 +108,8 @@ namespace Omochaya.HiddenStory
 
         // methods
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void Expand(int count) => Story.Pool.Expand(ref this.tops, count);
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int Add(int index)
         {
             var count = this.count;
@@ -155,12 +131,8 @@ namespace Omochaya.HiddenStory
             return count | this.type;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal ref T Get(int offset) => ref this.tops[offset & ~TaskManager.BAND_TYPE_MASK];
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void Compact()
         {
             // 最初の隙間

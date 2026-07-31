@@ -19,12 +19,12 @@ namespace Omochaya
 //         public static async Story.Task Main(RectTransform rt, CanvasGroup cg, SpriteRenderer sr)
 //         {
 //             var start = Story.GetStart();
-//             await rt.MoveLocalPosition().To(x:1f).Interval(2f, Story.Ease.None, ref start);
-//             await rt.MoveLocalPosition().By(z:10f, y:30f).Speed(2f);
-//             await rt.MoveAnchoredPosition().To(Vector2.up * 10f).Speed(2f);
-//             await cg.MoveAlpha().To(0.5f).Interval(2f);
-//             await sr.MoveColor().To(Color.red).Interval(2f);
-//             await rt.MoveLocalRotation().By(Quaternion.FromToRotation(rt.forward, Vector3.right)).Speed(30f);
+//             await rt.TweenLocalPosition().To(x:1f).Interval(2f, Story.Ease.None, ref start);
+//             await rt.TweenLocalPosition().By(z:10f, y:30f).Speed(2f);
+//             await rt.TweenAnchoredPosition().To(Vector2.up * 10f).Speed(2f);
+//             await cg.TweenAlpha().To(0.5f).Interval(2f);
+//             await sr.TweenColor().To(Color.red).Interval(2f);
+//             await rt.TweenLocalRotation().By(Quaternion.FromToRotation(rt.forward, Vector3.right)).Speed(30f);
 //         }
 //     }
 // #endif
@@ -44,8 +44,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(CanvasGroup self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -56,7 +54,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier0 MoveAlpha(this CanvasGroup self) => new(self);
+        public static Carrier0 TweenAlpha(this CanvasGroup self) => new(self);
 
         // Carrier1:TMP_Text.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -67,8 +65,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -79,7 +75,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier1 MoveAlpha(this TMP_Text self) => new(self);
+        public static Carrier1 TweenAlpha(this TMP_Text self) => new(self);
 
         // Carrier2:TMP_Text.fontSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -90,8 +86,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -102,7 +96,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier2 MoveFontSize(this TMP_Text self) => new(self);
+        public static Carrier2 TweenFontSize(this TMP_Text self) => new(self);
 
         // Carrier3:TMP_Text.maxVisibleCharacters -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -113,8 +107,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -125,7 +117,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier3 MoveVisibleCount(this TMP_Text self) => new(self);
+        public static Carrier3 TweenVisibleCount(this TMP_Text self) => new(self);
 
         // Carrier4:AudioSource.volume -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -136,8 +128,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier4(AudioSource self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -148,7 +138,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier4 MoveVolume(this AudioSource self) => new(self);
+        public static Carrier4 TweenVolume(this AudioSource self) => new(self);
 
         // Carrier5:AudioSource.pitch -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -159,8 +149,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier5(AudioSource self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -171,7 +159,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier5 MovePitch(this AudioSource self) => new(self);
+        public static Carrier5 TweenPitch(this AudioSource self) => new(self);
 
         // Carrier6:Camera.fieldOfView -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -182,8 +170,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier6(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -194,7 +180,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier6 MoveFov(this Camera self) => new(self);
+        public static Carrier6 TweenFov(this Camera self) => new(self);
 
         // Carrier7:Camera.orthographicSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -205,8 +191,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier7(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -217,7 +201,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier7 MoveOrthoSize(this Camera self) => new(self);
+        public static Carrier7 TweenOrthoSize(this Camera self) => new(self);
 
         // Carrier8:Image.fillAmount -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -228,8 +212,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier8(Image self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -240,7 +222,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier8 MoveFillAmount(this Image self) => new(self);
+        public static Carrier8 TweenFillAmount(this Image self) => new(self);
 
         // Carrier9:Slider.value -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -251,8 +233,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier9(Slider self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -263,7 +243,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier9 MoveValue(this Slider self) => new(self);
+        public static Carrier9 TweenValue(this Slider self) => new(self);
     }
 
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
@@ -281,8 +261,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -293,8 +271,24 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier0 MoveAnchoredPosition(this RectTransform self)
+        public static Carrier0 TweenAnchoredPosition(this RectTransform self)
             => new(self);
+
+        // /// <summary></summary>
+        // public static Plan<Carrier0> TweenAnchoredPositionTo(this RectTransform self, bool _ = false, float? x = null, float? y = null)
+        //     => new(new(self), false, x, y);
+
+        // /// <summary></summary>
+        // public static Plan<Carrier0> TweenAnchoredPositionBy(this RectTransform self, bool _ = true, float? x=null, float? y=null)
+        //     => new(new(self), true, x, y);
+
+        // /// <summary></summary>
+        // public static Plan<Carrier0> TweenAnchoredPositionTo(this RectTransform self, Vector2 p = default)
+        //     => new(new(self), false, p);
+
+        // /// <summary></summary>
+        // public static Plan<Carrier0> TweenAnchoredPositionBy(this RectTransform self, Vector2 p = default)
+        //     => new(new(self), true, p);
 
         // Carrier1:RectTransform.sizeDelta -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -305,8 +299,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -317,7 +309,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier1 MoveSizeDelta(this RectTransform self)
+        public static Carrier1 TweenSizeDelta(this RectTransform self)
             => new(self);
 
         // Carrier2:RectTransform.pivot -------------------------------------------------
@@ -329,8 +321,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(RectTransform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -341,7 +331,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier2 MovePivot(this RectTransform self)
+        public static Carrier2 TweenPivot(this RectTransform self)
             => new(self);
     }
 
@@ -360,8 +350,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -372,7 +360,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier0 MoveLocalPosition(this Transform self)
+        public static Carrier0 TweenLocalPosition(this Transform self)
             => new(self);
 
         // Carrier1:Transform.localScale -------------------------------------------------
@@ -384,8 +372,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -396,7 +382,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier1 MoveLocalScale(this Transform self)
+        public static Carrier1 TweenLocalScale(this Transform self)
             => new(self);
 
         // Carrier2:Transform.localEulerAngles -------------------------------------------------
@@ -408,8 +394,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -420,7 +404,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier2 MoveLocalEulerAngles(this Transform self)
+        public static Carrier2 TweenLocalEulerAngles(this Transform self)
             => new(self);
 
         // Carrier3:Transform.position -------------------------------------------------
@@ -432,8 +416,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -444,7 +426,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier3 MovePosition(this Transform self)
+        public static Carrier3 TweenPosition(this Transform self)
             => new(self);
 
         // Carrier4:Transform.eulerAngles -------------------------------------------------
@@ -456,8 +438,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier4(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -468,7 +448,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier4 MoveEulerAngles(this Transform self)
+        public static Carrier4 TweenEulerAngles(this Transform self)
             => new(self);
     }
 
@@ -487,8 +467,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Graphic self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -499,7 +477,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier0 MoveColor(this Graphic self)
+        public static Carrier0 TweenColor(this Graphic self)
             => new(self);
 
         // Carrier1:TMP_Text.color -------------------------------------------------
@@ -511,8 +489,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -523,7 +499,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier1 MoveColor(this TMP_Text self)
+        public static Carrier1 TweenColor(this TMP_Text self)
             => new(self);
 
         // Carrier2:SpriteRenderer.color -------------------------------------------------
@@ -535,8 +511,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier2(SpriteRenderer self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -547,7 +521,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier2 MoveColor(this SpriteRenderer self)
+        public static Carrier2 TweenColor(this SpriteRenderer self)
             => new(self);
 
         // Carrier3:Camera.backgroundColor -------------------------------------------------
@@ -559,8 +533,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier3(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -571,7 +543,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier3 MoveBackgroundColor(this Camera self)
+        public static Carrier3 TweenBackgroundColor(this Camera self)
             => new(self);
     }
 
@@ -590,8 +562,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier0(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -602,7 +572,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier0 MoveLocalRotation(this Transform self) => new(self);
+        public static Carrier0 TweenLocalRotation(this Transform self) => new(self);
 
         // Carrier1:Transform.rotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
@@ -613,8 +583,6 @@ namespace Omochaya
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Carrier1(Transform self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -625,7 +593,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier1 MoveRotation(this Transform self) => new(self);
+        public static Carrier1 TweenRotation(this Transform self) => new(self);
     }
 
     // ToDo...（たぶん非公開にする）

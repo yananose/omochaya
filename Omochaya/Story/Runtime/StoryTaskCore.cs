@@ -130,7 +130,7 @@ namespace Omochaya.HiddenStory
     // ステートマシン
     // UnsafePool相当。コードブロートを軽減するための独自定義。
 
-    internal readonly struct StateMachine
+    readonly struct StateMachine
     {
         // inner classes
         internal abstract class StateMachinePool : PoolCore

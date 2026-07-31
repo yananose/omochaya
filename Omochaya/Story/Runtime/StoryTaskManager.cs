@@ -18,51 +18,31 @@ namespace Omochaya.HiddenStory
     using System.Runtime.CompilerServices;
     using UnityEngine;
 
-    /// <summary>Don't touch! Only for system.</summary>
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal class TaskManager
+    class TaskManager
     {
         // static
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal static TaskManager Shared { get; } = new();
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         class CanceledException : Exception
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal static readonly CanceledException Shared = new CanceledException();
             CanceledException() : base(Messages.Exceptions.TaskCanceled) { }
         }
 
         // const
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int BAND_TYPE_SHIFT = 32 - 4; // なので rawOffset の有効範囲は 1 << 28 まで。
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int BAND_TYPE_MASK = -1 << BAND_TYPE_SHIFT;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int BAND_TYPE_MANUAL = 0 << BAND_TYPE_SHIFT; // 手動更新 & 初期位置
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int BAND_TYPE_AUTO = 1 << BAND_TYPE_SHIFT; // Update更新 & 削除位置
 
         const int INVALID_INDEX = -1;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int INVALID_OFFSET = -1;
         const int PENDING_OFFSET = -2;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal const int SAME_BAND = -2;
 
         // fields
@@ -73,29 +53,19 @@ namespace Omochaya.HiddenStory
         int runningIndex = INVALID_INDEX;
         Exception runningException = null;
         Story.PoolMemory runningResult;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int LastAwaitBandNo; // 一番最後に設定された type。タスクが終了したときは参照しない。つまりゴミを気にする必要はない。
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool HasValidResult;
         Story.CancelMode defaultCancelMode;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool IsCanceled;
 
         // properties
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool IsPrepared
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => this.manualBand.IsValid;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool IsRunningValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,8 +78,6 @@ namespace Omochaya.HiddenStory
             get => ref this.bandArray[0];
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal Story.CancelMode DefaultCancelMode
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -124,8 +92,6 @@ namespace Omochaya.HiddenStory
         }
 
 #if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR // テストで使用するので STORY_NO_DEBUG でも UNITY_EDITOR なら有効。
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal Story.CancelMode DefaultCancelModeForDebug
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,8 +103,6 @@ namespace Omochaya.HiddenStory
         }
 #endif
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal Story.CancelMode TaskCancelMode
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -160,8 +124,6 @@ namespace Omochaya.HiddenStory
 
         // methods
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.NoInlining)] // ジェネリクスによるコードブロート防止のため明示的にインライン化しない
         internal Story.Task Entry(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
@@ -175,8 +137,6 @@ namespace Omochaya.HiddenStory
             return new Story.Task(id);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Entry をインライン化しないのでこっちはインライン化
         internal Story.Task<R> Entry<R>(in StateMachine stateMachine) // TaskMethodBuilder からのみ呼ばれる
         {
@@ -185,13 +145,9 @@ namespace Omochaya.HiddenStory
             return new Story.Task<R>(task);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TryCustom() => Custom(Story.DEFAULT_BAND_COUNT, Story.DEFAULT_TASK_COUNT, false);
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Custom(int bandCount, int taskCount , bool warning = true)
         {
@@ -216,13 +172,9 @@ namespace Omochaya.HiddenStory
             Story.Pool<TaskInfo, TaskInfo2>.Shared.Expand(taskCount);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsManualBand(int offset) => (offset & BAND_TYPE_MASK) == BAND_TYPE_MANUAL;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ref TaskInfo GetRunningInfo()
         {
@@ -230,8 +182,6 @@ namespace Omochaya.HiddenStory
             else { return ref Story.Pool<TaskInfo, TaskInfo2>.Shared.UnsafeGet(runningIndex); }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ref TaskInfo2 GetRunningInfo2()
         {
@@ -261,8 +211,6 @@ namespace Omochaya.HiddenStory
             if (this.updateOffset == INVALID_OFFSET) { this.updateOffset = PENDING_OFFSET; }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Update()
         {
@@ -282,8 +230,6 @@ namespace Omochaya.HiddenStory
             FrameCheckEnable();
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void BandUpdate(int bandNo)
         {
@@ -301,13 +247,9 @@ namespace Omochaya.HiddenStory
             FrameCheckEnable();
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void LateUpdate() => BandUpdate(1);
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FixedUpdate() => BandUpdate(2);
 
@@ -339,8 +281,6 @@ namespace Omochaya.HiddenStory
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void UnsafeCancelManualChain(int topIndex)
         {
@@ -432,13 +372,9 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsCanceledException(Exception e)  => e == CanceledException.Shared;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void TryKeep(ref TaskInfo info)
         {
@@ -644,8 +580,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             nextInfo.Offset = offset;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool Boot(Story.Task task)
         {
             if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
@@ -692,8 +626,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal bool MoveNext(Story.Task task)
         {
             if (!task.IsValid) { return false; }
@@ -734,8 +666,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.NoInlining)] // UnsafePushChain を呼ぶので
         internal bool IsNotCompleted(Story.Task task)
         {
@@ -781,16 +711,12 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void SetResult()
         {
             Dev.Assert(this.IsRunningValid);
             this.GetRunningInfo().IsRunning = false;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void SetResult<R>(R result)
         {
             SetResult();
@@ -799,8 +725,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             this.runningResult = Story.PoolMemory.Alloc<R>(in result);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void SetException(Exception e)
         {
             SetResult();
@@ -813,8 +737,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void GetResult()
         {
             CaptureResult();
@@ -832,8 +754,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal R GetResult<R>()
         {
             R result = default;
@@ -850,8 +770,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             return result;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal void Free(Story.Task task)
         {
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
@@ -886,22 +804,12 @@ Dev.LoopBreak.Check(task.ToString());
         }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int BandCountForDebug() => this.bandArray.Length;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int TopCountForDebug() => this.manualBand.Count;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int TopCountForDebug(int bandNo) => this.bandArray[bandNo].Count;
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int TopIndexForDebug(int rawOffset) => this.manualBand[rawOffset].Index;
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         internal int TopIndexForDebug(int bandNo, int rawOffset) => this.bandArray[bandNo][rawOffset].Index;
 #endif
     }

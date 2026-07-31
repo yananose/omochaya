@@ -27,7 +27,8 @@ namespace Omochaya
         {
             // implementations
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct DirectImpl<E, C> : IEase
                 where E : struct, IEase
                 where C : struct, IEase
@@ -50,14 +51,15 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public DirectImpl(E prev, C calc)
+                internal DirectImpl(E prev, C calc)
                 {
                     this.prev = prev;
                     this.calc = calc;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct InverseImpl<C> : IEase
                 where C : struct, IEase
             {
@@ -79,13 +81,14 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public InverseImpl(C calc)
+                internal InverseImpl(C calc)
                 {
                     this.calc = calc;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct InverseImpl<E, C> : IEase
                 where E : struct, IEase
                 where C : struct, IEase
@@ -110,14 +113,15 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public InverseImpl(E prev, C calc)
+                internal InverseImpl(E prev, C calc)
                 {
                     this.prev = prev;
                     this.calc = calc;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct FromToImpl : IEase
             {
                 // for iease
@@ -133,14 +137,15 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public FromToImpl(float from, float to)
+                internal FromToImpl(float from, float to)
                 {
                     this.from = from;
                     this.to = to;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct FixImpl<E> : IEase // 特殊
                 where E : struct, IEase
             {
@@ -163,7 +168,7 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public FixImpl(E prev)
+                internal FixImpl(E prev)
                 {
                     this.prev = prev;
                     this.start = prev.Calc(0f);
@@ -176,7 +181,8 @@ namespace Omochaya
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct CombineImpl<E, C> : IEase
                 where E : struct, IEase
                 where C : struct, IEase
@@ -213,7 +219,7 @@ namespace Omochaya
                 // properties
 
                 /// <summary></summary>
-                public float EvenSplit
+                internal float EvenSplit
                 {
                     get
                     {
@@ -226,7 +232,7 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public CombineImpl(E prev, C calc, float split)
+                internal CombineImpl(E prev, C calc, float split)
                 {
                     this.prev = prev;
                     this.calc = calc;
@@ -256,7 +262,8 @@ namespace Omochaya
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct CurveImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -270,13 +277,14 @@ namespace Omochaya
                 readonly AnimationCurve curve;
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public CurveImpl(AnimationCurve curve)
+                internal CurveImpl(AnimationCurve curve)
                 {
                     this.curve = curve;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct NoneImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -285,7 +293,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => now;
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct ReverseImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -294,7 +303,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => 1f - now;
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct SineImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -303,7 +313,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => Mathf.Sin(now * Mathf.PI * 0.5f);
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct QuadImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -312,7 +323,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => now * now;
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct CubicImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -321,7 +333,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => now * now * now;
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct PowImpl : IEase
             {
                 // for iease
@@ -340,13 +353,14 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public PowImpl(float pow)
+                internal PowImpl(float pow)
                 {
                     this.pow = pow;
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct ExpoImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -355,7 +369,8 @@ namespace Omochaya
                 public readonly float Calc(float now) => now == 0f ? 0f : Mathf.Pow(2f, 10f * now - 10f);
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct CircImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -371,7 +386,8 @@ namespace Omochaya
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct BackImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -386,7 +402,8 @@ namespace Omochaya
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct ElasticImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -402,7 +419,8 @@ namespace Omochaya
                 }
             }
 
-            /// <summary></summary>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct BounceImpl : IEase
             {
                 /// <summary>Don't touch! Only for system.</summary>

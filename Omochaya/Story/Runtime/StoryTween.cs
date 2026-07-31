@@ -182,7 +182,6 @@ namespace Omochaya
             void Update(float now);
         }
 
-        /// <summary></summary>
         readonly struct UpdaterImpl<T> : IUpdater
         {
             // fields
@@ -310,6 +309,56 @@ namespace Omochaya
             }
         }
 
+        /// <summary></summary>
+        public static Task Interval<P, E>(this P plan, float interval, in E ease, ref double start)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            return plan.CreateTask(interval, 0f, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Interval<P>(this P plan, float interval, ref double start)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            return plan.CreateTask(interval, 0f, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Interval<P>(this P plan, float interval)
+            where P : struct, Mover.IPlan
+        {
+            var start = GetStart();
+            var ease = Ease.None;
+            return plan.CreateTask(interval, 0f, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Speed<P, E>(this P plan, float speed, in E ease, ref double start)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            return plan.CreateTask(0f, speed, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Speed<P>(this P plan, float speed, ref double start)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            return plan.CreateTask(0f, speed, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Speed<P>(this P plan, float speed)
+            where P : struct, Mover.IPlan
+        {
+            var start = GetStart();
+            var ease = Ease.None;
+            return plan.CreateTask(0f, speed, ease, ref start);
+        }
+
 #if STORY_TIME_CACHE
 
         static class Time
@@ -372,56 +421,6 @@ namespace Omochaya
             }
         }
 #endif
-
-        /// <summary></summary>
-        public static Task Interval<P, E>(this P plan, float interval, in E ease, ref double start)
-            where P : struct, Mover.IPlan
-            where E : struct, IEase
-        {
-            return plan.CreateTask(interval, 0f, ease, ref start);
-        }
-
-        /// <summary></summary>
-        public static Task Interval<P>(this P plan, float interval, ref double start)
-            where P : struct, Mover.IPlan
-        {
-            var ease = Ease.None;
-            return plan.CreateTask(interval, 0f, ease, ref start);
-        }
-
-        /// <summary></summary>
-        public static Task Interval<P>(this P plan, float interval)
-            where P : struct, Mover.IPlan
-        {
-            var start = GetStart();
-            var ease = Ease.None;
-            return plan.CreateTask(interval, 0f, ease, ref start);
-        }
-
-        /// <summary></summary>
-        public static Task Speed<P, E>(this P plan, float speed, in E ease, ref double start)
-            where P : struct, Mover.IPlan
-            where E : struct, IEase
-        {
-            return plan.CreateTask(0f, speed, ease, ref start);
-        }
-
-        /// <summary></summary>
-        public static Task Speed<P>(this P plan, float speed, ref double start)
-            where P : struct, Mover.IPlan
-        {
-            var ease = Ease.None;
-            return plan.CreateTask(0f, speed, ease, ref start);
-        }
-
-        /// <summary></summary>
-        public static Task Speed<P>(this P plan, float speed)
-            where P : struct, Mover.IPlan
-        {
-            var start = GetStart();
-            var ease = Ease.None;
-            return plan.CreateTask(0f, speed, ease, ref start);
-        }
     }
 }
 
@@ -460,14 +459,10 @@ namespace Omochaya.HiddenStory
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param1 : IParam<Param1>
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => Mathf.Abs(this.P0);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param1(float p0)
             {
                 this.P0 = p0;
@@ -487,14 +482,10 @@ namespace Omochaya.HiddenStory
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param2 : IParam<Param2>
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector2(this.P0, this.P1).magnitude; // 記述量減らしたいので（重くもないはず）
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param2(float p0, float p1)
             {
                 this.P0 = p0;
@@ -516,14 +507,10 @@ namespace Omochaya.HiddenStory
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param3 : IParam<Param3>
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1, P2;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector3(this.P0, this.P1, this.P2).magnitude;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param3(float p0, float p1, float p2)
             {
                 this.P0 = p0;
@@ -547,14 +534,10 @@ namespace Omochaya.HiddenStory
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Param4 : IParam<Param4>
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly float P0, P1, P2, P3;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => new Vector4(this.P0, this.P1, this.P2, this.P3).magnitude;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Param4(float p0, float p1, float p2, float p3)
             {
                 this.P0 = p0;
@@ -584,8 +567,6 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Length => Quaternion.Angle(Quaternion.identity, this.Q); // 角度にしておく
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal ParamQ(Quaternion q) => this.Q = q;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -632,12 +613,17 @@ namespace Omochaya.HiddenStory
         }
 
         // plan ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IPlan
         {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start) where E : struct, Story.IEase;
         }
 
-        public static Story.Task CreateTaskCore<T, C, H, P, E>(H changer, P _, T to, C carrier, bool isDelta, float interval, float speed, E ease, ref double start)
+        internal static Story.Task CreateTaskCore<T, C, H, P, E>(H changer, P _, T to, C carrier, bool isDelta, float interval, float speed, E ease, ref double start)
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
             where P : struct, IParam<P>
@@ -692,8 +678,6 @@ namespace Omochaya.HiddenStory
             }
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Updater<T, C, H, P> : Story.IUpdater
             where C : struct, ICarrier<T>
             where H : struct, IChanger<T, P>
@@ -703,8 +687,6 @@ namespace Omochaya.HiddenStory
             readonly H changer;
             readonly P from, to;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Updater(C carrier, H changer, in P from, in P to)
             {
                 this.carrier = carrier;

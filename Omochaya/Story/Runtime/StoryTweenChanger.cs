@@ -32,8 +32,6 @@ namespace Omochaya
             readonly bool isDelta;
             readonly float p;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float p)
             {
                 this.carrier = carrier;
@@ -93,8 +91,6 @@ namespace Omochaya
             readonly Comb comb;
             readonly Vector2 p;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y)
             {
                 this.carrier = carrier;
@@ -104,8 +100,6 @@ namespace Omochaya
                 this.p = result.Item2;
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, Vector2 p)
             {
                 this.carrier = carrier;
@@ -153,8 +147,6 @@ namespace Omochaya
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Changer
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct X_ : Mover.IChanger<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -168,8 +160,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _Y : Mover.IChanger<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -183,8 +173,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XY : Mover.IChanger<Vector2, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -234,8 +222,6 @@ namespace Omochaya
             readonly Comb comb;
             readonly Vector3 p;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? z)
             {
                 this.carrier = carrier;
@@ -245,8 +231,6 @@ namespace Omochaya
                 this.p = result.Item2;
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, in Vector3 p)
             {
                 this.carrier = carrier;
@@ -303,8 +287,6 @@ namespace Omochaya
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         static class Changer
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct X__ : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -318,8 +300,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _Y_ : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -333,8 +313,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct __Z : Mover.IChanger<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -348,8 +326,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct _YZ : Mover.IChanger<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -380,8 +356,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XY_ : Mover.IChanger<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -396,8 +370,6 @@ namespace Omochaya
                     return current;
                 }
             }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal readonly struct XYZ : Mover.IChanger<Vector3, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -448,8 +420,6 @@ namespace Omochaya
             readonly Comb comb;
             readonly Color p;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, float? r, float? g, float? b, float? a)
             {
                 this.carrier = carrier;
@@ -459,8 +429,6 @@ namespace Omochaya
                 this.p = result.Item2;
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, Color p)
             {
                 this.carrier = carrier;
@@ -802,8 +770,6 @@ namespace Omochaya
             readonly bool isDelta;
             readonly Quaternion p;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             internal Plan(in C carrier, bool isDelta, in Quaternion p)
             {
                 this.carrier = carrier;

@@ -25,6 +25,10 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<float> {}
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
@@ -67,7 +71,7 @@ namespace Omochaya
             => new(self, false, x, y);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x=null, float? y=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null)
             where C : struct, ICarrier
             => new(self, true, x, y);
 
@@ -80,6 +84,10 @@ namespace Omochaya
         public static Plan<C> By<C>(this C self, Vector2 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<Vector2> {}
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -198,7 +206,7 @@ namespace Omochaya
             => new(self, false, x, y, z);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x=null, float? y=null, float? z=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? z = null)
             where C : struct, ICarrier
             => new(self, true, x, y, z);
 
@@ -211,6 +219,10 @@ namespace Omochaya
         public static Plan<C> By<C>(this C self, in Vector3 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<Vector3> {}
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -396,7 +408,7 @@ namespace Omochaya
             => new(self, false, r, g, b, a);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, bool _ = true, float? r=null, float? g=null, float? b=null, float? a=null)
+        public static Plan<C> By<C>(this C self, bool _ = true, float? r = null, float? g = null, float? b = null, float? a = null)
             where C : struct, ICarrier
             => new(self, true, r, g, b, a);
 
@@ -409,6 +421,10 @@ namespace Omochaya
         public static Plan<C> By<C>(this C self, in Color p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<Color> {}
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -662,23 +678,6 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RGB_ : Mover.IChanger<Color, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                public Color Set(Color current, Mover.Param3 prm)
-                {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.b = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct _GBA : Mover.IChanger<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -730,6 +729,23 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct RGB_ : Mover.IChanger<Color, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Color Set(Color current, Mover.Param3 prm)
+                {
+                    current.r = prm.P0;
+                    current.g = prm.P1;
+                    current.b = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct RGBA : Mover.IChanger<Color, Mover.Param4>
             {
                 /// <summary>Don't touch! Only for system.</summary>
@@ -760,6 +776,10 @@ namespace Omochaya
         public static Plan<C> By<C>(this C self, in Quaternion p)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<Quaternion> {}
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -799,5 +819,366 @@ namespace Omochaya
 
     public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
+        /// <summary></summary>
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? width = null, float? height = null)
+            where C : struct, ICarrier
+            => new(self, false, x, y, width, height);
+
+        /// <summary></summary>
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? width = null, float? height = null)
+            where C : struct, ICarrier
+            => new(self, true, x, y, width, height);
+
+        /// <summary></summary>
+        public static Plan<C> To<C>(this C self, in Rect p = default)
+            where C : struct, ICarrier
+            => new(self, false, p);
+
+        /// <summary></summary>
+        public static Plan<C> By<C>(this C self, in Rect p = default)
+            where C : struct, ICarrier
+            => new(self, true, p);
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrier : Mover.ICarrier<Rect> {}
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct Plan<C> : Mover.IPlan
+            where C : struct, ICarrier
+        {
+            readonly C carrier;
+            readonly bool isDelta;
+            readonly Comb comb;
+            readonly Rect p;
+
+            internal Plan(in C carrier, bool isDelta, float? x, float? y, float? width, float? height)
+            {
+                this.carrier = carrier;
+                this.isDelta = isDelta;
+                var result = Analyze(x, y, height, width);
+                this.comb = result.Item1;
+                this.p = result.Item2;
+            }
+
+            internal Plan(in C carrier, bool isDelta, Rect p)
+            {
+                this.carrier = carrier;
+                this.isDelta = isDelta;
+                this.comb = Comb.XYWH;
+                this.p = p;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+                where E : struct, Story.IEase
+            {
+                switch (this.comb)
+                {
+                    case Comb.X___: return Mover.CreateTaskCore(new Changer.X___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y__: return Mover.CreateTaskCore(new Changer._Y__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__W_: return Mover.CreateTaskCore(new Changer.__W_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.___H: return Mover.CreateTaskCore(new Changer.___H(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY__: return Mover.CreateTaskCore(new Changer.XY__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__WH: return Mover.CreateTaskCore(new Changer.__WH(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_W_: return Mover.CreateTaskCore(new Changer.X_W_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y_H: return Mover.CreateTaskCore(new Changer._Y_H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X__H: return Mover.CreateTaskCore(new Changer.X__H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._YW_: return Mover.CreateTaskCore(new Changer._YW_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._YWH: return Mover.CreateTaskCore(new Changer._YWH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_WH: return Mover.CreateTaskCore(new Changer.X_WH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY_H: return Mover.CreateTaskCore(new Changer.XY_H(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XYW_: return Mover.CreateTaskCore(new Changer.XYW_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XYWH: return Mover.CreateTaskCore(new Changer.XYWH(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                }
+                return default;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        static (Comb, Rect) Analyze(float? x, float? y, float? width, float? height)
+        {
+            if (x != null && y == null && width == null && height == null) { return (Comb.X___, new((float)x, default, default, default)); }
+            if (x == null && y != null && width == null && height == null) { return (Comb._Y__, new(default, (float)y, default, default)); }
+            if (x == null && y == null && width != null && height == null) { return (Comb.__W_, new(default, default, (float)width, default)); }
+            if (x == null && y == null && width == null && height != null) { return (Comb.___H, new(default, default, default, (float)height)); }
+            if (x != null && y != null && width == null && height == null) { return (Comb.XY__, new((float)x, (float)y, default, default)); }
+            if (x == null && y == null && width != null && height != null) { return (Comb.__WH, new(default, default, (float)width, (float)height)); }
+            if (x != null && y == null && width != null && height == null) { return (Comb.X_W_, new((float)x, default, (float)width, default)); }
+            if (x == null && y != null && width == null && height != null) { return (Comb._Y_H, new(default, (float)y, default, (float)height)); }
+            if (x != null && y == null && width == null && height != null) { return (Comb.X__H, new((float)x, default, default, (float)height)); }
+            if (x == null && y != null && width != null && height == null) { return (Comb._YW_, new(default, (float)y, (float)width, default)); }
+            if (x == null && y != null && width != null && height != null) { return (Comb._YWH, new(default, (float)y, (float)width, (float)height)); }
+            if (x != null && y == null && width != null && height != null) { return (Comb.X_WH, new((float)x, default, (float)width, (float)height)); }
+            if (x != null && y != null && width == null && height != null) { return (Comb.XY_H, new((float)x, (float)y, default, (float)height)); }
+            if (x != null && y != null && width != null && height == null) { return (Comb.XYW_, new((float)x, (float)y, (float)width, default)); }
+            if (x != null && y != null && width != null && height != null) { return (Comb.XYWH, new((float)x, (float)y, (float)width, (float)height)); }
+            Dev.LogError("引数の指定が不正です");
+            return default;
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public enum Comb
+        {
+            None,
+            X___, _Y__, __W_, ___H,
+            XY__, __WH,
+            X_W_, _Y_H,
+            X__H, _YW_,
+            _YWH, X_WH, XY_H, XYW_,
+            XYWH
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        static class Changer
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct X___ : Mover.IChanger<Rect, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param1 Get(Rect current) => new(current.x);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param1 prm)
+                {
+                    current.x = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct _Y__ : Mover.IChanger<Rect, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param1 Get(Rect current) => new(current.y);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param1 prm)
+                {
+                    current.y = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct __W_ : Mover.IChanger<Rect, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param1 Get(Rect current) => new(current.width);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param1 prm)
+                {
+                    current.width = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct ___H : Mover.IChanger<Rect, Mover.Param1>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param1 Get(Rect current) => new(current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param1 prm)
+                {
+                    current.height = prm.P0;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct XY__ : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.x, current.y);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.x = prm.P0;
+                    current.y = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct __WH : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.width, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.width = prm.P0;
+                    current.height = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct X_W_ : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.x, current.width);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.x = prm.P0;
+                    current.width = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct _Y_H : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.y, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.y = prm.P0;
+                    current.height = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct X__H : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.x, current.width);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.x = prm.P0;
+                    current.height = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct _YW_ : Mover.IChanger<Rect, Mover.Param2>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param2 Get(Rect current) => new(current.y, current.width);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param2 prm)
+                {
+                    current.y = prm.P0;
+                    current.width = prm.P1;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct _YWH : Mover.IChanger<Rect, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param3 Get(Rect current) => new(current.y, current.width, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param3 prm)
+                {
+                    current.y = prm.P0;
+                    current.width = prm.P1;
+                    current.height = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct X_WH : Mover.IChanger<Rect, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param3 Get(Rect current) => new(current.x, current.width, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param3 prm)
+                {
+                    current.x = prm.P0;
+                    current.width = prm.P1;
+                    current.height = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct XY_H : Mover.IChanger<Rect, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param3 prm)
+                {
+                    current.x = prm.P0;
+                    current.y = prm.P1;
+                    current.height = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct XYW_ : Mover.IChanger<Rect, Mover.Param3>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.width);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param3 prm)
+                {
+                    current.x = prm.P0;
+                    current.y = prm.P1;
+                    current.width = prm.P2;
+                    return current;
+                }
+            }
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct XYWH : Mover.IChanger<Rect, Mover.Param4>
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Mover.Param4 Get(Rect current) => new(current.x, current.y, current.width, current.height);
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                public Rect Set(Rect current, Mover.Param4 prm)
+                {
+                    current.x = prm.P0;
+                    current.y = prm.P1;
+                    current.width = prm.P2;
+                    current.height = prm.P3;
+                    return current;
+                }
+            }
+        }
     }
 }

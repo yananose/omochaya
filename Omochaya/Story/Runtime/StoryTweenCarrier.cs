@@ -31,10 +31,6 @@ namespace Omochaya
 
     public static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface ICarrier : Mover.ICarrier<float> {}
-
         // Carrier0:CanvasGroup.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -248,10 +244,6 @@ namespace Omochaya
 
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface ICarrier : Mover.ICarrier<Vector2> {}
-
         // Carrier0:RectTransform.anchoredPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -337,10 +329,6 @@ namespace Omochaya
 
     public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface ICarrier : Mover.ICarrier<Vector3> {}
-
         // Carrier0:Transform.localPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -454,10 +442,6 @@ namespace Omochaya
 
     public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface ICarrier : Mover.ICarrier<Color> {}
-
         // Carrier0:Graphic.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -549,10 +533,6 @@ namespace Omochaya
 
     public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface ICarrier : Mover.ICarrier<Quaternion> {}
-
         // Carrier0:Transform.localRotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

@@ -99,7 +99,7 @@ namespace Omochaya
             public static readonly EaseFast.NoneImpl None = new();
 
             /// <summary></summary>
-            public static readonly ReverseImpl Reverse = new();
+            public static readonly EaseFast.ReverseImpl Reverse = new();
 
             /// <summary></summary>
             public static readonly InverseImpl<EaseFast.SineImpl> SineAcc = new();
@@ -165,12 +165,15 @@ namespace Omochaya
             // 〜〜 引数アリの ease（これらは共通化できない） 〜〜
 
             /// <summary></summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CurveImpl Curve(AnimationCurve curve) => new(curve);
 
             /// <summary></summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static PowImpl PowAcc(float pow) => new(pow);
 
             /// <summary></summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static InverseImpl<PowImpl> PowDec(float pow) => new(new(pow));
 
             /// <summary></summary>
@@ -272,16 +275,6 @@ namespace Omochaya
                     this.prev = prev;
                     this.calc = calc;
                 }
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct ReverseImpl : IEase
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public readonly float Calc(float now) => 1f - now;
             }
 
             /// <summary>Don't touch! Only for system.</summary>
@@ -805,9 +798,9 @@ namespace Omochaya
                 BounceAcc,
                 BounceDec,
             }
-            public class Impl : IEase
+            public readonly struct Impl : IEase
             {
-                Type type;
+                readonly Type type;
                 public Impl(Type type) => this.type = type;
 
                 public float Calc(float now)
@@ -848,21 +841,11 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.ReverseImpl> Reverse<E>(this E prev)
-            where E : struct, IEase
-            => new(prev, new());
+        public static Ease.DirectImpl<E, Ease.FromToImpl> FromTo<E>(this E prev, float from, float to) where E : struct, IEase => new(prev, new(from, to));
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.FromToImpl> FromTo<E>(this E prev, float from, float to)
-            where E : struct, IEase
-            => new(prev, new(from, to));
-
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.FixImpl<E> Fix<E>(this E prev)
-            where E : struct, IEase
-            => new(prev);
+        public static Ease.FixImpl<E> Fix<E>(this E prev) where E : struct, IEase => new(prev);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -897,6 +880,10 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.DirectImpl<E, EaseFast.ReverseImpl> Reverse<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.InverseImpl<E, EaseFast.SineImpl> SineAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
@@ -918,6 +905,22 @@ namespace Omochaya
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.InverseImpl<E, EaseFast.CubicImpl> CubicDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.DirectImpl<E, EaseFast.QuartImpl> QuartAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.InverseImpl<E, EaseFast.QuartImpl> QuartDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.InverseImpl<E, EaseFast.SqrtImpl> SqrtAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Ease.DirectImpl<E, EaseFast.SqrtImpl> SqrtDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

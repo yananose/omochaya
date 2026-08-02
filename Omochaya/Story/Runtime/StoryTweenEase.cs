@@ -22,10 +22,164 @@ namespace Omochaya
             float Calc(float now);
         }
 
+        // ------------------------------------------------------------------------------------------------------------
         /// <summary></summary>
         public static class Ease
         {
+            // shared
+
+#if STORY_EASE_COMPACT
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl None = new(EaseCompact.Type.None);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl Reverse = new(EaseCompact.Type.Reverse);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl SineAcc = new(EaseCompact.Type.SineAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl SineDec = new(EaseCompact.Type.SineDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl QuadAcc = new(EaseCompact.Type.QuadAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl QuadDec = new(EaseCompact.Type.QuadDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl CubicAcc = new(EaseCompact.Type.CubicAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl CubicDec = new(EaseCompact.Type.CubicDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl QuartAcc = new(EaseCompact.Type.QuartAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl QuartDec = new(EaseCompact.Type.QuartDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl SqrtAcc = new(EaseCompact.Type.SqrtAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl SqrtDec = new(EaseCompact.Type.SqrtDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl ExpoAcc = new(EaseCompact.Type.ExpoAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl ExpoDec = new(EaseCompact.Type.ExpoDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl CircAcc = new(EaseCompact.Type.CircAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl CircDec = new(EaseCompact.Type.CircDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl BackAcc = new(EaseCompact.Type.BackAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl BackDec = new(EaseCompact.Type.BackDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl ElasticAcc = new(EaseCompact.Type.ElasticAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl ElasticDec = new(EaseCompact.Type.ElasticDec);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl BounceAcc = new(EaseCompact.Type.BounceAcc);
+
+            /// <summary></summary>
+            public static readonly EaseCompact.Impl BounceDec = new(EaseCompact.Type.BounceDec);
+#else
+            /// <summary></summary>
+            public static readonly EaseFast.NoneImpl None = new();
+
+            /// <summary></summary>
+            public static readonly ReverseImpl Reverse = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.SineImpl> SineAcc = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.SineImpl SineDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.QuadImpl QuadAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.QuadImpl> QuadDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.CubicImpl CubicAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.CubicImpl> CubicDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.QuartImpl QuartAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.QuartImpl> QuartDec = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.SqrtImpl> SqrtAcc = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.SqrtImpl SqrtDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.ExpoImpl ExpoAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.ExpoImpl> ExpoDec = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.CircImpl> CircAcc = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.CircImpl CircDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.BackImpl BackAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.BackImpl> BackDec = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.ElasticImpl ElasticAcc = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.ElasticImpl> ElasticDec = new();
+
+            /// <summary></summary>
+            public static readonly InverseImpl<EaseFast.BounceImpl> BounceAcc = new();
+
+            /// <summary></summary>
+            public static readonly EaseFast.BounceImpl BounceDec = new();
+#endif
+
+            // 〜〜 引数アリの ease（これらは共通化できない） 〜〜
+
+            /// <summary></summary>
+            public static CurveImpl Curve(AnimationCurve curve) => new(curve);
+
+            /// <summary></summary>
+            public static PowImpl PowAcc(float pow) => new(pow);
+
+            /// <summary></summary>
+            public static InverseImpl<PowImpl> PowDec(float pow) => new(new(pow));
+
+            /// <summary></summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static FromToImpl FromTo(float from, float to) => new(from, to);
+
             // implementations
+
+            // 加工用
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -122,6 +276,16 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct ReverseImpl : IEase
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public readonly float Calc(float now) => 1f - now;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct FromToImpl : IEase
             {
                 // for iease
@@ -175,7 +339,7 @@ namespace Omochaya
                     this.length = prev.Calc(1f) - this.start;
                     if (Mathf.Approximately(this.length, 0f))
                     {
-                        Debug.Assert(false);
+                        Debug.LogError("始点と終点が近すぎるため正規化できません");
                         this.length = this.length < 0f ? -float.Epsilon : float.Epsilon;
                     }
                 }
@@ -183,7 +347,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct CombineImpl<E, C> : IEase
+            public readonly struct JoinImpl<E, C> : IEase
                 where E : struct, IEase
                 where C : struct, IEase
             {
@@ -232,7 +396,7 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                internal CombineImpl(E prev, C calc, float split)
+                internal JoinImpl(E prev, C calc, float split)
                 {
                     this.prev = prev;
                     this.calc = calc;
@@ -282,6 +446,107 @@ namespace Omochaya
                     this.curve = curve;
                 }
             }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct PowImpl : IEase
+            {
+                // for iease
+
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public readonly float Calc(float now)
+                {
+                    now = Mathf.Pow(now, this.pow);
+                    return now;
+                }
+
+                // fields
+                readonly float pow;
+
+                // constructors
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                internal PowImpl(float pow)
+                {
+                    this.pow = pow;
+                }
+            }
+         }
+
+        // ------------------------------------------------------------------------------------------------------------
+        /// <summary></summary>
+        public static class EaseFast
+        {
+            // shared
+
+            /// <summary></summary>
+            public static readonly NoneImpl None = new();
+
+            /// <summary></summary>
+            public static readonly ReverseImpl Reverse = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<SineImpl> SineAcc = new();
+
+            /// <summary></summary>
+            public static readonly SineImpl SineDec = new();
+
+            /// <summary></summary>
+            public static readonly QuadImpl QuadAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<QuadImpl> QuadDec = new();
+
+            /// <summary></summary>
+            public static readonly CubicImpl CubicAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<CubicImpl> CubicDec = new();
+
+            /// <summary></summary>
+            public static readonly QuartImpl QuartAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<QuartImpl> QuartDec = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<SqrtImpl> SqrtAcc = new();
+
+            /// <summary></summary>
+            public static readonly SqrtImpl SqrtDec = new();
+
+            /// <summary></summary>
+            public static readonly ExpoImpl ExpoAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<ExpoImpl> ExpoDec = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<CircImpl> CircAcc = new();
+
+            /// <summary></summary>
+            public static readonly CircImpl CircDec = new();
+
+            /// <summary></summary>
+            public static readonly BackImpl BackAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<BackImpl> BackDec = new();
+
+            /// <summary></summary>
+            public static readonly ElasticImpl ElasticAcc = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<ElasticImpl> ElasticDec = new();
+
+            /// <summary></summary>
+            public static readonly Ease.InverseImpl<BounceImpl> BounceAcc = new();
+
+            /// <summary></summary>
+            public static readonly BounceImpl BounceDec = new();
+
+            // implementations
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -335,28 +600,22 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct PowImpl : IEase
+            public readonly struct QuartImpl : IEase
             {
-                // for iease
-
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public readonly float Calc(float now)
-                {
-                    now = Mathf.Pow(now, this.pow);
-                    return now;
-                }
+                public readonly float Calc(float now) => now * now * now * now;
+            }
 
-                // fields
-                readonly float pow;
-
-                // constructors
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct SqrtImpl : IEase
+            {
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                internal PowImpl(float pow)
-                {
-                    this.pow = pow;
-                }
+                public readonly float Calc(float now) => Mathf.Sqrt(now);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
@@ -445,78 +704,147 @@ namespace Omochaya
                     }
                 }
             }
+       }
 
+        // ------------------------------------------------------------------------------------------------------------
+        /// <summary></summary>
+        public static class EaseCompact
+        {
             // shared
 
             /// <summary></summary>
-            public static readonly NoneImpl None = new();
+            public static readonly Impl None = new(Type.None);
 
             /// <summary></summary>
-            public static readonly ReverseImpl Reverse = new();
+            public static readonly Impl Reverse = new(Type.Reverse);
 
             /// <summary></summary>
-            public static FromToImpl FromTo(float from, float to) => new(from, to);
+            public static readonly Impl SineAcc = new(Type.SineAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<SineImpl> SineAcc = new();
+            public static readonly Impl SineDec = new(Type.SineDec);
 
             /// <summary></summary>
-            public static readonly SineImpl SineDec = new();
+            public static readonly Impl QuadAcc = new(Type.QuadAcc);
 
             /// <summary></summary>
-            public static CurveImpl Curve(AnimationCurve curve) => new(curve);
+            public static readonly Impl QuadDec = new(Type.QuadDec);
 
             /// <summary></summary>
-            public static readonly QuadImpl QuadAcc = new();
+            public static readonly Impl CubicAcc = new(Type.CubicAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<QuadImpl> QuadDec = new();
+            public static readonly Impl CubicDec = new(Type.CubicDec);
 
             /// <summary></summary>
-            public static PowImpl PowAcc(float pow) => new(pow);
+            public static readonly Impl QuartAcc = new(Type.QuartAcc);
 
             /// <summary></summary>
-            public static InverseImpl<PowImpl> PowDec(float pow) => new(new(pow));
+            public static readonly Impl QuartDec = new(Type.QuartDec);
 
             /// <summary></summary>
-            public static readonly CubicImpl CubicAcc = new();
+            public static readonly Impl SqrtAcc = new(Type.SqrtAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<CubicImpl> CubicDec = new();
+            public static readonly Impl SqrtDec = new(Type.SqrtDec);
 
             /// <summary></summary>
-            public static readonly ExpoImpl ExpoAcc = new();
+            public static readonly Impl ExpoAcc = new(Type.ExpoAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<ExpoImpl> ExpoDec = new();
+            public static readonly Impl ExpoDec = new(Type.ExpoDec);
 
             /// <summary></summary>
-            public static readonly InverseImpl<CircImpl> CircAcc = new();
+            public static readonly Impl CircAcc = new(Type.CircAcc);
 
             /// <summary></summary>
-            public static readonly CircImpl CircDec = new();
+            public static readonly Impl CircDec = new(Type.CircDec);
 
             /// <summary></summary>
-            public static readonly BackImpl BackAcc = new();
+            public static readonly Impl BackAcc = new(Type.BackAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<BackImpl> BackDec = new();
+            public static readonly Impl BackDec = new(Type.BackDec);
 
             /// <summary></summary>
-            public static readonly ElasticImpl ElasticAcc = new();
+            public static readonly Impl ElasticAcc = new(Type.ElasticAcc);
 
             /// <summary></summary>
-            public static readonly InverseImpl<ElasticImpl> ElasticDec = new();
+            public static readonly Impl ElasticDec = new(Type.ElasticDec);
 
             /// <summary></summary>
-            public static readonly InverseImpl<BounceImpl> BounceAcc = new();
+            public static readonly Impl BounceAcc = new(Type.BounceAcc);
 
             /// <summary></summary>
-            public static readonly BounceImpl BounceDec = new();
+            public static readonly Impl BounceDec = new(Type.BounceDec);
+
+            // implementations
+
+            public enum Type
+            {
+                None,
+                Reverse,
+                SineAcc,
+                SineDec,
+                QuadAcc,
+                QuadDec,
+                CubicAcc,
+                CubicDec,
+                QuartAcc,
+                QuartDec,
+                SqrtAcc,
+                SqrtDec,
+                ExpoAcc,
+                ExpoDec,
+                CircAcc,
+                CircDec,
+                BackAcc,
+                BackDec,
+                ElasticAcc,
+                ElasticDec,
+                BounceAcc,
+                BounceDec,
+            }
+            public class Impl : IEase
+            {
+                Type type;
+                public Impl(Type type) => this.type = type;
+
+                public float Calc(float now)
+                {
+                    switch (this.type)
+                    {
+                        case Type.Reverse: return EaseFast.Reverse.Calc(now);
+                        case Type.SineAcc: return EaseFast.SineAcc.Calc(now);
+                        case Type.SineDec: return EaseFast.SineDec.Calc(now);
+                        case Type.QuadAcc: return EaseFast.QuadAcc.Calc(now);
+                        case Type.QuadDec: return EaseFast.QuadDec.Calc(now);
+                        case Type.CubicAcc: return EaseFast.CubicAcc.Calc(now);
+                        case Type.CubicDec: return EaseFast.CubicDec.Calc(now);
+                        case Type.QuartAcc: return EaseFast.QuartAcc.Calc(now);
+                        case Type.QuartDec: return EaseFast.QuartDec.Calc(now);
+                        case Type.SqrtAcc: return EaseFast.SqrtAcc.Calc(now);
+                        case Type.SqrtDec: return EaseFast.SqrtDec.Calc(now);
+                        case Type.ExpoAcc: return EaseFast.ExpoAcc.Calc(now);
+                        case Type.ExpoDec: return EaseFast.ExpoDec.Calc(now);
+                        case Type.CircAcc: return EaseFast.CircAcc.Calc(now);
+                        case Type.CircDec: return EaseFast.CircDec.Calc(now);
+                        case Type.BackAcc: return EaseFast.BackAcc.Calc(now);
+                        case Type.BackDec: return EaseFast.BackDec.Calc(now);
+                        case Type.ElasticAcc: return EaseFast.ElasticAcc.Calc(now);
+                        case Type.ElasticDec: return EaseFast.ElasticDec.Calc(now);
+                        case Type.BounceAcc: return EaseFast.BounceAcc.Calc(now);
+                        case Type.BounceDec: return EaseFast.BounceDec.Calc(now);
+                        default: return now;
+                    }
+                }
+            }
         }
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
-        // 【公開】Ease 拡張メソッド
+        // ease を加工する拡張メソッド。
+        // 加工を3つ以上重ねるとパフォーマンスが低下する場合があるため注意
+        // （ジェネリックの階層が7を超えるとフォールバック処理に置き換わるため）
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -538,21 +866,21 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.CombineImpl<E, C> Combine<E, C>(this E prev, C calc)
+        public static Ease.JoinImpl<E, C> Join<E, C>(this E prev, C calc)
             where E : struct, IEase
             where C : struct, IEase
             => new(prev, calc, 0.5f);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.CombineImpl<E, C> Combine<E, C>(this E prev, float split, C calc)
+        public static Ease.JoinImpl<E, C> Join<E, C>(this E prev, float split, C calc)
             where E : struct, IEase
             where C : struct, IEase
             => new(prev, calc, split);
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.CombineImpl<Ease.CombineImpl<A, B>, C> Combine<A, B, C>(this Ease.CombineImpl<A, B> prev, C calc)
+        public static Ease.JoinImpl<Ease.JoinImpl<A, B>, C> Join<A, B, C>(this Ease.JoinImpl<A, B> prev, C calc)
             where A : struct, IEase
             where B : struct, IEase
             where C : struct, IEase
@@ -560,7 +888,7 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.CombineImpl<Ease.CombineImpl<A, B>, Ease.CombineImpl<C, D>> Combine<A, B, C, D>(this Ease.CombineImpl<A, B> prev, Ease.CombineImpl<C, D> calc)
+        public static Ease.JoinImpl<Ease.JoinImpl<A, B>, Ease.JoinImpl<C, D>> Join<A, B, C, D>(this Ease.JoinImpl<A, B> prev, Ease.JoinImpl<C, D> calc)
             where A : struct, IEase
             where B : struct, IEase
             where C : struct, IEase
@@ -569,27 +897,27 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.SineImpl> SineAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.SineImpl> SineAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.SineImpl> SineDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.SineImpl> SineDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.QuadImpl> QuadAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.QuadImpl> QuadAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.QuadImpl> QuadDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.QuadImpl> QuadDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.CubicImpl> CubicAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.CubicImpl> CubicAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.CubicImpl> CubicDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.CubicImpl> CubicDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -601,43 +929,46 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.ExpoImpl> ExpoAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.ExpoImpl> ExpoAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.ExpoImpl> ExpoDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.ExpoImpl> ExpoDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.CircImpl> CircAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.CircImpl> CircAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.CircImpl> CircDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.CircImpl> CircDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.BackImpl> BackAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.BackImpl> BackAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.BackImpl> BackDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.BackImpl> BackDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.ElasticImpl> ElasticAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.ElasticImpl> ElasticAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.ElasticImpl> ElasticDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.ElasticImpl> ElasticDec<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, Ease.BounceImpl> BounceAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.BounceImpl> BounceAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, Ease.BounceImpl> BounceDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.BounceImpl> BounceDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+
+        // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
+        // utils
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

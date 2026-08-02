@@ -27,7 +27,7 @@ namespace Omochaya
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            Debug.Assert(0f <= interval);
+            Dev.Assert(0f <= interval);
             return float.Epsilon < interval ? TweenTask(interval, updater, ease, ref start)
                 : ImmediateTask(updater, ease.Calc(1f)); // interval = 0 : 即終了
         }
@@ -103,7 +103,7 @@ namespace Omochaya
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            Debug.Assert(0f <= speed);
+            Dev.Assert(0f <= speed);
             return float.Epsilon < speed ? TweenTask(Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
                 : ImmediateTask(updater, from); // speed = 0 : 始まらない
         }
@@ -229,7 +229,7 @@ namespace Omochaya
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            while (passer.Bundle(updater, ease)) { await Yield; }
+            while (passer.Step(updater, ease)) { await Yield; }
         }
 
         internal struct Passer
@@ -237,14 +237,14 @@ namespace Omochaya
             // fields
             double prev;
             double start;
-            float interval;
+            readonly float interval;
             float seek;
 
             // properties
             readonly float Now
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { Debug.Assert(float.Epsilon < interval); return seek / interval; }
+                get { Dev.Assert(float.Epsilon < interval); return seek / interval; }
             }
 
             // constructors
@@ -291,14 +291,14 @@ namespace Omochaya
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal bool Bundle<U, E>(in U updater, in E ease)
+            internal bool Step<U, E>(in U updater, in E ease)
                 where U : struct, IUpdater
                 where E : struct, IEase
             {
                 Proceed();
-                if (0f <= seek)
+                if (0f <= this.seek)
                 {
-                    if (interval <= seek)
+                    if (this.interval <= this.seek)
                     {
                         updater.Update(ease.Calc(1f));
                         return false;
@@ -314,6 +314,15 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
+            return plan.CreateTask(interval, 0f, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Interval<P, E>(this P plan, float interval, in E ease)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            var start = GetStart();
             return plan.CreateTask(interval, 0f, ease, ref start);
         }
 
@@ -339,6 +348,15 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
+            return plan.CreateTask(0f, speed, ease, ref start);
+        }
+
+        /// <summary></summary>
+        public static Task Speed<P, E>(this P plan, float speed, in E ease)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            var start = GetStart();
             return plan.CreateTask(0f, speed, ease, ref start);
         }
 
@@ -382,7 +400,7 @@ namespace Omochaya
                 var customLoop = new PlayerLoopSystem { type = typeof(Time), updateDelegate = Time.UpdateCache };
 
                 if (PlayerLoopUtility.AppendToPhase<EarlyUpdate>(ref defaultLoop, customLoop)) { PlayerLoop.SetPlayerLoop(defaultLoop); }
-                else { Dev.LogError("[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
+                else { Dev.Assert(false, "[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
             }
         }
 
@@ -597,11 +615,11 @@ namespace Omochaya.HiddenStory
             void SetCurrent(T current);
         }
 
-        // changer ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // mapper ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface IChanger<T, P>
+        public interface IMapper<T, P>
             where P : struct, IParam<P>
         {
             /// <summary>Don't touch! Only for system.</summary>
@@ -623,50 +641,93 @@ namespace Omochaya.HiddenStory
             Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start) where E : struct, Story.IEase;
         }
 
-        internal static Story.Task CreateTaskCore<T, C, H, P, E>(H changer, P _, T to, C carrier, bool isDelta, float interval, float speed, E ease, ref double start)
-            where C : struct, ICarrier<T>
-            where H : struct, IChanger<T, P>
+        internal static Story.Task Create<T, P, M, C, E>(M _, P __, T to, C carrier, bool isDelta, float interval, float speed, in E ease, ref double start)
             where P : struct, IParam<P>
+            where M : struct, IMapper<T, P>
+            where C : struct, ICarrier<T>
+            where E : struct, Story.IEase
+            => Task(new Builder<T, P, M, C>(new Target<T, P, M>(to), carrier, isDelta, interval, speed, ref start), ease);
+
+        static async Story.Task Task<T, P, M, C, E>(Builder<T, P, M, C> builder, E ease)
+            where P : struct, IParam<P>
+            where M : struct, IMapper<T, P>
+            where C : struct, ICarrier<T>
             where E : struct, Story.IEase
         {
-            var ret = Task<T, C, H, P, E>(changer, changer.Get(to), carrier, isDelta, interval, speed, ease, start);
-            if (float.Epsilon < speed)
-            {
-                var length = isDelta ? changer.Get(to).Length : changer.Get(to).Sub(changer.Get(carrier.Current)).Length;
-                interval = length / speed;
-            }
-            start += interval;
-            return ret;
+            var kit = builder.Build();
+            while (kit.Step(ease)) { await Story.Yield; }
         }
 
-        static async Story.Task Task<T, C, H, P, E>(H changer, P to, C carrier, bool isDelta, float interval, float speed, E ease, double start)
-            where C : struct, ICarrier<T>
-            where H : struct, IChanger<T, P>
+        readonly struct Target<T, P, M>
             where P : struct, IParam<P>
-            where E : struct, Story.IEase
+            where M : struct, IMapper<T, P>
         {
-            TryKeep(carrier.Self);
-
-            var from = changer.Get(carrier.Current);
-
-            var trueInterval = interval;
-            if (float.Epsilon < speed)
+            readonly P to;
+            internal P To => this.to;
+            internal Target(T to)
             {
-                if (isDelta) { trueInterval = to.Length / speed; }
-                else { trueInterval = from.Sub(to).Length / speed; }
+                this.to = new M().Get(to);
+            }
+            internal P Get(T p) => new M().Get(p);
+            internal float Distance(T p) => this.To.Sub(this.Get(p)).Length;
+        }
+
+        readonly struct Builder<T, P, M, C>
+            where P : struct, IParam<P>
+            where M : struct, IMapper<T, P>
+            where C : struct, ICarrier<T>
+        {
+            readonly Target<T, P, M> target;
+            readonly C carrier;
+            readonly bool isDelta;
+            readonly float interval;
+            readonly float speed;
+            readonly double start;
+            internal Builder(Target<T, P, M> target, C carrier, bool isDelta, float interval, float speed, ref double start)
+            {
+                this.target = target;
+                this.carrier = carrier;
+                this.isDelta = isDelta;
+                this.interval = interval;
+                this.speed = speed;
+                this.start = start;
+                if (float.Epsilon < speed)
+                {
+                    var length = isDelta ? this.target.To.Length : this.target.Distance(carrier.Current);
+                    interval = length / speed;
+                }
+                start += interval;
+            }
+
+            internal Updater<T, P, M, C> Build()
+            {
+                // owner 確定
+                TryKeep(this.carrier.Self);
+
+                // from 確定
+                var from = this.target.Get(this.carrier.Current);
+                var to = this.target.To;
+
+                // interval 確定
+                var interval = this.interval;
+                if (float.Epsilon < this.speed)
+                {
+                    if (this.isDelta) { interval = to.Length / this.speed; }
+                    else { interval = from.Sub(to).Length / this.speed; }
 
 #if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
-                // 変化したら警告
-                if ((float.Epsilon < interval) && interval != trueInterval) { Dev.LogWarning("移動期間が変化しました"); }
+                    // 変化したら警告
+                    if ((float.Epsilon < this.interval) && this.interval != interval) { Dev.LogWarning("移動期間が変化しました"); }
 #endif
 
+                }
+
+                // to 確定
+                if (this.isDelta) { to = from.Add(to); }
+
+                // 生成
+                return new(start, interval, this.carrier, from, to);
             }
-            var passer = new Story.Passer(trueInterval, ref start);
-
-            if (isDelta) { to = from.Add(to); }
-            var updater = new Updater<T, C, H, P>(carrier, changer, from, to);
-
-            while (passer.Bundle(updater, ease)) { await Story.Yield; }
         }
 
         static void TryKeep(Component self)
@@ -678,29 +739,29 @@ namespace Omochaya.HiddenStory
             }
         }
 
-        readonly struct Updater<T, C, H, P> : Story.IUpdater
-            where C : struct, ICarrier<T>
-            where H : struct, IChanger<T, P>
+        struct Updater<T, P, M, C> : Story.IUpdater
             where P : struct, IParam<P>
+            where M : struct, IMapper<T, P>
+            where C : struct, ICarrier<T>
         {
-            readonly C carrier;
-            readonly H changer;
+            Story.Passer passer;
+            C carrier; // 読み取り専用にできるらしいが、したら Update で更新されなくならないか？
             readonly P from, to;
-
-            internal Updater(C carrier, H changer, in P from, in P to)
+            internal Updater(double start, float interval, C carrier, P from, P to)
             {
+                this.passer = new Story.Passer(interval, ref start);
                 this.carrier = carrier;
-                this.changer = changer;
                 this.from = from;
                 this.to = to;
             }
+            internal bool Step<E>(in E ease)
+                where E : struct, Story.IEase
+                => this.passer.Step(this, ease);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void Update(float now)
-                => this.carrier.SetCurrent(this.changer.Set(this.carrier.Current, this.from.Lerp(this.to, now)));
-                // 防御的コピー発生するが carrier が持つ参照に対する操作なので問題にならない
-                // というか問題にならないように参照に対する操作になるように実装すること！
+                => this.carrier.SetCurrent(new M().Set(this.carrier.Current, this.from.Lerp(this.to, now)));
         }
     }
 }

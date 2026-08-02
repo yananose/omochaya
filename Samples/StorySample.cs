@@ -1,5 +1,6 @@
 using UnityEngine;
 using Omochaya;
+using TMPro;
 
 public class StorySample : MonoBehaviour
 // public class StorySample : Story.TaskBehaviour // こちらだと Start に指定した場合にタスクが高速化されます。OnDestroy が必要な場合は代わりに OnDestroyed を override してください。
@@ -15,6 +16,9 @@ public class StorySample : MonoBehaviour
 
     [SerializeField]
     RectTransform white;
+
+    [SerializeField]
+    TextMeshProUGUI tmp;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -85,6 +89,109 @@ public class StorySample : MonoBehaviour
         // アプリ起動直後は安定しないのでちょっと待つ
         var wait = Time.time + 0.5f;
         while (Time.time < wait) { await Story.Yield; }
+
+        var to = this.white.anchoredPosition;
+        var count = 0;
+        // 1:None
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.None).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.None).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.None).At(this);
+        // 2:BackAcc
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.BackAcc).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.BackAcc).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.BackAcc).At(this);
+        // 3:BackDec
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.BackDec).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.BackDec).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.BackDec).At(this);
+        // 4:BounceAcc
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.BounceAcc).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.BounceAcc).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.BounceAcc).At(this);
+        // 5:BounceDec
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.BounceDec).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.BounceDec).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.BounceDec).At(this);
+        // 6:CircAcc
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.CircAcc).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.CircAcc).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.CircAcc).At(this);
+        // 7:CircDec
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.CircDec).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.CircDec).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.CircDec).At(this);
+        // 8:CubicAcc
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.CubicAcc).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.CubicAcc).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.CubicAcc).At(this);
+        // 9:CubicDec
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.CubicDec).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.CubicDec).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.CubicDec).At(this);
+        // 10:ElasticAcc
+        this.tmp.text = (++count).ToString();
+        await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.ElasticAcc).At(this);
+        await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.ElasticAcc).At(this);
+        await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.ElasticAcc).At(this);
+        // // 11:ElasticDec
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.ElasticDec).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.ElasticDec).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.ElasticDec).At(this);
+        // // 12:ExpoAcc
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.ExpoAcc).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.ExpoAcc).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.ExpoAcc).At(this);
+        // // 13:ExpoDec
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.ExpoDec).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.ExpoDec).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.ExpoDec).At(this);
+        // // 14:PowAcc
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.PowAcc(0.5f)).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.PowAcc(0.5f)).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.PowAcc(0.5f)).At(this);
+        // // 15:PowDec
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.PowDec(0.5f)).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.PowDec(0.5f)).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.PowDec(0.5f)).At(this);
+        // // 16:QuadAcc
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.QuadAcc).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.QuadAcc).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.QuadAcc).At(this);
+        // // 17:QuadDec
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.QuadDec).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.QuadDec).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.QuadDec).At(this);
+        // // 18:SineAcc
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.SineAcc).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.SineAcc).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.SineAcc).At(this);
+        // // 19:SineDec
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.SineDec).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.SineDec).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.SineDec).At(this);
+        // // 20:Combin
+        // this.tmp.text = (++count).ToString();
+        // await this.white.TweenAnchoredPosition().To(x:Range*0.5f).Speed(Speed * 2f, Story.Ease.None.Combine(Story.Ease.None)).At(this);
+        // await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed * 2f, Story.Ease.None.Combine(Story.Ease.None)).At(this);
+        // await this.white.TweenAnchoredPosition().To(to).Speed(Speed * 2f, Story.Ease.None.Combine(Story.Ease.None)).At(this);
 
         // タスク内でタスクを起動するときは、誰に所属するかは省略できます。
         // 省略した場合は起動したタスクと同じところに所属します。

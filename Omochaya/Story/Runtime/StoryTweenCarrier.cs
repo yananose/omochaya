@@ -52,7 +52,7 @@ namespace Omochaya
         /// <summary></summary>
         public static Carrier0 TweenAlpha(this CanvasGroup self) => new(self);
 
-        // Carrier1:TMP_Text.alpha -------------------------------------------------
+        // Carrier1:TMP_Text.fontSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier1 : ICarrier
@@ -64,16 +64,16 @@ namespace Omochaya
             internal Carrier1(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.alpha;
+            public float Current => this.self.fontSize;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public void SetCurrent(float value) => this.self.alpha = value;
+            public void SetCurrent(float value) => this.self.fontSize = value;
         }
 
         /// <summary></summary>
-        public static Carrier1 TweenAlpha(this TMP_Text self) => new(self);
+        public static Carrier1 TweenFontSize(this TMP_Text self) => new(self);
 
-        // Carrier2:TMP_Text.fontSize -------------------------------------------------
+        // Carrier2:TMP_Text.maxVisibleCharacters -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier2 : ICarrier
@@ -85,27 +85,6 @@ namespace Omochaya
             internal Carrier2(TMP_Text self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.fontSize;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public void SetCurrent(float value) => this.self.fontSize = value;
-        }
-
-        /// <summary></summary>
-        public static Carrier2 TweenFontSize(this TMP_Text self) => new(self);
-
-        // Carrier3:TMP_Text.maxVisibleCharacters -------------------------------------------------
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier3 : ICarrier
-        {
-            readonly TMP_Text self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Self => this.self;
-            internal Carrier3(TMP_Text self) => this.self = self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.maxVisibleCharacters;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -113,9 +92,30 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier3 TweenVisibleCount(this TMP_Text self) => new(self);
+        public static Carrier2 TweenVisibleCount(this TMP_Text self) => new(self);
 
-        // Carrier4:AudioSource.volume -------------------------------------------------
+        // Carrier3:AudioSource.volume -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct Carrier3 : ICarrier
+        {
+            readonly AudioSource self;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public Component Self => this.self;
+            internal Carrier3(AudioSource self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public float Current => this.self.volume;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public void SetCurrent(float value) => this.self.volume = value;
+        }
+
+        /// <summary></summary>
+        public static Carrier3 TweenVolume(this AudioSource self) => new(self);
+
+        // Carrier4:AudioSource.pitch -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier4 : ICarrier
@@ -127,27 +127,6 @@ namespace Omochaya
             internal Carrier4(AudioSource self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.volume;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public void SetCurrent(float value) => this.self.volume = value;
-        }
-
-        /// <summary></summary>
-        public static Carrier4 TweenVolume(this AudioSource self) => new(self);
-
-        // Carrier5:AudioSource.pitch -------------------------------------------------
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier5 : ICarrier
-        {
-            readonly AudioSource self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Self => this.self;
-            internal Carrier5(AudioSource self) => this.self = self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.pitch;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -155,9 +134,30 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier5 TweenPitch(this AudioSource self) => new(self);
+        public static Carrier4 TweenPitch(this AudioSource self) => new(self);
 
-        // Carrier6:Camera.fieldOfView -------------------------------------------------
+        // Carrier5:Camera.fieldOfView -------------------------------------------------
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct Carrier5 : ICarrier
+        {
+            readonly Camera self;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public Component Self => this.self;
+            internal Carrier5(Camera self) => this.self = self;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public float Current => this.self.fieldOfView;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public void SetCurrent(float value) => this.self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
+        }
+
+        /// <summary></summary>
+        public static Carrier5 TweenFov(this Camera self) => new(self);
+
+        // Carrier6:Camera.orthographicSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct Carrier6 : ICarrier
@@ -169,27 +169,6 @@ namespace Omochaya
             internal Carrier6(Camera self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.fieldOfView;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public void SetCurrent(float value) => this.self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
-        }
-
-        /// <summary></summary>
-        public static Carrier6 TweenFov(this Camera self) => new(self);
-
-        // Carrier7:Camera.orthographicSize -------------------------------------------------
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier7 : ICarrier
-        {
-            readonly Camera self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Self => this.self;
-            internal Carrier7(Camera self) => this.self = self;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.orthographicSize;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -197,18 +176,18 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier7 TweenOrthoSize(this Camera self) => new(self);
+        public static Carrier6 TweenOrthoSize(this Camera self) => new(self);
 
-        // Carrier8:Image.fillAmount -------------------------------------------------
+        // Carrier7:Image.fillAmount -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier8 : ICarrier
+        public readonly struct Carrier7 : ICarrier
         {
             readonly Image self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            internal Carrier8(Image self) => this.self = self;
+            internal Carrier7(Image self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.fillAmount;
@@ -218,18 +197,18 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier8 TweenFillAmount(this Image self) => new(self);
+        public static Carrier7 TweenFillAmount(this Image self) => new(self);
 
-        // Carrier9:Slider.value -------------------------------------------------
+        // Carrier8:Slider.value -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier9 : ICarrier
+        public readonly struct Carrier8 : ICarrier
         {
             readonly Slider self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Component Self => this.self;
-            internal Carrier9(Slider self) => this.self = self;
+            internal Carrier8(Slider self) => this.self = self;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public float Current => this.self.value;
@@ -239,7 +218,7 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Carrier9 TweenValue(this Slider self) => new(self);
+        public static Carrier8 TweenValue(this Slider self) => new(self);
     }
 
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
@@ -574,10 +553,5 @@ namespace Omochaya
 
         /// <summary></summary>
         public static Carrier1 TweenRotation(this Transform self) => new(self);
-    }
-
-    // ToDo...（たぶん非公開にする）
-    public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
-    {
     }
 }

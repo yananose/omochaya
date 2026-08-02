@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="StoryTweenChanger.cs" company="Omochaya">
+// <copyright file="StoryTweenMapper.cs" company="Omochaya">
 //   Copyright (t) 2026 Omochaya. All rights reserved.
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
@@ -47,12 +47,13 @@ namespace Omochaya
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
-                => Mover.CreateTaskCore(new Changer(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                // => Mover.Create(Mover.Type<Mapper, Mover.Param1, float>(this.p), this.carrier, this.isDelta, interval, speed, ease, ref start);
+                => Mover.Create(new Mapper(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Changer : Mover.IChanger<float, Mover.Param1>
+        readonly struct Mapper : Mover.IMapper<float, Mover.Param1>
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -123,9 +124,9 @@ namespace Omochaya
             {
                 switch (this.comb)
                 {
-                    case Comb.X_: return Mover.CreateTaskCore(new Changer.X_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y: return Mover.CreateTaskCore(new Changer._Y(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY: return Mover.CreateTaskCore(new Changer.XY(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_: return Mover.Create(new Mapper.X_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y: return Mover.Create(new Mapper._Y(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY: return Mover.Create(new Mapper.XY(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
                 }
                 return default;
             }
@@ -138,7 +139,7 @@ namespace Omochaya
             if (x != null && y == null) { return (Comb.X_, new((float)x, default)); }
             if (x == null && y != null) { return (Comb._Y, new(default, (float)y)); }
             if (x != null && y != null) { return (Comb.XY, new((float)x, (float)y)); }
-            Dev.LogError("引数の指定が不正です");
+            Dev.LogException(new System.ArgumentException());
             return default;
         }
 
@@ -153,9 +154,9 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Changer
+        readonly struct Mapper
         {
-            internal readonly struct X_ : Mover.IChanger<Vector2, Mover.Param1>
+            internal readonly struct X_ : Mover.IMapper<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -168,7 +169,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct _Y : Mover.IChanger<Vector2, Mover.Param1>
+            internal readonly struct _Y : Mover.IMapper<Vector2, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -181,7 +182,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct XY : Mover.IChanger<Vector2, Mover.Param2>
+            internal readonly struct XY : Mover.IMapper<Vector2, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -258,13 +259,13 @@ namespace Omochaya
             {
                 switch (this.comb)
                 {
-                    case Comb.X__: return Mover.CreateTaskCore(new Changer.X__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y_: return Mover.CreateTaskCore(new Changer._Y_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__Z: return Mover.CreateTaskCore(new Changer.__Z(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YZ: return Mover.CreateTaskCore(new Changer._YZ(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_Z: return Mover.CreateTaskCore(new Changer.X_Z(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY_: return Mover.CreateTaskCore(new Changer.XY_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYZ: return Mover.CreateTaskCore(new Changer.XYZ(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X__: return Mover.Create(new Mapper.X__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y_: return Mover.Create(new Mapper._Y_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__Z: return Mover.Create(new Mapper.__Z(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._YZ: return Mover.Create(new Mapper._YZ(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_Z: return Mover.Create(new Mapper.X_Z(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY_: return Mover.Create(new Mapper.XY_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XYZ: return Mover.Create(new Mapper.XYZ(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
                 }
                 return default;
             }
@@ -281,7 +282,7 @@ namespace Omochaya
             if (x != null && y == null && z != null) { return (Comb.X_Z, new((float)x, default, (float)z)); }
             if (x != null && y != null && z == null) { return (Comb.XY_, new((float)x, (float)y, default)); }
             if (x != null && y != null && z != null) { return (Comb.XYZ, new((float)x, (float)y, (float)z)); }
-            Dev.LogError("引数の指定が不正です");
+            Dev.LogException(new System.ArgumentException());
             return default;
         }
 
@@ -297,9 +298,9 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Changer
+        static class Mapper
         {
-            internal readonly struct X__ : Mover.IChanger<Vector3, Mover.Param1>
+            internal readonly struct X__ : Mover.IMapper<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -312,7 +313,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct _Y_ : Mover.IChanger<Vector3, Mover.Param1>
+            internal readonly struct _Y_ : Mover.IMapper<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -325,7 +326,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct __Z : Mover.IChanger<Vector3, Mover.Param1>
+            internal readonly struct __Z : Mover.IMapper<Vector3, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -338,7 +339,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct _YZ : Mover.IChanger<Vector3, Mover.Param2>
+            internal readonly struct _YZ : Mover.IMapper<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -354,7 +355,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_Z : Mover.IChanger<Vector3, Mover.Param2>
+            public readonly struct X_Z : Mover.IMapper<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -368,7 +369,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct XY_ : Mover.IChanger<Vector3, Mover.Param2>
+            internal readonly struct XY_ : Mover.IMapper<Vector3, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -382,7 +383,7 @@ namespace Omochaya
                     return current;
                 }
             }
-            internal readonly struct XYZ : Mover.IChanger<Vector3, Mover.Param3>
+            internal readonly struct XYZ : Mover.IMapper<Vector3, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -460,21 +461,21 @@ namespace Omochaya
             {
                 switch (this.comb)
                 {
-                    case Comb.R___: return Mover.CreateTaskCore(new Changer.R___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._G__: return Mover.CreateTaskCore(new Changer._G__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__B_: return Mover.CreateTaskCore(new Changer.__B_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.___A: return Mover.CreateTaskCore(new Changer.___A(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RG__: return Mover.CreateTaskCore(new Changer.RG__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__BA: return Mover.CreateTaskCore(new Changer.__BA(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R_B_: return Mover.CreateTaskCore(new Changer.R_B_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._G_A: return Mover.CreateTaskCore(new Changer._G_A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R__A: return Mover.CreateTaskCore(new Changer.R__A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._GB_: return Mover.CreateTaskCore(new Changer._GB_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._GBA: return Mover.CreateTaskCore(new Changer._GBA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R_BA: return Mover.CreateTaskCore(new Changer.R_BA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RG_A: return Mover.CreateTaskCore(new Changer.RG_A(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RGB_: return Mover.CreateTaskCore(new Changer.RGB_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RGBA: return Mover.CreateTaskCore(new Changer.RGBA(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.R___: return Mover.Create(new Mapper.R___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._G__: return Mover.Create(new Mapper._G__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__B_: return Mover.Create(new Mapper.__B_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.___A: return Mover.Create(new Mapper.___A(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.RG__: return Mover.Create(new Mapper.RG__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__BA: return Mover.Create(new Mapper.__BA(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.R_B_: return Mover.Create(new Mapper.R_B_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._G_A: return Mover.Create(new Mapper._G_A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.R__A: return Mover.Create(new Mapper.R__A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._GB_: return Mover.Create(new Mapper._GB_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._GBA: return Mover.Create(new Mapper._GBA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.R_BA: return Mover.Create(new Mapper.R_BA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.RG_A: return Mover.Create(new Mapper.RG_A(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.RGB_: return Mover.Create(new Mapper.RGB_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.RGBA: return Mover.Create(new Mapper.RGBA(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
                 }
                 return default;
             }
@@ -499,7 +500,7 @@ namespace Omochaya
             if (r != null && g != null && b == null && a != null) { return (Comb.RG_A, new((float)r, (float)g, default, (float)a)); }
             if (r != null && g != null && b != null && a == null) { return (Comb.RGB_, new((float)r, (float)g, (float)b, default)); }
             if (r != null && g != null && b != null && a != null) { return (Comb.RGBA, new((float)r, (float)g, (float)b, (float)a)); }
-            Dev.LogError("引数の指定が不正です");
+            Dev.LogException(new System.ArgumentException());
             return default;
         }
 
@@ -518,11 +519,11 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Changer
+        static class Mapper
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R___ : Mover.IChanger<Color, Mover.Param1>
+            public readonly struct R___ : Mover.IMapper<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -537,7 +538,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _G__ : Mover.IChanger<Color, Mover.Param1>
+            public readonly struct _G__ : Mover.IMapper<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -552,7 +553,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __B_ : Mover.IChanger<Color, Mover.Param1>
+            public readonly struct __B_ : Mover.IMapper<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -567,7 +568,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct ___A : Mover.IChanger<Color, Mover.Param1>
+            public readonly struct ___A : Mover.IMapper<Color, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -582,7 +583,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RG__ : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct RG__ : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -598,7 +599,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __BA : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct __BA : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -614,7 +615,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R_B_ : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct R_B_ : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -630,7 +631,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _G_A : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct _G_A : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -646,7 +647,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R__A : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct R__A : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -662,7 +663,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _GB_ : Mover.IChanger<Color, Mover.Param2>
+            public readonly struct _GB_ : Mover.IMapper<Color, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -678,7 +679,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _GBA : Mover.IChanger<Color, Mover.Param3>
+            public readonly struct _GBA : Mover.IMapper<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -695,7 +696,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R_BA : Mover.IChanger<Color, Mover.Param3>
+            public readonly struct R_BA : Mover.IMapper<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -712,7 +713,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RG_A : Mover.IChanger<Color, Mover.Param3>
+            public readonly struct RG_A : Mover.IMapper<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -729,7 +730,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RGB_ : Mover.IChanger<Color, Mover.Param3>
+            public readonly struct RGB_ : Mover.IMapper<Color, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -746,7 +747,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RGBA : Mover.IChanger<Color, Mover.Param4>
+            public readonly struct RGBA : Mover.IMapper<Color, Mover.Param4>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -801,12 +802,12 @@ namespace Omochaya
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
                 where E : struct, Story.IEase
-                => Mover.CreateTaskCore(new Changer(), new Mover.ParamQ(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                => Mover.Create(new Mapper(), new Mover.ParamQ(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Changer : Mover.IChanger<Quaternion, Mover.ParamQ>
+        readonly struct Mapper : Mover.IMapper<Quaternion, Mover.ParamQ>
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -857,7 +858,7 @@ namespace Omochaya
             {
                 this.carrier = carrier;
                 this.isDelta = isDelta;
-                var result = Analyze(x, y, height, width);
+                var result = Analyze(x, y, width, height);
                 this.comb = result.Item1;
                 this.p = result.Item2;
             }
@@ -877,21 +878,21 @@ namespace Omochaya
             {
                 switch (this.comb)
                 {
-                    case Comb.X___: return Mover.CreateTaskCore(new Changer.X___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y__: return Mover.CreateTaskCore(new Changer._Y__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__W_: return Mover.CreateTaskCore(new Changer.__W_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.___H: return Mover.CreateTaskCore(new Changer.___H(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY__: return Mover.CreateTaskCore(new Changer.XY__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__WH: return Mover.CreateTaskCore(new Changer.__WH(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_W_: return Mover.CreateTaskCore(new Changer.X_W_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y_H: return Mover.CreateTaskCore(new Changer._Y_H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X__H: return Mover.CreateTaskCore(new Changer.X__H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YW_: return Mover.CreateTaskCore(new Changer._YW_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YWH: return Mover.CreateTaskCore(new Changer._YWH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_WH: return Mover.CreateTaskCore(new Changer.X_WH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY_H: return Mover.CreateTaskCore(new Changer.XY_H(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYW_: return Mover.CreateTaskCore(new Changer.XYW_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYWH: return Mover.CreateTaskCore(new Changer.XYWH(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X___: return Mover.Create(new Mapper.X___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y__: return Mover.Create(new Mapper._Y__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__W_: return Mover.Create(new Mapper.__W_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.___H: return Mover.Create(new Mapper.___H(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY__: return Mover.Create(new Mapper.XY__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.__WH: return Mover.Create(new Mapper.__WH(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_W_: return Mover.Create(new Mapper.X_W_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._Y_H: return Mover.Create(new Mapper._Y_H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X__H: return Mover.Create(new Mapper.X__H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._YW_: return Mover.Create(new Mapper._YW_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb._YWH: return Mover.Create(new Mapper._YWH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_WH: return Mover.Create(new Mapper.X_WH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XY_H: return Mover.Create(new Mapper.XY_H(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XYW_: return Mover.Create(new Mapper.XYW_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.XYWH: return Mover.Create(new Mapper.XYWH(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
                 }
                 return default;
             }
@@ -916,7 +917,7 @@ namespace Omochaya
             if (x != null && y != null && width == null && height != null) { return (Comb.XY_H, new((float)x, (float)y, default, (float)height)); }
             if (x != null && y != null && width != null && height == null) { return (Comb.XYW_, new((float)x, (float)y, (float)width, default)); }
             if (x != null && y != null && width != null && height != null) { return (Comb.XYWH, new((float)x, (float)y, (float)width, (float)height)); }
-            Dev.LogError("引数の指定が不正です");
+            Dev.LogException(new System.ArgumentException());
             return default;
         }
 
@@ -935,11 +936,11 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Changer
+        static class Mapper
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X___ : Mover.IChanger<Rect, Mover.Param1>
+            public readonly struct X___ : Mover.IMapper<Rect, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -954,7 +955,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _Y__ : Mover.IChanger<Rect, Mover.Param1>
+            public readonly struct _Y__ : Mover.IMapper<Rect, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -969,7 +970,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __W_ : Mover.IChanger<Rect, Mover.Param1>
+            public readonly struct __W_ : Mover.IMapper<Rect, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -984,7 +985,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct ___H : Mover.IChanger<Rect, Mover.Param1>
+            public readonly struct ___H : Mover.IMapper<Rect, Mover.Param1>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -999,7 +1000,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XY__ : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct XY__ : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1015,7 +1016,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __WH : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct __WH : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1031,7 +1032,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_W_ : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct X_W_ : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1047,7 +1048,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _Y_H : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct _Y_H : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1063,11 +1064,11 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X__H : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct X__H : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                public Mover.Param2 Get(Rect current) => new(current.x, current.width);
+                public Mover.Param2 Get(Rect current) => new(current.x, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Rect Set(Rect current, Mover.Param2 prm)
@@ -1079,7 +1080,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _YW_ : Mover.IChanger<Rect, Mover.Param2>
+            public readonly struct _YW_ : Mover.IMapper<Rect, Mover.Param2>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1095,7 +1096,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _YWH : Mover.IChanger<Rect, Mover.Param3>
+            public readonly struct _YWH : Mover.IMapper<Rect, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1112,7 +1113,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_WH : Mover.IChanger<Rect, Mover.Param3>
+            public readonly struct X_WH : Mover.IMapper<Rect, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1129,7 +1130,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XY_H : Mover.IChanger<Rect, Mover.Param3>
+            public readonly struct XY_H : Mover.IMapper<Rect, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1146,7 +1147,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XYW_ : Mover.IChanger<Rect, Mover.Param3>
+            public readonly struct XYW_ : Mover.IMapper<Rect, Mover.Param3>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -1163,7 +1164,7 @@ namespace Omochaya
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XYWH : Mover.IChanger<Rect, Mover.Param4>
+            public readonly struct XYWH : Mover.IMapper<Rect, Mover.Param4>
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

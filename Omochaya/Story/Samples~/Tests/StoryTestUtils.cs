@@ -4,6 +4,8 @@ namespace OmochayaTests
     using UnityEngine;
     using NUnit.Framework;
     using System;
+    using UnityEngine.TestTools;
+    using System.Diagnostics;
 
     static class Utils
     {
@@ -33,7 +35,7 @@ namespace OmochayaTests
         {
             var count = Utils.GCAlloc;
             Utils.GCAlloc = 0;
-            Omochaya.HiddenStory.Dev.AssertIsTrue(count == 0, string.Format("[アロケーションが発生していないこと] {0}", count));
+            Utils.AssertIsTrue(count == 0, string.Format("[アロケーションが発生していないこと] {0}", count));
         }
 
         internal static void Take(List<int> note) =>  note.Add(Time.frameCount);
@@ -56,5 +58,25 @@ namespace OmochayaTests
                 Assert.IsTrue(Mathf.Abs((float)delta) < 0.005f, string.Format("[タイミングが同じこと] {0} ({1})", i, delta));
             }
         }
+
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+        internal static void ExpectError(string message) =>  LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        internal static void ExpectAssert(string message) =>  LogAssert.Expect(LogType.Assert, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        internal static void ExpectRuntimeAsseert(string message) =>  LogAssert.Expect(LogType.Assert, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        internal static void ExpectException(string message) =>  LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        [Conditional("DUMMY")] static void AssertIsTrue(bool condition, string message) {}
+#else
+        [Conditional("DUMMY")] internal static void ExpectError(string message) {}
+        [Conditional("DUMMY")] internal static void ExpectAssert(string message) {}
+#if STORY_FULL_TUNE || STORY_NO_DEBUG
+        [Conditional("DUMMY")] internal static void ExpectRuntimeAsseert(string message) {}
+        [Conditional("DUMMY")] internal static void ExpectException(string message) {}
+        static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
+#else
+        internal static void ExpectRuntimeAsseert(string message) =>  LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        internal static void ExpectException(string message) =>  LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex($".*{message}.*"));
+        [Conditional("DUMMY")] static void AssertIsTrue(bool condition, string message) {}
+#endif
+#endif
     }
 }

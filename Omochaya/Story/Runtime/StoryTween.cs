@@ -377,7 +377,7 @@ namespace Omochaya
             return plan.CreateTask(0f, speed, ease, ref start);
         }
 
-#if STORY_TIME_CACHE
+#if !STORY_NO_TIME_CACHE
 
         static class Time
         {
@@ -715,7 +715,7 @@ namespace Omochaya.HiddenStory
                     if (this.isDelta) { interval = to.Length / this.speed; }
                     else { interval = from.Sub(to).Length / this.speed; }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
                     if ((float.Epsilon < this.interval) && this.interval != interval) { Dev.LogWarning("移動期間が変化しました"); }
 #endif

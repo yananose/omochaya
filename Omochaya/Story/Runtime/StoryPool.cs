@@ -92,7 +92,7 @@ namespace Omochaya
             public static int GetNeedCountAtExpand(int count, int itemSize, int limit = EXPAND_LIMIT_SIZE)
                 => count + Mathf.Min(count, Mathf.Max(4, limit / itemSize));
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             [Obsolete("このメソッドは廃止されました。代わりに Expand(ref array, GetNeedCountAtCreate(Unsafe.SizeOf<T>())) を使用してください。", true)]
             public static void Create<T>(ref T[] array)
                 => throw new NotSupportedException();
@@ -120,7 +120,7 @@ namespace Omochaya
             public static readonly Pool<T> Shared = new();
             Pool() { }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.Pool<T>.Name;
@@ -137,7 +137,7 @@ namespace Omochaya
             public static readonly Pool<HOT, COOL> Shared = new();
             Pool() { }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.Pool<HOT, COOL>.Name;
@@ -165,7 +165,7 @@ namespace Omochaya
                 internal static readonly HiddenPool<T> Shared = new();
                 HiddenPool() {}
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public override string PoolName => Dev.HiddenPool<T>.Name;
@@ -250,7 +250,7 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref T Get<T>()
             {
-                Dev.Assert(HiddenPool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", HiddenPool<T>.Shared, this.pool, typeof(T)));
+                Dev.RuntimeAssert(HiddenPool<T>.Shared == this.pool, string.Format("{0} != {1}. type is {2}", HiddenPool<T>.Shared, this.pool, typeof(T)));
                 return ref HiddenPool<T>.Shared.UnsafeGet(this.index);
             }
 
@@ -277,7 +277,7 @@ namespace Omochaya
         public static ref M GetMeta<M, V>(this PoolBase<M, V> self, Pool.Id id)
             where M : struct, IPoolMeta
         {
-            Dev.Assert(self.IsValid(id));
+            Dev.RuntimeAssert(self.IsValid(id));
             return ref self.UnsafeGetMeta(id.Index);
             
         }
@@ -337,7 +337,7 @@ namespace Omochaya
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
     public abstract class PoolCore
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         : IPoolMonitorForDebug
 #endif
     {
@@ -348,7 +348,7 @@ namespace Omochaya
         int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE;
         int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         int useCount;
         int worstCount;
 
@@ -431,7 +431,7 @@ namespace Omochaya
             var index = this.freeHead;
             this.freeHead = this.nextFree[index];
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             this.useCount++;
             this.worstCount = Mathf.Max(this.worstCount, this.useCount);
 #endif
@@ -446,7 +446,7 @@ namespace Omochaya
             this.nextFree[index] = this.freeHead;
             this.freeHead = index;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             this.useCount--;
 #endif
         }
@@ -588,11 +588,11 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
         public ref V Get(Story.Pool.Id id)
         {
-            Dev.Assert(IsValid(id));
+            Dev.RuntimeAssert(IsValid(id));
             return ref UnsafeGet(id.Index);
         }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         [Obsolete("このメソッドは廃止されました。代わりに Get(Alloc()) = value を使用してください。", true)]
         public Story.Pool.Id Alloc(in V value)
             => throw new NotSupportedException();
@@ -657,7 +657,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
         public new ref HOT Get(Story.Pool.Id id)
         {
-            Dev.Assert(IsValid(id));
+            Dev.RuntimeAssert(IsValid(id));
             return ref this.hotArray[id.Index];
         }
 
@@ -733,7 +733,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
         public ref COOL UnsafeGet2(int index) => ref base.UnsafeGet(index);
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         [Obsolete("このメソッドは廃止されました。代わりに var id = Alloc(); Get(id) = hot; Get2(id) = cool; を使用してください。", true)]
         public Story.Pool.Id Alloc(in HOT hot, in COOL cool)
             => throw new NotSupportedException();

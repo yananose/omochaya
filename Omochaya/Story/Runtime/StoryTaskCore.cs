@@ -139,7 +139,7 @@ namespace Omochaya.HiddenStory
         }
  
         // fields
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         internal
 #endif
         readonly StateMachinePool pool;
@@ -224,7 +224,7 @@ namespace Omochaya.HiddenStory
                 if (this.array != array) { this.array[index] = array[index]; } // 配列拡張時に新しい配列へ情報を反映
             }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override string PoolName => Dev.StateMachinePool<S>.Name;

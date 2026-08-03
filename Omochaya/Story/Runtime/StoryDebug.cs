@@ -27,7 +27,7 @@ namespace Omochaya.HiddenStory
 
 // --------------------------------------------------------------------------------------------------------------------
 // エディタ向け機能
-#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
+#if (STORY_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
     internal interface IPoolMonitorForDebug
     {
@@ -136,16 +136,16 @@ Dev.LoopBreak.Check(index.ToString());
 
 #endif // STORY_NO_DEBUG
 
-#endif // (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
+#endif // (STORY_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR
 
 // --------------------------------------------------------------------------------------------------------------------
 // 開発向け機能
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
     internal class Dev : UnityEngine.Debug
     {
-        internal static bool IsEnableAssert = true;
+        internal static bool IsFullTune = false;
 
         internal static bool EnableTaskTracking = false;
 
@@ -164,9 +164,7 @@ Dev.LoopBreak.Check(index.ToString());
             internal static void Init() => count = 0;
 
             internal static void Check(string str = "")
-            {
-                if (255 < ++count) { throw new InvalidOperationException(string.Format(Messages.Exceptions.InfiniteLoop, str, TaskManager.Shared.GetRunningInfo().GetMethodName())); }
-            }
+                => Assert(++count <= 255, string.Format(Messages.Exceptions.InfiniteLoop, str, TaskManager.Shared.GetRunningInfo().GetMethodName()));
         }
 
         internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool)
@@ -242,7 +240,11 @@ Dev.LoopBreak.Check(index.ToString());
             Assert(TaskManager.Shared.IsManualBand(topInfo.Offset), string.Format(message, topInfo.GetMethodName()));
         }
 
-        [Conditional("DUMMY")] internal static void AssertIsTrue(bool condition, string message) {}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void RuntimeAssert(bool condition, string message) => Assert(condition, message);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void RuntimeAssert(bool condition) => Assert(condition);
 
         // for debug only
 
@@ -343,12 +345,10 @@ Dev.LoopBreak.Check("bad");
         static StringBuilder ToDebugString(StringBuilder sb, int num) => num < 0 ? sb.Append("_") : sb.Append(num);
     }
 
-#else // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG == false
+#else // (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG == false
 
     internal class Dev : Debug
     {
-        internal static bool IsEnableAssert = false;
-
         internal static bool EnableTaskTracking { get => false; set {} }
         [Conditional("DUMMY")] internal static void PoolMonitorRegister(object monitor) {}
         [Conditional("DUMMY")] internal static void ValidateAwaiter<T>() {}
@@ -361,7 +361,7 @@ Dev.LoopBreak.Check("bad");
 
         internal static StringBuilder ToString(StringBuilder sb, StateMachine.StateMachinePool pool) => null;
 
-#if FOR_DEBUG || UNITY_EDITOR
+#if STORY_DEBUG || UNITY_EDITOR
 
         internal static string ToString(Story.Task self) => string.Empty;
         internal static class Type<T> { internal static string Name = string.Empty; }
@@ -370,7 +370,7 @@ Dev.LoopBreak.Check("bad");
         internal static class HiddenPool<T> { internal static string Name = string.Empty; }
         internal static class StateMachinePool<S> { internal static string Name = string.Empty; }
 
-#endif // FOR_DEBUG || UNITY_EDITOR
+#endif // STORY_DEBUG || UNITY_EDITOR
 
         internal static string FormatMemorySize(int bytes) => string.Empty;
 
@@ -390,39 +390,31 @@ Dev.LoopBreak.Check("bad");
 
     internal class Debug
     {
-
-#if STORY_FAST || STORY_NO_DEBUG // 製品版でパフォーマンスを重視したいとき
-
         [Conditional("DUMMY")] internal static void Assert(bool condition, string message) {}
         [Conditional("DUMMY")] internal static void Assert(bool condition) {}
-
-#if STORY_NO_DEBUG
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
-        internal static void AssertIsTrue(bool condition, string message) => NUnit.Framework.Assert.IsTrue(condition, message);
-
-#else // (STORY_NO_DEBUG) == false
-
-        [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
-
-#endif // STORY_NO_DEBUG
-
-#else // (STORY_FAST || STORY_NO_DEBUG) == false 製品版でリスクヘッジしたいとき
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Assert(bool condition, string message) { if (!condition) { throw new Exception(message); } }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Assert(bool condition) { if (!condition) { throw new Exception(); } }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
-
-#endif // STORY_FAST || STORY_NO_DEBUG
-
         [Conditional("DUMMY")] internal static void Log(object message) {}
         [Conditional("DUMMY")] internal static void LogWarning(object message) {}
+        [Conditional("DUMMY")] internal static void LogError(object message) {}
+
+#if STORY_FULL_TUNE || STORY_NO_DEBUG // 製品版でパフォーマンスを重視したい時（あるいはテスト時等にデバッグを無効にしたい時）
+
+        [Conditional("DUMMY")] internal static void LogException(System.Exception exception) {}
+        [Conditional("DUMMY")] internal static void RuntimeAssert(bool condition, string message) {}
+        [Conditional("DUMMY")] internal static void RuntimeAssert(bool condition) {}
+
+#else // 製品版でリスクヘッジしたいとき
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void LogException(System.Exception exception) => UnityEngine.Debug.LogException(exception);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void RuntimeAssert(bool condition, string message) { if (!condition) { throw new Exception(message); } }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void RuntimeAssert(bool condition) { if (!condition) { throw new Exception(); } }
+
+#endif // STORY_FULL_TUNE || STORY_NO_DEBUG
+
     }
 
-#endif // (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#endif // (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
 
 }

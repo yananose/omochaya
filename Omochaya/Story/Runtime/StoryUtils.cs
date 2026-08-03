@@ -32,7 +32,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void At(Component owner)
         {
-            Dev.Assert(TaskManager.Shared.IsRunningValid);
+            Dev.RuntimeAssert(TaskManager.Shared.IsRunningValid);
             if (TaskManager.Shared.IsRunningValid) { TaskManager.Shared.GetRunningInfo().Keep(owner); }
         }
 

@@ -227,7 +227,11 @@ namespace Omochaya
 
             /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Keep(Component owner) => this.Info().Keep(owner);
+            public void Keep(Component owner)
+            {
+                if (IsValid) { this.Info().Keep(owner); }
+                else { Dev.LogError(Messages.Exceptions.CannotOperateInvalidTask); }
+            }
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -287,7 +291,7 @@ namespace Omochaya
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public TaskEnumerator GetEnumerator() => new TaskEnumerator(this);
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => Dev.ToString(this);
 #endif
@@ -408,7 +412,7 @@ namespace Omochaya
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public TaskEnumerator GetEnumerator() => this.rawTask.GetEnumerator();
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => this.rawTask.ToString();
 #endif
@@ -472,7 +476,7 @@ namespace Omochaya
         /// <summary>Gets a reference to the custom extra metadata structure bound to the currently executing task.</summary>
         public static ref E GetExtra<E>()
         {
-            Dev.Assert(TaskManager.Shared.IsRunningValid);
+            Dev.RuntimeAssert(TaskManager.Shared.IsRunningValid);
             return ref TaskManager.Shared.GetRunningInfo2().GetExtra<E>();
         }
 
@@ -480,7 +484,7 @@ namespace Omochaya
         public static ref E GetExtra<E>(this Story.Task self)
         {
             ref var info2 = ref self.Info2();
-            Dev.Assert(info2.IsValid, Messages.Exceptions.InvalidExtraOperation);
+            Dev.RuntimeAssert(info2.IsValid, Messages.Exceptions.InvalidExtraOperation);
             return ref info2.GetExtra<E>();
         }
 
@@ -724,7 +728,6 @@ namespace Omochaya.HiddenStory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Keep(Component owner)
         {
-            if (!IsValid) { throw new Exception(Messages.Exceptions.CannotOperateInvalidTask); }
             Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;
@@ -757,7 +760,7 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         public StringBuilder GetMethodName(StringBuilder sb) => Dev.ToString(sb, this.stateMachine.pool);
         public string GetMethodName() => GetMethodName(new StringBuilder()).ToString();
 #else
@@ -793,7 +796,7 @@ namespace Omochaya.HiddenStory
         public int Next; // 親タスクの方向
         Flags flags;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public long SortKeyForDebug;
@@ -823,7 +826,7 @@ namespace Omochaya.HiddenStory
         {
             this.IsValid = true;
             this.Next = this.Prev = index;
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             if (Omochaya.HiddenStory.Dev.EnableTaskTracking)
             {
                 var st = new System.Diagnostics.StackTrace(3, true);

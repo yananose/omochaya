@@ -91,7 +91,7 @@ namespace Omochaya.HiddenStory
             }
         }
 
-#if (FOR_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR // テストで使用するので STORY_NO_DEBUG でも UNITY_EDITOR なら有効。
+#if (STORY_DEBUG && !STORY_NO_DEBUG) || UNITY_EDITOR // テストで使用するので STORY_NO_DEBUG でも UNITY_EDITOR なら有効。
         internal Story.CancelMode DefaultCancelModeForDebug
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -525,8 +525,8 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             // band の繋ぎ変え：情報取得
             ref var prevTopInfo = ref pool.UnsafeGet(prevTopIndex);
             ref var nextTopInfo = ref pool.UnsafeGet(nextTopIndex);
-            Dev.Assert(prevTopInfo.IsTop, string.Format(Messages.Exceptions.DoubleAwait, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
-            Dev.Assert(nextTopInfo.IsTop, string.Format(Messages.Exceptions.AwaitingWhileAwaited, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            Dev.RuntimeAssert(prevTopInfo.IsTop, string.Format(Messages.Exceptions.DoubleAwait, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
+            Dev.RuntimeAssert(nextTopInfo.IsTop, string.Format(Messages.Exceptions.AwaitingWhileAwaited, pool.UnsafeGet(prevRootIndex).GetMethodName(), nextTopInfo.GetMethodName()));
             var prevOffset = prevTopInfo.Offset;
             var nextOffset = nextTopInfo.Offset;
 
@@ -582,7 +582,11 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
 
         internal bool Boot(Story.Task task)
         {
-            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
+            if (!task.IsValid)
+            {
+                Dev.LogException(new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTask)));
+                return false;
+            }
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -671,7 +675,7 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
         {
             Dev.Assert(IsRunningValid);
 
-            if (!task.IsValid) { throw new Exception(string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task)); }
+            Dev.RuntimeAssert(task.IsValid, string.Format(Messages.Exceptions.CannotOperateInvalidTaskFormat, task));
 
             var pool = Story.Pool<TaskInfo, TaskInfo2>.Shared;
             var rootIndex = task.Id.Index;
@@ -803,7 +807,7 @@ Dev.LoopBreak.Check(task.ToString());
             CaptureException();
         }
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         internal int BandCountForDebug() => this.bandArray.Length;
 
         internal int TopCountForDebug() => this.manualBand.Count;

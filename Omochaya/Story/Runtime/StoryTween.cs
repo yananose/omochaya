@@ -400,7 +400,7 @@ namespace Omochaya
                 var customLoop = new PlayerLoopSystem { type = typeof(Time), updateDelegate = Time.UpdateCache };
 
                 if (PlayerLoopUtility.AppendToPhase<EarlyUpdate>(ref defaultLoop, customLoop)) { PlayerLoop.SetPlayerLoop(defaultLoop); }
-                else { Dev.Assert(false, "[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
+                else { Dev.LogError("[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
             }
         }
 

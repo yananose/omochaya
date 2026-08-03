@@ -10,6 +10,7 @@ namespace Omochaya
 {
     using System.Runtime.CompilerServices;
     using UnityEngine;
+    using HiddenStory;
 
     public static partial class Story
     {
@@ -24,143 +25,13 @@ namespace Omochaya
 
         // ------------------------------------------------------------------------------------------------------------
         /// <summary></summary>
-        public static class Ease
+#if STORY_EASE_COMPACT
+        public class Ease : EaseCompact
+#else
+        public class Ease : EaseFast
+#endif
         {
             // shared
-
-#if STORY_EASE_COMPACT
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl None = new(EaseCompact.Type.None);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl Reverse = new(EaseCompact.Type.Reverse);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl SineAcc = new(EaseCompact.Type.SineAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl SineDec = new(EaseCompact.Type.SineDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl QuadAcc = new(EaseCompact.Type.QuadAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl QuadDec = new(EaseCompact.Type.QuadDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl CubicAcc = new(EaseCompact.Type.CubicAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl CubicDec = new(EaseCompact.Type.CubicDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl QuartAcc = new(EaseCompact.Type.QuartAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl QuartDec = new(EaseCompact.Type.QuartDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl SqrtAcc = new(EaseCompact.Type.SqrtAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl SqrtDec = new(EaseCompact.Type.SqrtDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl ExpoAcc = new(EaseCompact.Type.ExpoAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl ExpoDec = new(EaseCompact.Type.ExpoDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl CircAcc = new(EaseCompact.Type.CircAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl CircDec = new(EaseCompact.Type.CircDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl BackAcc = new(EaseCompact.Type.BackAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl BackDec = new(EaseCompact.Type.BackDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl ElasticAcc = new(EaseCompact.Type.ElasticAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl ElasticDec = new(EaseCompact.Type.ElasticDec);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl BounceAcc = new(EaseCompact.Type.BounceAcc);
-
-            /// <summary></summary>
-            public static readonly EaseCompact.Impl BounceDec = new(EaseCompact.Type.BounceDec);
-#else
-            /// <summary></summary>
-            public static readonly EaseFast.NoneImpl None = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.ReverseImpl Reverse = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.SineImpl> SineAcc = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.SineImpl SineDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.QuadImpl QuadAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.QuadImpl> QuadDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.CubicImpl CubicAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.CubicImpl> CubicDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.QuartImpl QuartAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.QuartImpl> QuartDec = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.SqrtImpl> SqrtAcc = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.SqrtImpl SqrtDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.ExpoImpl ExpoAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.ExpoImpl> ExpoDec = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.CircImpl> CircAcc = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.CircImpl CircDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.BackImpl BackAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.BackImpl> BackDec = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.ElasticImpl ElasticAcc = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.ElasticImpl> ElasticDec = new();
-
-            /// <summary></summary>
-            public static readonly InverseImpl<EaseFast.BounceImpl> BounceAcc = new();
-
-            /// <summary></summary>
-            public static readonly EaseFast.BounceImpl BounceDec = new();
-#endif
 
             // 〜〜 引数アリの ease（これらは共通化できない） 〜〜
 
@@ -332,7 +203,7 @@ namespace Omochaya
                     this.length = prev.Calc(1f) - this.start;
                     if (Mathf.Approximately(this.length, 0f))
                     {
-                        Debug.LogError("始点と終点が近すぎるため正規化できません");
+                        Dev.LogError("始点と終点が近すぎるため正規化できません");
                         this.length = this.length < 0f ? -float.Epsilon : float.Epsilon;
                     }
                 }
@@ -414,7 +285,7 @@ namespace Omochaya
                     var b = p - p * split + q * split;
 
                     if (!Mathf.Approximately(b, 0f)) { return a / b; }
-                    Debug.LogError("結合できない");
+                    Dev.LogError("結合できない");
                     return 1f;
                 }
             }
@@ -469,7 +340,7 @@ namespace Omochaya
 
         // ------------------------------------------------------------------------------------------------------------
         /// <summary></summary>
-        public static class EaseFast
+        public class EaseFast
         {
             // shared
 
@@ -701,7 +572,7 @@ namespace Omochaya
 
         // ------------------------------------------------------------------------------------------------------------
         /// <summary></summary>
-        public static class EaseCompact
+        public class EaseCompact
         {
             // shared
 

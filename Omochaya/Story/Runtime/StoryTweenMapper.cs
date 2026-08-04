@@ -176,7 +176,7 @@ namespace Omochaya
                         current.y = to.y + diff.y * rt;
                         return current;
                     case Comb.XY:
-                        return to + diff * rt;;
+                        return to + diff * rt;
                     default: return current;
                 }
             }
@@ -349,7 +349,7 @@ namespace Omochaya
                         current.y = to.y + diff.y * rt;
                         return current;
                     case Comb.XYZ:
-                        return to + diff * rt;;
+                        return to + diff * rt;
                     default: return current;
                 }
             }
@@ -550,7 +550,7 @@ namespace Omochaya
                         current.b = to.b + diff.b * rt;
                         return current;
                     case Comb.RGBA:
-                        return to + diff * rt;;
+                        return to + diff * rt;
                     default: return current;
                 }
             }

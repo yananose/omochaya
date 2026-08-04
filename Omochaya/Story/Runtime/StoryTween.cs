@@ -18,23 +18,25 @@ namespace Omochaya
     public static partial class Story
     {
         /// <summary></summary>
-        // デフォルトでは（0歩目ではなく）1歩目から始まり到達したら終わる。0歩目からなど開始位置を指定したいときは ref start で指定すること。
-        public static double GetStart() => Time.timeAsDouble - Time.deltaTime;
+        public static double GetStart() => Time.timeAsDouble;
+
+        /// <summary></summary>
+        public static double GetUnacaledStart() => Time.unscaledTimeAsDouble;
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<U, E>(float interval, in U updater, in E ease, ref double start)
+        public static Task Tween<U, E>(float interval, in U updater, E ease, ref double start)
             where U : struct, IUpdater
             where E : struct, IEase
         {
             Dev.Assert(0f <= interval);
-            return float.Epsilon < interval ? TweenTask(interval, updater, ease, ref start)
+            return float.Epsilon < interval ? TweenTask(new Stepper(), interval, updater, ease, ref start)
                 : ImmediateTask(updater, ease.Calc(1f)); // interval = 0 : 即終了
         }
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<U, E>(float interval, in U updater, in E ease)
+        public static Task Tween<U, E>(float interval, in U updater, E ease)
             where U : struct, IUpdater
             where E : struct, IEase
         {
@@ -61,7 +63,7 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<E, T>(float interval, T args, Action<T, float> update, in E ease, ref double start)
+        public static Task Tween<E, T>(float interval, T args, Action<T, float> update, E ease, ref double start)
             where E : struct, IEase
         {
             var updater = Updater(args, update);
@@ -70,7 +72,7 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<E, T>(float interval, T args, Action<T, float> update, in E ease)
+        public static Task Tween<E, T>(float interval, T args, Action<T, float> update, E ease)
             where E : struct, IEase
         {
             var start = GetStart();
@@ -99,18 +101,18 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<U, E>(float from, float to, float speed, in U updater, in E ease, ref double start)
+        public static Task Tween<U, E>(float from, float to, float speed, in U updater, E ease, ref double start)
             where U : struct, IUpdater
             where E : struct, IEase
         {
             Dev.Assert(0f <= speed);
-            return float.Epsilon < speed ? TweenTask(Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
+            return float.Epsilon < speed ? TweenTask(new Stepper(), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
                 : ImmediateTask(updater, from); // speed = 0 : 始まらない
         }
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<U, E>(float from, float to, float speed, in U updater, in E ease)
+        public static Task Tween<U, E>(float from, float to, float speed, in U updater, E ease)
             where U : struct, IUpdater
             where E : struct, IEase
         {
@@ -137,7 +139,7 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<T, E>(float from, float to, float speed, T args, Action<T, float> update, in E ease, ref double start)
+        public static Task Tween<T, E>(float from, float to, float speed, T args, Action<T, float> update, E ease, ref double start)
             where E : struct, IEase
         {
             var updater = Updater(args, update);
@@ -146,7 +148,7 @@ namespace Omochaya
 
         /// <summary></summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Task Tween<T, E>(float from, float to, float speed, T args, Action<T, float> update, in E ease)
+        public static Task Tween<T, E>(float from, float to, float speed, T args, Action<T, float> update, E ease)
             where E : struct, IEase
         {
             var updater = Updater(args, update);
@@ -169,6 +171,157 @@ namespace Omochaya
             var updater = Updater(args, update);
             var start = GetStart();
             return Tween(from, to, speed, updater, Ease.None, ref start);
+        }
+
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U, E>(float interval, in U updater, E ease, ref double start)
+            where U : struct, IUpdater
+            where E : struct, IEase
+        {
+            Dev.Assert(0f <= interval);
+            return float.Epsilon < interval ? TweenTask(new UnscaledStepper(), interval, updater, ease, ref start)
+                : ImmediateTask(updater, ease.Calc(1f)); // interval = 0 : 即終了
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U, E>(float interval, in U updater, E ease)
+            where U : struct, IUpdater
+            where E : struct, IEase
+        {
+            var start = GetStart();
+            return UnscaledTween(interval, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U>(float interval, in U updater, ref double start)
+            where U : struct, IUpdater
+        {
+            return UnscaledTween(interval, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U>(float interval, in U updater)
+            where U : struct, IUpdater
+        {
+            var start = GetStart();
+            return UnscaledTween(interval, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<E, T>(float interval, T args, Action<T, float> update, E ease, ref double start)
+            where E : struct, IEase
+        {
+            var updater = Updater(args, update);
+            return UnscaledTween(interval, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<E, T>(float interval, T args, Action<T, float> update, E ease)
+            where E : struct, IEase
+        {
+            var start = GetStart();
+            var updater = Updater(args, update);
+            return UnscaledTween(interval, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T>(float interval, T args, Action<T, float> update, ref double start)
+        {
+            var updater = Updater(args, update);
+            return UnscaledTween(interval, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T>(float interval, T args, Action<T, float> update)
+        {
+            var start = GetStart();
+            var updater = Updater(args, update);
+            return UnscaledTween(interval, updater, Ease.None, ref start);
+        }
+
+        // 【from/to/speed】
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U, E>(float from, float to, float speed, in U updater, E ease, ref double start)
+            where U : struct, IUpdater
+            where E : struct, IEase
+        {
+            Dev.Assert(0f <= speed);
+            return float.Epsilon < speed ? TweenTask(new Stepper(), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
+                : ImmediateTask(updater, from); // speed = 0 : 始まらない
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U, E>(float from, float to, float speed, in U updater, E ease)
+            where U : struct, IUpdater
+            where E : struct, IEase
+        {
+            var start = GetStart();
+            return UnscaledTween(from, to, speed, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U>(float from, float to, float speed, in U updater, ref double start)
+            where U : struct, IUpdater
+        {
+            return UnscaledTween(from, to, speed, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<U>(float from, float to, float speed, in U updater)
+            where U : struct, IUpdater
+        {
+            var start = GetStart();
+            return UnscaledTween(from, to, speed, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T, E>(float from, float to, float speed, T args, Action<T, float> update, E ease, ref double start)
+            where E : struct, IEase
+        {
+            var updater = Updater(args, update);
+            return UnscaledTween(from, to, speed, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T, E>(float from, float to, float speed, T args, Action<T, float> update, E ease)
+            where E : struct, IEase
+        {
+            var updater = Updater(args, update);
+            var start = GetStart();
+            return UnscaledTween(from, to, speed, updater, ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T>(float from, float to, float speed, T args, Action<T, float> update, ref double start)
+        {
+            var updater = Updater(args, update);
+            return UnscaledTween(from, to, speed, updater, Ease.None, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledTween<T>(float from, float to, float speed, T args, Action<T, float> update)
+        {
+            var updater = Updater(args, update);
+            var start = GetStart();
+            return UnscaledTween(from, to, speed, updater, Ease.None, ref start);
         }
 
         // updater
@@ -216,23 +369,68 @@ namespace Omochaya
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Task TweenTask<U, E>(float interval, in U updater, in E ease, ref double start)
+        static Task TweenTask<S, U, E>(S stepper, float interval, in U updater, E ease, ref double start)
+            where S : struct, IStepper
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            var passer = new Passer(interval, ref start);
-            return IntervalTask(passer, updater, ease);
+            stepper.Setup(interval, ref start);
+            return IntervalTask(stepper, updater, ease);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static async Task IntervalTask<U, E>(Passer passer, U updater, E ease)
+        static async Task IntervalTask<S, U, E>(S stepper, U updater, E ease)
+            where S : struct, IStepper
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            while (passer.Step(updater, ease)) { await Yield; }
+            while (stepper.Step(updater, ease)) { await Yield; }
         }
 
-        internal struct Passer
+        internal struct Stepper : IStepper
+        {
+            StepperImpl impl;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public void Setup(float interval, ref double start) => this.impl = new(interval, ref start);
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public bool Step<U, E>(in U updater, E ease)
+                where U : struct, IUpdater
+                where E : struct, IEase
+            {
+                this.impl.Proceed();
+                return this.impl.Step(updater, ease);
+            }
+        }
+        internal struct UnscaledStepper : IStepper
+        {
+            StepperImpl impl;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public void Setup(float interval, ref double start) => this.impl = new(interval, ref start);
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public bool Step<U, E>(in U updater, E ease)
+                where U : struct, IUpdater
+                where E : struct, IEase
+            {
+                this.impl.UnscaledProceed();
+                return this.impl.Step(updater, ease);
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface IStepper
+        {
+            void Setup(float interval, ref double start);
+            bool Step<U, E>(in U updater, E ease)
+                where U : struct, IUpdater
+                where E : struct, IEase;
+        }
+
+        struct StepperImpl
         {
             // fields
             double prev;
@@ -244,24 +442,24 @@ namespace Omochaya
             readonly float Now
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { Dev.Assert(float.Epsilon < interval); return seek / interval; }
+                get { Dev.Assert(float.Epsilon < this.interval); return this.seek / this.interval; }
             }
 
             // constructors
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Passer(float interval, ref double start)
+            internal StepperImpl(float interval, ref double start)
             {
                 prev = this.start = start;
                 this.interval = interval;
-                seek = 0f;
+                this.seek = 0f;
                 start = this.start + interval;
             }
 
             // methods
-            void Proceed()
+            internal void Proceed()
             {
                 var timeAsDouble = Time.timeAsDouble;
-                var diff = timeAsDouble - prev;
+                var diff = timeAsDouble - this.prev;
                 if (diff <= 0)
                 {
 #if UNITY_EDITOR
@@ -280,22 +478,50 @@ namespace Omochaya
                     Dev.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
                     this.start += diff;
                 }
-                prev = timeAsDouble;
+                this.prev = timeAsDouble;
 
                 var seek = (float)(timeAsDouble - this.start);
 #if UNITY_EDITOR
                 if (seek < 0f) { Dev.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
 #endif
                 this.seek = seek;
-                return;
+            }
+            internal void UnscaledProceed()
+            {
+                var timeAsDouble = Time.unscaledTimeAsDouble;
+                var diff = timeAsDouble - this.prev;
+                if (diff <= 0)
+                {
+#if UNITY_EDITOR
+                    if (diff == 0f) { Dev.Log($"巻き戻ってるので実行しない(interrupt？)：{diff}"); }
+                    else if (timeAsDouble <= this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動？)：{diff}"); }
+                    else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
+#endif
+                    this.seek = -1f;
+                    return;
+                }
+
+                double delta = Time.unscaledDeltaTime;
+                if (delta * 1.25 < diff)
+                {
+                    diff -= delta;
+                    Dev.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
+                    this.start += diff;
+                }
+                this.prev = timeAsDouble;
+
+                var seek = (float)(timeAsDouble - this.start);
+#if UNITY_EDITOR
+                if (seek < 0f) { Dev.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
+#endif
+                this.seek = seek;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal bool Step<U, E>(in U updater, in E ease)
+            internal bool Step<U, E>(in U updater, E ease)
                 where U : struct, IUpdater
                 where E : struct, IEase
             {
-                Proceed();
                 if (0f <= this.seek)
                 {
                     if (this.interval <= this.seek)
@@ -310,71 +536,155 @@ namespace Omochaya
         }
 
         /// <summary></summary>
-        public static Task Interval<P, E>(this P plan, float interval, in E ease, ref double start)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task Interval<P, E>(this P plan, float interval, E ease, ref double start)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(interval, 0f, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(interval:interval), ease, ref start);
         }
 
         /// <summary></summary>
-        public static Task Interval<P, E>(this P plan, float interval, in E ease)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task Interval<P, E>(this P plan, float interval, E ease)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
             var start = GetStart();
-            return plan.CreateTask(interval, 0f, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(interval:interval), ease, ref start);
         }
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Interval<P>(this P plan, float interval, ref double start)
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(interval, 0f, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(interval:interval), ease, ref start);
         }
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Interval<P>(this P plan, float interval)
             where P : struct, Mover.IPlan
         {
             var start = GetStart();
             var ease = Ease.None;
-            return plan.CreateTask(interval, 0f, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(interval:interval), ease, ref start);
         }
 
         /// <summary></summary>
-        public static Task Speed<P, E>(this P plan, float speed, in E ease, ref double start)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task Speed<P, E>(this P plan, float speed, E ease, ref double start)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(0f, speed, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(speed:speed), ease, ref start);
         }
 
         /// <summary></summary>
-        public static Task Speed<P, E>(this P plan, float speed, in E ease)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task Speed<P, E>(this P plan, float speed, E ease)
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
             var start = GetStart();
-            return plan.CreateTask(0f, speed, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(speed:speed), ease, ref start);
         }
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Speed<P>(this P plan, float speed, ref double start)
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(0f, speed, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(speed:speed), ease, ref start);
         }
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Speed<P>(this P plan, float speed)
             where P : struct, Mover.IPlan
         {
             var start = GetStart();
             var ease = Ease.None;
-            return plan.CreateTask(0f, speed, ease, ref start);
+            return plan.CreateTask(new Stepper(), new(speed:speed), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledInterval<P, E>(this P plan, float interval, E ease, ref double start)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            return plan.CreateTask(new UnscaledStepper(), new(interval:interval), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledInterval<P, E>(this P plan, float interval, E ease)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            var start = GetUnacaledStart();
+            return plan.CreateTask(new UnscaledStepper(), new(interval:interval), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledInterval<P>(this P plan, float interval, ref double start)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            return plan.CreateTask(new UnscaledStepper(), new(interval:interval), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledInterval<P>(this P plan, float interval)
+            where P : struct, Mover.IPlan
+        {
+            var start = GetUnacaledStart();
+            var ease = Ease.None;
+            return plan.CreateTask(new UnscaledStepper(), new(interval:interval), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledSpeed<P, E>(this P plan, float speed, E ease, ref double start)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            return plan.CreateTask(new UnscaledStepper(), new(speed:speed), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledSpeed<P, E>(this P plan, float speed, E ease)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            var start = GetUnacaledStart();
+            return plan.CreateTask(new UnscaledStepper(), new(speed:speed), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledSpeed<P>(this P plan, float speed, ref double start)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            return plan.CreateTask(new UnscaledStepper(), new(speed:speed), ease, ref start);
+        }
+
+        /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Task UnscaledSpeed<P>(this P plan, float speed)
+            where P : struct, Mover.IPlan
+        {
+            var start = GetUnacaledStart();
+            var ease = Ease.None;
+            return plan.CreateTask(new UnscaledStepper(), new(speed:speed), ease, ref start);
         }
 
 #if !STORY_NO_TIME_CACHE
@@ -384,12 +694,14 @@ namespace Omochaya
             public static double timeAsDouble;
             public static double unscaledTimeAsDouble;
             public static float deltaTime;
+            public static float unscaledDeltaTime;
             public static int frameCount;
             public static void UpdateCache()
             {
                 timeAsDouble = UnityEngine.Time.timeAsDouble;
                 unscaledTimeAsDouble = UnityEngine.Time.unscaledTimeAsDouble;
                 deltaTime = UnityEngine.Time.deltaTime;
+                unscaledDeltaTime = UnityEngine.Time.unscaledDeltaTime;
                 frameCount = UnityEngine.Time.frameCount;
             }
 
@@ -447,6 +759,7 @@ namespace Omochaya
 // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
 namespace Omochaya.HiddenStory
 {
+    using System.Runtime.CompilerServices;
     using UnityEngine;
 
     /// <summary>Don't touch! Only for system.</summary>
@@ -638,17 +951,60 @@ namespace Omochaya.HiddenStory
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start) where E : struct, Story.IEase;
+            Story.Task CreateTask<S, E>(in S spepper, in TimeArg arg, E ease, ref double start)
+                where S : struct, Story.IStepper
+                where E : struct, Story.IEase;
         }
 
-        internal static Story.Task Create<T, P, M, C, E>(M _, P __, T to, C carrier, bool isDelta, float interval, float speed, in E ease, ref double start)
+        internal readonly struct PlanArg<T, C>
+            where C : struct, ICarrier<T>
+        {
+            internal readonly T To;
+            internal readonly C Carrier;
+            internal readonly bool IsDelta;
+            internal PlanArg(C carrier, T to, bool isDelta)
+            {
+                this.To = to;
+                this.Carrier = carrier;
+                this.IsDelta = isDelta;
+            }
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct TimeArg
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly float Interval;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly float Speed;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly bool IsUnscaled;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public TimeArg(float interval = 0f, float speed = 0f, bool isUnscaled = false)
+            {
+                this.Interval = interval;
+                this.Speed = speed;
+                this.IsUnscaled = isUnscaled;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Story.Task Create<S, T, P, M, C, E>(in PlanArg<T, C> planArg, in TimeArg timeArg, E ease, ref double start)
+            where S : struct, Story.IStepper
             where P : struct, IParam<P>
             where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
             where E : struct, Story.IEase
-            => Task(new Builder<T, P, M, C>(new Target<T, P, M>(to), carrier, isDelta, interval, speed, ref start), ease);
+            => Task(new Builder<S, T, P, M, C>(planArg, timeArg, ref start), ease);
 
-        static async Story.Task Task<T, P, M, C, E>(Builder<T, P, M, C> builder, E ease)
+        static async Story.Task Task<S, T, P, M, C, E>(Builder<S, T, P, M, C> builder, E ease)
+            where S : struct, Story.IStepper
             where P : struct, IParam<P>
             where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
@@ -664,69 +1020,70 @@ namespace Omochaya.HiddenStory
         {
             readonly P to;
             internal P To => this.to;
-            internal Target(T to)
-            {
-                this.to = new M().Get(to);
-            }
+            internal Target(T to) => this.to = new M().Get(to);
             internal P Get(T p) => new M().Get(p);
             internal float Distance(T p) => this.To.Sub(this.Get(p)).Length;
         }
 
-        readonly struct Builder<T, P, M, C>
+        readonly struct Builder<S, T, P, M, C>
+            where S : struct, Story.IStepper
             where P : struct, IParam<P>
             where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
         {
-            readonly Target<T, P, M> target;
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly float interval;
-            readonly float speed;
+            readonly PlanArg<T, C> planArg;
+            readonly TimeArg timeArg;
             readonly double start;
-            internal Builder(Target<T, P, M> target, C carrier, bool isDelta, float interval, float speed, ref double start)
+            // internal Builder(Target<T, P, M> target, C carrier, bool isDelta, in TimeArg arg, ref double start)
+            internal Builder(in PlanArg<T, C> planArg, in TimeArg timeArg, ref double start)
             {
-                this.target = target;
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.interval = interval;
-                this.speed = speed;
+                this.planArg = planArg;
+                this.timeArg = timeArg;
                 this.start = start;
-                if (float.Epsilon < speed)
+                if (float.Epsilon < this.timeArg.Speed)
                 {
-                    var length = isDelta ? this.target.To.Length : this.target.Distance(carrier.Current);
-                    interval = length / speed;
+                    var target = new Target<T, P, M>(planArg.To);
+                    var length = planArg.IsDelta ? target.To.Length : target.Distance(planArg.Carrier.Current);
+                    start += length / this.timeArg.Speed;
                 }
-                start += interval;
+                else
+                {
+                    start += this.timeArg.Interval;
+                }
             }
 
-            internal Updater<T, P, M, C> Build()
+            internal Updater<S, T, P, M, C> Build()
             {
                 // owner 確定
-                TryKeep(this.carrier.Self);
+                TryKeep(this.planArg.Carrier.Self);
 
                 // from 確定
-                var from = this.target.Get(this.carrier.Current);
-                var to = this.target.To;
+                var target = new Target<T, P, M>(this.planArg.To);
+                var from = target.Get(this.planArg.Carrier.Current);
+                var to = target.To;
 
                 // interval 確定
-                var interval = this.interval;
-                if (float.Epsilon < this.speed)
+                var interval = this.timeArg.Interval;
+                if (float.Epsilon < this.timeArg.Speed)
                 {
-                    if (this.isDelta) { interval = to.Length / this.speed; }
-                    else { interval = from.Sub(to).Length / this.speed; }
+                    if (this.planArg.IsDelta) { interval = to.Length / this.timeArg.Speed; }
+                    else { interval = from.Sub(to).Length / this.timeArg.Speed; }
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
-                    if ((float.Epsilon < this.interval) && this.interval != interval) { Dev.LogWarning("移動期間が変化しました"); }
+                    if ((float.Epsilon < this.timeArg.Interval) && this.timeArg.Interval != interval) { Dev.LogWarning("移動期間が変化しました"); }
 #endif
 
                 }
 
                 // to 確定
-                if (this.isDelta) { to = from.Add(to); }
+                if (this.planArg.IsDelta) { to = from.Add(to); }
 
                 // 生成
-                return new(start, interval, this.carrier, from, to);
+                var stepper = new S();
+                var start = this.start;
+                stepper.Setup(interval, ref start);
+                return new(stepper, this.planArg.Carrier, from, to);
             }
         }
 
@@ -739,24 +1096,25 @@ namespace Omochaya.HiddenStory
             }
         }
 
-        struct Updater<T, P, M, C> : Story.IUpdater
+        struct Updater<S, T, P, M, C> : Story.IUpdater
+            where S : struct, Story.IStepper
             where P : struct, IParam<P>
             where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
         {
-            Story.Passer passer;
+            S stepper;
             C carrier; // 読み取り専用にできるらしいが、したら Update で更新されなくならないか？
             readonly P from, to;
-            internal Updater(double start, float interval, C carrier, P from, P to)
+            internal Updater(in S stepper, C carrier, P from, P to)
             {
-                this.passer = new Story.Passer(interval, ref start);
+                this.stepper = stepper;
                 this.carrier = carrier;
                 this.from = from;
                 this.to = to;
             }
-            internal bool Step<E>(in E ease)
+            internal bool Step<E>(E ease)
                 where E : struct, Story.IEase
-                => this.passer.Step(this, ease);
+                => this.stepper.Step(this, ease);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

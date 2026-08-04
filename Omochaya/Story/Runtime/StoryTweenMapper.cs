@@ -10,18 +10,17 @@ namespace Omochaya
 {
     using UnityEngine;
     using Omochaya.HiddenStory;
+    using System.Runtime.CompilerServices;
 
     public static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
-        public static Plan<C> To<C>(this C self, float p)
-            where C : struct, ICarrier
-            => new(self, false, p);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> To<C>(this C self, float p) where C : struct, ICarrier => new(self, false, p);
 
         /// <summary></summary>
-        public static Plan<C> By<C>(this C self, float p)
-            where C : struct, ICarrier
-            => new(self, true, p);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> By<C>(this C self, float p) where C : struct, ICarrier => new(self, true, p);
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -32,23 +31,18 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly float p;
+            readonly Mover.PlanArg<float, C> planArg;
 
-            internal Plan(in C carrier, bool isDelta, float p)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.p = p;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-                // => Mover.Create(Mover.Type<Mapper, Mover.Param1, float>(this.p), this.carrier, this.isDelta, interval, speed, ease, ref start);
-                => Mover.Create(new Mapper(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                => Mover.Create<S, float, Mover.Param1, Mapper, C, E>(this.planArg, timeArg, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -57,9 +51,11 @@ namespace Omochaya
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Mover.Param1 Get(float current) => new(current);
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float Set(float current, Mover.Param1 prm) => prm.P0;
         }
     }
@@ -67,21 +63,25 @@ namespace Omochaya
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
             where C : struct, ICarrier
             => new(self, false, x, y);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null)
             where C : struct, ICarrier
             => new(self, true, x, y);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, Vector2 p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, Vector2 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
@@ -95,38 +95,35 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
+            readonly Mover.PlanArg<Vector2, C> planArg;
             readonly Comb comb;
-            readonly Vector2 p;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 var result = Analyze(x, y);
                 this.comb = result.Item1;
-                this.p = result.Item2;
+                this.planArg = new(carrier, result.Item2, isDelta);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Vector2 p)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 this.comb = Comb.XY;
-                this.p = p;
+                this.planArg = new(carrier, p, isDelta);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
             {
                 switch (this.comb)
                 {
-                    case Comb.X_: return Mover.Create(new Mapper.X_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y: return Mover.Create(new Mapper._Y(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY: return Mover.Create(new Mapper.XY(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X_: return Mover.Create<S, Vector2, Mover.Param1, Mapper.X_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._Y: return Mover.Create<S, Vector2, Mover.Param1, Mapper._Y, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XY: return Mover.Create<S, Vector2, Mover.Param2, Mapper.XY, C, E>(this.planArg, timeArg, ease, ref start);
                 }
                 return default;
             }
@@ -160,9 +157,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Vector2 current) => new(current.x);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Set(Vector2 current, Mover.Param1 prm)
                 {
                     current.x = prm.P0;
@@ -173,9 +172,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Vector2 current) => new(current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Set(Vector2 current, Mover.Param1 prm)
                 {
                     current.y = prm.P0;
@@ -186,9 +187,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Vector2 current) => new(current.x, current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Set(Vector2 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -202,21 +205,25 @@ namespace Omochaya
     public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
             where C : struct, ICarrier
             => new(self, false, x, y, z);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? z = null)
             where C : struct, ICarrier
             => new(self, true, x, y, z);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Vector3 p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Vector3 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
@@ -230,42 +237,40 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
+            readonly Mover.PlanArg<Vector3, C> planArg;
             readonly Comb comb;
-            readonly Vector3 p;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? z)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 var result = Analyze(x, y, z);
                 this.comb = result.Item1;
-                this.p = result.Item2;
+                this.planArg = new(carrier, result.Item2, isDelta);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, in Vector3 p)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 this.comb = Comb.XYZ;
-                this.p = p;
+                this.planArg = new(carrier, p, isDelta);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
             {
+                // 芋づる式にステートマシンが全部作られる...ヤバすぎ
                 switch (this.comb)
                 {
-                    case Comb.X__: return Mover.Create(new Mapper.X__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y_: return Mover.Create(new Mapper._Y_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__Z: return Mover.Create(new Mapper.__Z(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YZ: return Mover.Create(new Mapper._YZ(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_Z: return Mover.Create(new Mapper.X_Z(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY_: return Mover.Create(new Mapper.XY_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYZ: return Mover.Create(new Mapper.XYZ(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X__: return Mover.Create<S, Vector3, Mover.Param1, Mapper.X__, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._Y_: return Mover.Create<S, Vector3, Mover.Param1, Mapper._Y_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.__Z: return Mover.Create<S, Vector3, Mover.Param1, Mapper.__Z, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._YZ: return Mover.Create<S, Vector3, Mover.Param2, Mapper._YZ, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.X_Z: return Mover.Create<S, Vector3, Mover.Param2, Mapper.X_Z, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XY_: return Mover.Create<S, Vector3, Mover.Param2, Mapper.XY_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XYZ: return Mover.Create<S, Vector3, Mover.Param3, Mapper.XYZ, C, E>(this.planArg, timeArg, ease, ref start);
                 }
                 return default;
             }
@@ -304,9 +309,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Vector3 current) => new(current.x);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.x = prm.P0;
@@ -317,9 +324,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Vector3 current) => new(current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.y = prm.P0;
@@ -330,9 +339,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Vector3 current) => new(current.z);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param1 prm)
                 {
                     current.z = prm.P0;
@@ -343,9 +354,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Vector3 current) => new(current.y, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.y = prm.P0;
@@ -359,9 +372,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Vector3 current) => new(current.x, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -373,9 +388,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Vector3 current) => new(current.x, current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -387,9 +404,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Vector3 current) => new(current.x, current.y, current.z);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector3 Set(Vector3 current, Mover.Param3 prm)
                 {
                     current.x = prm.P0;
@@ -404,21 +423,25 @@ namespace Omochaya
     public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
             where C : struct, ICarrier
             => new(self, false, r, g, b, a);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, bool _ = true, float? r = null, float? g = null, float? b = null, float? a = null)
             where C : struct, ICarrier
             => new(self, true, r, g, b, a);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Color p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Color p = default)
             where C : struct, ICarrier
             => new(self, true, p);
@@ -432,50 +455,47 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
+            readonly Mover.PlanArg<Color, C> planArg;
             readonly Comb comb;
-            readonly Color p;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? r, float? g, float? b, float? a)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 var result = Analyze(r, g, b, a);
                 this.comb = result.Item1;
-                this.p = result.Item2;
+                this.planArg = new(carrier, result.Item2, isDelta);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Color p)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 this.comb = Comb.RGBA;
-                this.p = p;
+                this.planArg = new(carrier, p, isDelta);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
             {
                 switch (this.comb)
                 {
-                    case Comb.R___: return Mover.Create(new Mapper.R___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._G__: return Mover.Create(new Mapper._G__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__B_: return Mover.Create(new Mapper.__B_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.___A: return Mover.Create(new Mapper.___A(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RG__: return Mover.Create(new Mapper.RG__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__BA: return Mover.Create(new Mapper.__BA(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R_B_: return Mover.Create(new Mapper.R_B_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._G_A: return Mover.Create(new Mapper._G_A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R__A: return Mover.Create(new Mapper.R__A(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._GB_: return Mover.Create(new Mapper._GB_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._GBA: return Mover.Create(new Mapper._GBA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.R_BA: return Mover.Create(new Mapper.R_BA(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RG_A: return Mover.Create(new Mapper.RG_A(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RGB_: return Mover.Create(new Mapper.RGB_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.RGBA: return Mover.Create(new Mapper.RGBA(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.R___: return Mover.Create<S, Color, Mover.Param1, Mapper.R___, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._G__: return Mover.Create<S, Color, Mover.Param1, Mapper._G__, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.__B_: return Mover.Create<S, Color, Mover.Param1, Mapper.__B_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.___A: return Mover.Create<S, Color, Mover.Param1, Mapper.___A, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.RG__: return Mover.Create<S, Color, Mover.Param2, Mapper.RG__, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.__BA: return Mover.Create<S, Color, Mover.Param2, Mapper.__BA, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.R_B_: return Mover.Create<S, Color, Mover.Param2, Mapper.R_B_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._G_A: return Mover.Create<S, Color, Mover.Param2, Mapper._G_A, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.R__A: return Mover.Create<S, Color, Mover.Param2, Mapper.R__A, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._GB_: return Mover.Create<S, Color, Mover.Param2, Mapper._GB_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._GBA: return Mover.Create<S, Color, Mover.Param3, Mapper._GBA, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.R_BA: return Mover.Create<S, Color, Mover.Param3, Mapper.R_BA, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.RG_A: return Mover.Create<S, Color, Mover.Param3, Mapper.RG_A, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.RGB_: return Mover.Create<S, Color, Mover.Param3, Mapper.RGB_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.RGBA: return Mover.Create<S, Color, Mover.Param4, Mapper.RGBA, C, E>(this.planArg, timeArg, ease, ref start);
                 }
                 return default;
             }
@@ -527,9 +547,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Color current) => new(current.r);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.r = prm.P0;
@@ -542,9 +564,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Color current) => new(current.g);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.g = prm.P0;
@@ -557,9 +581,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Color current) => new(current.b);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.b = prm.P0;
@@ -572,9 +598,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Color current) => new(current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param1 prm)
                 {
                     current.a = prm.P0;
@@ -587,9 +615,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.g);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -603,9 +633,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.b = prm.P0;
@@ -619,9 +651,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -635,9 +669,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.g, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.g = prm.P0;
@@ -651,9 +687,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.r, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.r = prm.P0;
@@ -667,9 +705,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Color current) => new(current.g, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param2 prm)
                 {
                     current.g = prm.P0;
@@ -683,9 +723,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Color current) => new(current.g, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.g = prm.P0;
@@ -700,9 +742,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -717,9 +761,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.g, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -734,9 +780,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param3 prm)
                 {
                     current.r = prm.P0;
@@ -751,9 +799,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param4 Get(Color current) => new(current.r, current.g, current.b, current.a);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Color Set(Color current, Mover.Param4 prm)
                 {
                     current.r = prm.P0;
@@ -769,11 +819,13 @@ namespace Omochaya
     public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Quaternion p)
             where C : struct, ICarrier
             => new(self, false, p);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Quaternion p)
             where C : struct, ICarrier
             => new(self, true, p);
@@ -787,31 +839,31 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly Quaternion p;
+            readonly Mover.PlanArg<Quaternion, C> planArg;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, in Quaternion p)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.p = p;
+                this.planArg = new(carrier, p, isDelta);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-                => Mover.Create(new Mapper(), new Mover.ParamQ(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                => Mover.Create<S, Quaternion, Mover.ParamQ, Mapper, C, E>(this.planArg, timeArg, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         readonly struct Mapper : Mover.IMapper<Quaternion, Mover.ParamQ>
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Mover.ParamQ Get(Quaternion current) => new(current);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Quaternion Set(Quaternion current, Mover.ParamQ prm) => prm.Q;
@@ -821,21 +873,25 @@ namespace Omochaya
     public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? width = null, float? height = null)
             where C : struct, ICarrier
             => new(self, false, x, y, width, height);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? width = null, float? height = null)
             where C : struct, ICarrier
             => new(self, true, x, y, width, height);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Rect p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
         /// <summary></summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Rect p = default)
             where C : struct, ICarrier
             => new(self, true, p);
@@ -849,50 +905,47 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly C carrier;
-            readonly bool isDelta;
+            readonly Mover.PlanArg<Rect, C> planArg;
             readonly Comb comb;
-            readonly Rect p;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? width, float? height)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 var result = Analyze(x, y, width, height);
                 this.comb = result.Item1;
-                this.p = result.Item2;
+                this.planArg = new(carrier, result.Item2, isDelta);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Rect p)
             {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
                 this.comb = Comb.XYWH;
-                this.p = p;
+                this.planArg = new(carrier, p, isDelta);
             }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Story.Task CreateTask<E>(float interval, float speed, E ease, ref double start)
+            public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+                where S : struct, Story.IStepper
                 where E : struct, Story.IEase
             {
                 switch (this.comb)
                 {
-                    case Comb.X___: return Mover.Create(new Mapper.X___(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y__: return Mover.Create(new Mapper._Y__(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__W_: return Mover.Create(new Mapper.__W_(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.___H: return Mover.Create(new Mapper.___H(), new Mover.Param1(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY__: return Mover.Create(new Mapper.XY__(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.__WH: return Mover.Create(new Mapper.__WH(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_W_: return Mover.Create(new Mapper.X_W_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._Y_H: return Mover.Create(new Mapper._Y_H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X__H: return Mover.Create(new Mapper.X__H(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YW_: return Mover.Create(new Mapper._YW_(), new Mover.Param2(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb._YWH: return Mover.Create(new Mapper._YWH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.X_WH: return Mover.Create(new Mapper.X_WH(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XY_H: return Mover.Create(new Mapper.XY_H(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYW_: return Mover.Create(new Mapper.XYW_(), new Mover.Param3(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
-                    case Comb.XYWH: return Mover.Create(new Mapper.XYWH(), new Mover.Param4(), this.p, this.carrier, this.isDelta, interval, speed, ease, ref start);
+                    case Comb.X___: return Mover.Create<S, Rect, Mover.Param1, Mapper.X___, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._Y__: return Mover.Create<S, Rect, Mover.Param1, Mapper._Y__, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.__W_: return Mover.Create<S, Rect, Mover.Param1, Mapper.__W_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.___H: return Mover.Create<S, Rect, Mover.Param1, Mapper.___H, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XY__: return Mover.Create<S, Rect, Mover.Param2, Mapper.XY__, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.__WH: return Mover.Create<S, Rect, Mover.Param2, Mapper.__WH, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.X_W_: return Mover.Create<S, Rect, Mover.Param2, Mapper.X_W_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._Y_H: return Mover.Create<S, Rect, Mover.Param2, Mapper._Y_H, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.X__H: return Mover.Create<S, Rect, Mover.Param2, Mapper.X__H, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._YW_: return Mover.Create<S, Rect, Mover.Param2, Mapper._YW_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb._YWH: return Mover.Create<S, Rect, Mover.Param3, Mapper._YWH, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.X_WH: return Mover.Create<S, Rect, Mover.Param3, Mapper.X_WH, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XY_H: return Mover.Create<S, Rect, Mover.Param3, Mapper.XY_H, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XYW_: return Mover.Create<S, Rect, Mover.Param3, Mapper.XYW_, C, E>(this.planArg, timeArg, ease, ref start);
+                    case Comb.XYWH: return Mover.Create<S, Rect, Mover.Param4, Mapper.XYWH, C, E>(this.planArg, timeArg, ease, ref start);
                 }
                 return default;
             }
@@ -944,9 +997,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Rect current) => new(current.x);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param1 prm)
                 {
                     current.x = prm.P0;
@@ -959,9 +1014,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Rect current) => new(current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param1 prm)
                 {
                     current.y = prm.P0;
@@ -974,9 +1031,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Rect current) => new(current.width);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param1 prm)
                 {
                     current.width = prm.P0;
@@ -989,9 +1048,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param1 Get(Rect current) => new(current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param1 prm)
                 {
                     current.height = prm.P0;
@@ -1004,9 +1065,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.x, current.y);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -1020,9 +1083,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.width, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.width = prm.P0;
@@ -1036,9 +1101,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.x, current.width);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -1052,9 +1119,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.y, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.y = prm.P0;
@@ -1068,9 +1137,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.x, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.x = prm.P0;
@@ -1084,9 +1155,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param2 Get(Rect current) => new(current.y, current.width);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param2 prm)
                 {
                     current.y = prm.P0;
@@ -1100,9 +1173,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Rect current) => new(current.y, current.width, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param3 prm)
                 {
                     current.y = prm.P0;
@@ -1117,9 +1192,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Rect current) => new(current.x, current.width, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param3 prm)
                 {
                     current.x = prm.P0;
@@ -1134,9 +1211,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param3 prm)
                 {
                     current.x = prm.P0;
@@ -1151,9 +1230,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.width);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param3 prm)
                 {
                     current.x = prm.P0;
@@ -1168,9 +1249,11 @@ namespace Omochaya
             {
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Mover.Param4 Get(Rect current) => new(current.x, current.y, current.width, current.height);
                 /// <summary>Don't touch! Only for system.</summary>
                 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Rect Set(Rect current, Mover.Param4 prm)
                 {
                     current.x = prm.P0;

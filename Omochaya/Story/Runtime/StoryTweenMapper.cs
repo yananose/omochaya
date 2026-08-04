@@ -31,10 +31,10 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<float, C> planArg;
+            readonly Mover.PlanArg<C, Mapper, float> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, p, isDelta);
+            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -42,21 +42,27 @@ namespace Omochaya
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-                => Mover.Create<S, float, Mover.Param1, Mapper, C, E>(this.planArg, timeArg, ease, ref start);
+                => Mover.Create<S, C, Mapper, float, E>(this.planArg, timeArg, ease, ref start);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Mapper : Mover.IMapper<float, Mover.Param1>
+        readonly struct Mapper : Mover.IMapper<float>
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Mover.Param1 Get(float current) => new(current);
+            public float GetLength(float to, float from) => Mathf.Abs(to - from);
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float Set(float current, Mover.Param1 prm) => prm.P0;
+            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public (float, float) GetParam(float from, float to, bool isDelta)
+            {
+                if (isDelta) { to += from; }
+                return (to, from - to);
+            }
         }
     }
 
@@ -95,38 +101,25 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<Vector2, C> planArg;
-            readonly Comb comb;
+            readonly Mover.PlanArg<C, Mapper, Vector2> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y)
             {
                 var result = Analyze(x, y);
-                this.comb = result.Item1;
-                this.planArg = new(carrier, result.Item2, isDelta);
+                this.planArg = new(carrier, new Mapper(result.Item1), result.Item2, isDelta);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Vector2 p)
-            {
-                this.comb = Comb.XY;
-                this.planArg = new(carrier, p, isDelta);
-            }
+                => this.planArg = new(carrier, new Mapper(Comb.XY), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-            {
-                switch (this.comb)
-                {
-                    case Comb.X_: return Mover.Create<S, Vector2, Mover.Param1, Mapper.X_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._Y: return Mover.Create<S, Vector2, Mover.Param1, Mapper._Y, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XY: return Mover.Create<S, Vector2, Mover.Param2, Mapper.XY, C, E>(this.planArg, timeArg, ease, ref start);
-                }
-                return default;
-            }
+                => Mover.Create<S, C, Mapper, Vector2, E>(this.planArg, timeArg, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -140,8 +133,6 @@ namespace Omochaya
             return default;
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         enum Comb
         {
             None,
@@ -151,53 +142,52 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Mapper
+        readonly struct Mapper : Mover.IMapper<Vector2>
         {
-            internal readonly struct X_ : Mover.IMapper<Vector2, Mover.Param1>
+            readonly Comb comb;
+            internal Mapper(Comb comb) => this.comb = comb;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float GetLength(Vector2 to, Vector2 from)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Vector2 current) => new(current.x);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector2 Set(Vector2 current, Mover.Param1 prm)
+                var diff = to - from;
+                switch (this.comb)
                 {
-                    current.x = prm.P0;
-                    return current;
+                    case Comb.X_: return Mathf.Abs(diff.x);
+                    case Comb._Y: return Mathf.Abs(diff.y);
+                    case Comb.XY: return diff.magnitude;
+                    default: return default;
                 }
             }
-            internal readonly struct _Y : Mover.IMapper<Vector2, Mover.Param1>
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Vector2 current) => new(current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector2 Set(Vector2 current, Mover.Param1 prm)
+                switch (this.comb)
                 {
-                    current.y = prm.P0;
-                    return current;
+                    case Comb.X_:
+                        current.x = to.x + diff.x * rt;
+                        return current;
+                    case Comb._Y:
+                        current.y = to.y + diff.y * rt;
+                        return current;
+                    case Comb.XY:
+                        return to + diff * rt;;
+                    default: return current;
                 }
             }
-            internal readonly struct XY : Mover.IMapper<Vector2, Mover.Param2>
+            
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Vector2 current) => new(current.x, current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector2 Set(Vector2 current, Mover.Param2 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    return current;
-                }
+                if (isDelta) { to += from; }
+                return (to, from - to);
             }
         }
     }
@@ -237,43 +227,49 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<Vector3, C> planArg;
-            readonly Comb comb;
+            readonly Mover.PlanArg<C, Mapper, Vector3> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? z)
             {
                 var result = Analyze(x, y, z);
-                this.comb = result.Item1;
-                this.planArg = new(carrier, result.Item2, isDelta);
+                this.planArg = new(carrier, new Mapper(result.Item1), result.Item2, isDelta);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, in Vector3 p)
-            {
-                this.comb = Comb.XYZ;
-                this.planArg = new(carrier, p, isDelta);
-            }
+            internal Plan(in C carrier, bool isDelta, Vector3 p)
+                => this.planArg = new(carrier, new Mapper(Comb.XYZ), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-            {
-                // 芋づる式にステートマシンが全部作られる...ヤバすぎ
-                switch (this.comb)
-                {
-                    case Comb.X__: return Mover.Create<S, Vector3, Mover.Param1, Mapper.X__, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._Y_: return Mover.Create<S, Vector3, Mover.Param1, Mapper._Y_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.__Z: return Mover.Create<S, Vector3, Mover.Param1, Mapper.__Z, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._YZ: return Mover.Create<S, Vector3, Mover.Param2, Mapper._YZ, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.X_Z: return Mover.Create<S, Vector3, Mover.Param2, Mapper.X_Z, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XY_: return Mover.Create<S, Vector3, Mover.Param2, Mapper.XY_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XYZ: return Mover.Create<S, Vector3, Mover.Param3, Mapper.XYZ, C, E>(this.planArg, timeArg, ease, ref start);
-                }
-                return default;
-            }
+                => Mover.Create<S, C, Mapper, Vector3, E>(this.planArg, timeArg, ease, ref start);
+
+
+            // これだと芋づる式に全部のステートマシンのコードが作られる...ヤバすぎ
+            // 毎回分岐を挟むとしてもまとめるしかないのか...（仮想メソッドよりはマシだけど）
+            // To(x:10f) とかでなく ToX(10f) と書いてもらうなら対象のステートマシンのみコードが作られるようにできるけど、折角のオシャレ感が...
+            // STORY_EASE_COMPACT があるならそれほど膨らまないのでこのままにする手も...
+            // 
+            // public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
+            //     where S : struct, Story.IStepper
+            //     where E : struct, Story.IEase
+            // {
+            //     switch (this.comb)
+            //     {
+            //         case Comb.X__: return Mover.Create<S, Vector3, Mover.Param1, Mapper.X__, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb._Y_: return Mover.Create<S, Vector3, Mover.Param1, Mapper._Y_, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb.__Z: return Mover.Create<S, Vector3, Mover.Param1, Mapper.__Z, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb._YZ: return Mover.Create<S, Vector3, Mover.Param2, Mapper._YZ, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb.X_Z: return Mover.Create<S, Vector3, Mover.Param2, Mapper.X_Z, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb.XY_: return Mover.Create<S, Vector3, Mover.Param2, Mapper.XY_, C, E>(this.planArg, timeArg, ease, ref start);
+            //         case Comb.XYZ: return Mover.Create<S, Vector3, Mover.Param3, Mapper.XYZ, C, E>(this.planArg, timeArg, ease, ref start);
+            //     }
+            //     return default;
+            // }
+
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -303,119 +299,66 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Mapper
+        readonly struct Mapper : Mover.IMapper<Vector3>
         {
-            internal readonly struct X__ : Mover.IMapper<Vector3, Mover.Param1>
+            readonly Comb comb;
+            internal Mapper(Comb comb) => this.comb = comb;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public float GetLength(Vector3 to, Vector3 from)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Vector3 current) => new(current.x);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param1 prm)
+                var diff = to - from;
+                switch (this.comb)
                 {
-                    current.x = prm.P0;
-                    return current;
-                }
-            }
-            internal readonly struct _Y_ : Mover.IMapper<Vector3, Mover.Param1>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Vector3 current) => new(current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param1 prm)
-                {
-                    current.y = prm.P0;
-                    return current;
-                }
-            }
-            internal readonly struct __Z : Mover.IMapper<Vector3, Mover.Param1>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Vector3 current) => new(current.z);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param1 prm)
-                {
-                    current.z = prm.P0;
-                    return current;
-                }
-            }
-            internal readonly struct _YZ : Mover.IMapper<Vector3, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Vector3 current) => new(current.y, current.z);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param2 prm)
-                {
-                    current.y = prm.P0;
-                    current.z = prm.P1;
-                    return current;
+                    case Comb.X__: return Mathf.Abs(diff.x);
+                    case Comb._Y_: return Mathf.Abs(diff.y);
+                    case Comb.__Z: return Mathf.Abs(diff.z);
+                    case Comb._YZ: return Mathf.Sqrt(diff.y * diff.y + diff.z * diff.z);
+                    case Comb.X_Z: return Mathf.Sqrt(diff.x * diff.x + diff.z * diff.z);
+                    case Comb.XY_: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y);
+                    case Comb.XYZ: return diff.magnitude;
+                    default: return default;
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_Z : Mover.IMapper<Vector3, Mover.Param2>
+            public Vector3 Lerp(Vector3 current, Vector3 to, Vector3 diff, float rt)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Vector3 current) => new(current.x, current.z);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param2 prm)
+                switch (this.comb)
                 {
-                    current.x = prm.P0;
-                    current.z = prm.P1;
-                    return current;
+                    case Comb.X__:
+                        current.x = to.x + diff.x * rt;
+                        return current;
+                    case Comb._Y_:
+                        current.y = to.y + diff.y * rt;
+                        return current;
+                    case Comb.__Z:
+                        current.z = to.z + diff.z * rt;
+                        return current;
+                    case Comb._YZ:
+                        current.y = to.y + diff.y * rt;
+                        current.z = to.z + diff.z * rt;
+                        return current;
+                    case Comb.X_Z:
+                        current.x = to.x + diff.x * rt;
+                        current.z = to.z + diff.z * rt;
+                        return current;
+                    case Comb.XY_:
+                        current.x = to.x + diff.x * rt;
+                        current.y = to.y + diff.y * rt;
+                        return current;
+                    case Comb.XYZ:
+                        return to + diff * rt;;
+                    default: return current;
                 }
             }
-            internal readonly struct XY_ : Mover.IMapper<Vector3, Mover.Param2>
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public (Vector3, Vector3) GetParam(Vector3 from, Vector3 to, bool isDelta)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Vector3 current) => new(current.x, current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param2 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    return current;
-                }
-            }
-            internal readonly struct XYZ : Mover.IMapper<Vector3, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Vector3 current) => new(current.x, current.y, current.z);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Vector3 Set(Vector3 current, Mover.Param3 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    current.z = prm.P2;
-                    return current;
-                }
+                if (isDelta) { to += from; }
+                return (to, from - to);
             }
         }
     }
@@ -455,50 +398,25 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<Color, C> planArg;
-            readonly Comb comb;
+            readonly Mover.PlanArg<C, Mapper, Color> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? r, float? g, float? b, float? a)
             {
                 var result = Analyze(r, g, b, a);
-                this.comb = result.Item1;
-                this.planArg = new(carrier, result.Item2, isDelta);
+                this.planArg = new(carrier, new Mapper(result.Item1), result.Item2, isDelta);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Color p)
-            {
-                this.comb = Comb.RGBA;
-                this.planArg = new(carrier, p, isDelta);
-            }
+                => this.planArg = new(carrier, new Mapper(Comb.RGBA), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-            {
-                switch (this.comb)
-                {
-                    case Comb.R___: return Mover.Create<S, Color, Mover.Param1, Mapper.R___, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._G__: return Mover.Create<S, Color, Mover.Param1, Mapper._G__, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.__B_: return Mover.Create<S, Color, Mover.Param1, Mapper.__B_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.___A: return Mover.Create<S, Color, Mover.Param1, Mapper.___A, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.RG__: return Mover.Create<S, Color, Mover.Param2, Mapper.RG__, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.__BA: return Mover.Create<S, Color, Mover.Param2, Mapper.__BA, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.R_B_: return Mover.Create<S, Color, Mover.Param2, Mapper.R_B_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._G_A: return Mover.Create<S, Color, Mover.Param2, Mapper._G_A, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.R__A: return Mover.Create<S, Color, Mover.Param2, Mapper.R__A, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._GB_: return Mover.Create<S, Color, Mover.Param2, Mapper._GB_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._GBA: return Mover.Create<S, Color, Mover.Param3, Mapper._GBA, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.R_BA: return Mover.Create<S, Color, Mover.Param3, Mapper.R_BA, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.RG_A: return Mover.Create<S, Color, Mover.Param3, Mapper.RG_A, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.RGB_: return Mover.Create<S, Color, Mover.Param3, Mapper.RGB_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.RGBA: return Mover.Create<S, Color, Mover.Param4, Mapper.RGBA, C, E>(this.planArg, timeArg, ease, ref start);
-                }
-                return default;
-            }
+                => Mover.Create<S, C, Mapper, Color, E>(this.planArg, timeArg, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -539,279 +457,109 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Mapper
+        readonly struct Mapper : Mover.IMapper<Color>
         {
+            readonly Comb comb;
+            internal Mapper(Comb comb) => this.comb = comb;
+
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R___ : Mover.IMapper<Color, Mover.Param1>
+            public float GetLength(Color to, Color from)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Color current) => new(current.r);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param1 prm)
+                var diff = to - from;
+                switch (this.comb)
                 {
-                    current.r = prm.P0;
-                    return current;
+                    case Comb.R___: return Mathf.Abs(diff.r);
+                    case Comb._G__: return Mathf.Abs(diff.g);
+                    case Comb.__B_: return Mathf.Abs(diff.b);
+                    case Comb.___A: return Mathf.Abs(diff.a);
+                    case Comb.RG__: return Mathf.Sqrt(diff.r * diff.r + diff.g * diff.g);
+                    case Comb.__BA: return Mathf.Sqrt(diff.b * diff.b + diff.a * diff.a);
+                    case Comb.R_B_: return Mathf.Sqrt(diff.r * diff.r + diff.b * diff.b);
+                    case Comb._G_A: return Mathf.Sqrt(diff.g * diff.g + diff.a * diff.a);
+                    case Comb.R__A: return Mathf.Sqrt(diff.r * diff.r + diff.a * diff.a);
+                    case Comb._GB_: return Mathf.Sqrt(diff.g * diff.g + diff.b * diff.b);
+                    case Comb._GBA: return Mathf.Sqrt(diff.g * diff.g + diff.b * diff.b + diff.a * diff.a);
+                    case Comb.R_BA: return Mathf.Sqrt(diff.r * diff.r + diff.b * diff.b + diff.a * diff.a);
+                    case Comb.RG_A: return Mathf.Sqrt(diff.r * diff.r + diff.g * diff.g + diff.a * diff.a);
+                    case Comb.RGB_: return Mathf.Sqrt(diff.r * diff.r + diff.g * diff.g + diff.b * diff.b);
+                    case Comb.RGBA: return Mathf.Sqrt(diff.r * diff.r + diff.g * diff.g + diff.b * diff.b + diff.a * diff.a);
+                    default: return default;
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _G__ : Mover.IMapper<Color, Mover.Param1>
+            public Color Lerp(Color current, Color to, Color diff, float rt)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Color current) => new(current.g);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param1 prm)
+                switch (this.comb)
                 {
-                    current.g = prm.P0;
-                    return current;
+                    case Comb.R___:
+                        current.r = to.r + diff.r * rt;
+                        return current;
+                    case Comb._G__:
+                        current.g = to.g + diff.g * rt;
+                        return current;
+                    case Comb.__B_:
+                        current.b = to.b + diff.b * rt;
+                        return current;
+                    case Comb.___A:
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.RG__:
+                        current.r = to.r + diff.r * rt;
+                        current.g = to.g + diff.g * rt;
+                        return current;
+                    case Comb.__BA:
+                        current.b = to.b + diff.b * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.R_B_:
+                        current.r = to.r + diff.r * rt;
+                        current.b = to.b + diff.b * rt;
+                        return current;
+                    case Comb._G_A:
+                        current.g = to.g + diff.g * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.R__A:
+                        current.r = to.r + diff.r * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb._GB_:
+                        current.g = to.g + diff.g * rt;
+                        current.b = to.b + diff.b * rt;
+                        return current;
+                    case Comb._GBA:
+                        current.g = to.g + diff.g * rt;
+                        current.b = to.b + diff.b * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.R_BA:
+                        current.r = to.r + diff.r * rt;
+                        current.b = to.b + diff.b * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.RG_A:
+                        current.r = to.r + diff.r * rt;
+                        current.g = to.g + diff.g * rt;
+                        current.a = to.a + diff.a * rt;
+                        return current;
+                    case Comb.RGB_:
+                        current.r = to.r + diff.r * rt;
+                        current.g = to.g + diff.g * rt;
+                        current.b = to.b + diff.b * rt;
+                        return current;
+                    case Comb.RGBA:
+                        return to + diff * rt;;
+                    default: return current;
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __B_ : Mover.IMapper<Color, Mover.Param1>
+            public (Color, Color) GetParam(Color from, Color to, bool isDelta)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Color current) => new(current.b);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param1 prm)
-                {
-                    current.b = prm.P0;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct ___A : Mover.IMapper<Color, Mover.Param1>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Color current) => new(current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param1 prm)
-                {
-                    current.a = prm.P0;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RG__ : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.r, current.g);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __BA : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.b, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.b = prm.P0;
-                    current.a = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R_B_ : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.r, current.b);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.r = prm.P0;
-                    current.b = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _G_A : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.g, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.g = prm.P0;
-                    current.a = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R__A : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.r, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.r = prm.P0;
-                    current.a = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _GB_ : Mover.IMapper<Color, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Color current) => new(current.g, current.b);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param2 prm)
-                {
-                    current.g = prm.P0;
-                    current.b = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _GBA : Mover.IMapper<Color, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Color current) => new(current.g, current.b, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param3 prm)
-                {
-                    current.g = prm.P0;
-                    current.b = prm.P1;
-                    current.a = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct R_BA : Mover.IMapper<Color, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Color current) => new(current.r, current.b, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param3 prm)
-                {
-                    current.r = prm.P0;
-                    current.b = prm.P1;
-                    current.a = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RG_A : Mover.IMapper<Color, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Color current) => new(current.r, current.g, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param3 prm)
-                {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.a = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RGB_ : Mover.IMapper<Color, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Color current) => new(current.r, current.g, current.b);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param3 prm)
-                {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.b = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct RGBA : Mover.IMapper<Color, Mover.Param4>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param4 Get(Color current) => new(current.r, current.g, current.b, current.a);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Color Set(Color current, Mover.Param4 prm)
-                {
-                    current.r = prm.P0;
-                    current.g = prm.P1;
-                    current.b = prm.P2;
-                    current.a = prm.P3;
-                    return current;
-                }
+                if (isDelta) { to += from; }
+                return (to, from - to);
             }
         }
     }
@@ -839,34 +587,39 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<Quaternion, C> planArg;
+            readonly Mover.PlanArg<C, Mapper, Quaternion> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, in Quaternion p)
-            {
-                this.planArg = new(carrier, p, isDelta);
-            }
+            internal Plan(in C carrier, bool isDelta, Quaternion p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-                => Mover.Create<S, Quaternion, Mover.ParamQ, Mapper, C, E>(this.planArg, timeArg, ease, ref start);
+                => Mover.Create<S, C, Mapper, Quaternion, E>(this.planArg, timeArg, ease, ref start);
         }
 
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Mapper : Mover.IMapper<Quaternion, Mover.ParamQ>
+        // ToDo. 合ってるか要確認！！
+        readonly struct Mapper : Mover.IMapper<Quaternion>
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Mover.ParamQ Get(Quaternion current) => new(current);
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float GetLength(Quaternion to, Quaternion from) => Quaternion.Angle(from, to);
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Quaternion Set(Quaternion current, Mover.ParamQ prm) => prm.Q;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Quaternion Lerp(Quaternion current, Quaternion to, Quaternion from, float rt) => Quaternion.SlerpUnclamped(to, from, rt);
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public (Quaternion, Quaternion) GetParam(Quaternion from, Quaternion to, bool isDelta)
+            {
+                if (isDelta) { to = from * to; }
+                return (to, from);
+            }
         }
     }
 
@@ -905,50 +658,25 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<Rect, C> planArg;
-            readonly Comb comb;
+            readonly Mover.PlanArg<C, Mapper, Rect> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y, float? width, float? height)
             {
                 var result = Analyze(x, y, width, height);
-                this.comb = result.Item1;
-                this.planArg = new(carrier, result.Item2, isDelta);
+                this.planArg = new(carrier, new Mapper(result.Item1), result.Item2, isDelta);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Rect p)
-            {
-                this.comb = Comb.XYWH;
-                this.planArg = new(carrier, p, isDelta);
-            }
+            internal Plan(in C carrier, bool isDelta, Rect p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-            {
-                switch (this.comb)
-                {
-                    case Comb.X___: return Mover.Create<S, Rect, Mover.Param1, Mapper.X___, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._Y__: return Mover.Create<S, Rect, Mover.Param1, Mapper._Y__, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.__W_: return Mover.Create<S, Rect, Mover.Param1, Mapper.__W_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.___H: return Mover.Create<S, Rect, Mover.Param1, Mapper.___H, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XY__: return Mover.Create<S, Rect, Mover.Param2, Mapper.XY__, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.__WH: return Mover.Create<S, Rect, Mover.Param2, Mapper.__WH, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.X_W_: return Mover.Create<S, Rect, Mover.Param2, Mapper.X_W_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._Y_H: return Mover.Create<S, Rect, Mover.Param2, Mapper._Y_H, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.X__H: return Mover.Create<S, Rect, Mover.Param2, Mapper.X__H, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._YW_: return Mover.Create<S, Rect, Mover.Param2, Mapper._YW_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb._YWH: return Mover.Create<S, Rect, Mover.Param3, Mapper._YWH, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.X_WH: return Mover.Create<S, Rect, Mover.Param3, Mapper.X_WH, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XY_H: return Mover.Create<S, Rect, Mover.Param3, Mapper.XY_H, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XYW_: return Mover.Create<S, Rect, Mover.Param3, Mapper.XYW_, C, E>(this.planArg, timeArg, ease, ref start);
-                    case Comb.XYWH: return Mover.Create<S, Rect, Mover.Param4, Mapper.XYWH, C, E>(this.planArg, timeArg, ease, ref start);
-                }
-                return default;
-            }
+                => Mover.Create<S, C, Mapper, Rect, E>(this.planArg, timeArg, ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -989,279 +717,119 @@ namespace Omochaya
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        static class Mapper
+        readonly struct Mapper : Mover.IMapper<Rect>
         {
+            readonly Comb comb;
+            internal Mapper(Comb comb) => this.comb = comb;
+
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X___ : Mover.IMapper<Rect, Mover.Param1>
+            public float GetLength(Rect to, Rect from)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Rect current) => new(current.x);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param1 prm)
+                var diff = to;
+                diff.position -= from.position;
+                diff.size -= from.size;
+                switch (this.comb)
                 {
-                    current.x = prm.P0;
-                    return current;
+                    case Comb.X___: return Mathf.Abs(diff.x);
+                    case Comb._Y__: return Mathf.Abs(diff.y);
+                    case Comb.__W_: return Mathf.Abs(diff.width);
+                    case Comb.___H: return Mathf.Abs(diff.height);
+                    case Comb.XY__: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y);
+                    case Comb.__WH: return Mathf.Sqrt(diff.width * diff.width + diff.height * diff.height);
+                    case Comb.X_W_: return Mathf.Sqrt(diff.x * diff.x + diff.width * diff.width); // position と size が混じった時の長さはこれでいいのか？
+                    case Comb._Y_H: return Mathf.Sqrt(diff.y * diff.y + diff.height * diff.height);
+                    case Comb.X__H: return Mathf.Sqrt(diff.x * diff.x + diff.height * diff.height);
+                    case Comb._YW_: return Mathf.Sqrt(diff.y * diff.y + diff.width * diff.width);
+                    case Comb._YWH: return Mathf.Sqrt(diff.y * diff.y + diff.width * diff.width + diff.height * diff.height);
+                    case Comb.X_WH: return Mathf.Sqrt(diff.x * diff.x + diff.width * diff.width + diff.height * diff.height);
+                    case Comb.XY_H: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y + diff.height * diff.height);
+                    case Comb.XYW_: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y + diff.width * diff.width);
+                    case Comb.XYWH: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y + diff.width * diff.width + diff.height * diff.height);
+                    default: return default;
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _Y__ : Mover.IMapper<Rect, Mover.Param1>
+            public Rect Lerp(Rect current, Rect to, Rect diff, float rt)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Rect current) => new(current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param1 prm)
+                switch (this.comb)
                 {
-                    current.y = prm.P0;
-                    return current;
+                    case Comb.X___:
+                        current.x = to.x + diff.x * rt;
+                        return current;
+                    case Comb._Y__:
+                        current.y = to.y + diff.y * rt;
+                        return current;
+                    case Comb.__W_:
+                        current.width = to.width + diff.width * rt;
+                        return current;
+                    case Comb.___H:
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.XY__:
+                        current.x = to.x + diff.x * rt;
+                        current.y = to.y + diff.y * rt;
+                        return current;
+                    case Comb.__WH:
+                        current.width = to.width + diff.width * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.X_W_:
+                        current.x = to.x + diff.x * rt;
+                        current.width = to.width + diff.width * rt;
+                        return current;
+                    case Comb._Y_H:
+                        current.y = to.y + diff.y * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.X__H:
+                        current.x = to.x + diff.x * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb._YW_:
+                        current.y = to.y + diff.y * rt;
+                        current.width = to.width + diff.width * rt;
+                        return current;
+                    case Comb._YWH:
+                        current.y = to.y + diff.y * rt;
+                        current.width = to.width + diff.width * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.X_WH:
+                        current.x = to.x + diff.x * rt;
+                        current.width = to.width + diff.width * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.XY_H:
+                        current.x = to.x + diff.x * rt;
+                        current.y = to.y + diff.y * rt;
+                        current.height = to.height + diff.height * rt;
+                        return current;
+                    case Comb.XYW_:
+                        current.x = to.x + diff.x * rt;
+                        current.y = to.y + diff.y * rt;
+                        current.width = to.width + diff.width * rt;
+                        return current;
+                    case Comb.XYWH:
+                        current.position = to.position + diff.position * rt;
+                        current.size = to.size + diff.size * rt;
+                        return current;
+                    default: return current;
                 }
             }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __W_ : Mover.IMapper<Rect, Mover.Param1>
+            public (Rect, Rect) GetParam(Rect from, Rect to, bool isDelta)
             {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Rect current) => new(current.width);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param1 prm)
+                if (isDelta)
                 {
-                    current.width = prm.P0;
-                    return current;
+                    to.position += from.position;
+                    to.size += from.size;
                 }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct ___H : Mover.IMapper<Rect, Mover.Param1>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param1 Get(Rect current) => new(current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param1 prm)
-                {
-                    current.height = prm.P0;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XY__ : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.x, current.y);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct __WH : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.width, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.width = prm.P0;
-                    current.height = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_W_ : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.x, current.width);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.x = prm.P0;
-                    current.width = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _Y_H : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.y, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.y = prm.P0;
-                    current.height = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X__H : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.x, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.x = prm.P0;
-                    current.height = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _YW_ : Mover.IMapper<Rect, Mover.Param2>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param2 Get(Rect current) => new(current.y, current.width);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param2 prm)
-                {
-                    current.y = prm.P0;
-                    current.width = prm.P1;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct _YWH : Mover.IMapper<Rect, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Rect current) => new(current.y, current.width, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param3 prm)
-                {
-                    current.y = prm.P0;
-                    current.width = prm.P1;
-                    current.height = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct X_WH : Mover.IMapper<Rect, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Rect current) => new(current.x, current.width, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param3 prm)
-                {
-                    current.x = prm.P0;
-                    current.width = prm.P1;
-                    current.height = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XY_H : Mover.IMapper<Rect, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param3 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    current.height = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XYW_ : Mover.IMapper<Rect, Mover.Param3>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param3 Get(Rect current) => new(current.x, current.y, current.width);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param3 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    current.width = prm.P2;
-                    return current;
-                }
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct XYWH : Mover.IMapper<Rect, Mover.Param4>
-            {
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Mover.Param4 Get(Rect current) => new(current.x, current.y, current.width, current.height);
-                /// <summary>Don't touch! Only for system.</summary>
-                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public Rect Set(Rect current, Mover.Param4 prm)
-                {
-                    current.x = prm.P0;
-                    current.y = prm.P1;
-                    current.width = prm.P2;
-                    current.height = prm.P3;
-                    return current;
-                }
+                from.position -= to.position;
+                from.size -= to.size;
+                return (to, from);
             }
         }
     }

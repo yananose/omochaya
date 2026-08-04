@@ -766,153 +766,6 @@ namespace Omochaya.HiddenStory
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static class Mover
     {
-        // param ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface IParam<P>
-        {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            float Length { get; }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            P Lerp(in P b, float now);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            P Add(in P b);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            P Sub(in P b);
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Param1 : IParam<Param1>
-        {
-            internal readonly float P0;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Length => Mathf.Abs(this.P0);
-            internal Param1(float p0)
-            {
-                this.P0 = p0;
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param1 Lerp(in Param1 b, float t) => new(
-                Mathf.LerpUnclamped(this.P0, b.P0, t));
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param1 Add(in Param1 b) => new(this.P0 + b.P0);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param1 Sub(in Param1 b) => new(this.P0 - b.P0);
-        }
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Param2 : IParam<Param2>
-        {
-            internal readonly float P0, P1;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Length => new Vector2(this.P0, this.P1).magnitude; // 記述量減らしたいので（重くもないはず）
-            internal Param2(float p0, float p1)
-            {
-                this.P0 = p0;
-                this.P1 = p1;
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param2 Lerp(in Param2 b, float t) => new(
-                Mathf.LerpUnclamped(this.P0, b.P0, t),
-                Mathf.LerpUnclamped(this.P1, b.P1, t));
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param2 Add(in Param2 b) => new(this.P0 + b.P0, this.P1 + b.P1);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param2 Sub(in Param2 b) => new(this.P0 - b.P0, this.P1 - b.P1);
-        }
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Param3 : IParam<Param3>
-        {
-            internal readonly float P0, P1, P2;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Length => new Vector3(this.P0, this.P1, this.P2).magnitude;
-            internal Param3(float p0, float p1, float p2)
-            {
-                this.P0 = p0;
-                this.P1 = p1;
-                this.P2 = p2;
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param3 Lerp(in Param3 b, float t) => new(
-                Mathf.LerpUnclamped(this.P0, b.P0, t),
-                Mathf.LerpUnclamped(this.P1, b.P1, t),
-                Mathf.LerpUnclamped(this.P2, b.P2, t));
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param3 Add(in Param3 b) => new(this.P0 + b.P0, this.P1 + b.P1, this.P2 + b.P2);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param3 Sub(in Param3 b) => new(this.P0 - b.P0, this.P1 - b.P1, this.P2 - b.P2);
-        }
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Param4 : IParam<Param4>
-        {
-            internal readonly float P0, P1, P2, P3;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Length => new Vector4(this.P0, this.P1, this.P2, this.P3).magnitude;
-            internal Param4(float p0, float p1, float p2, float p3)
-            {
-                this.P0 = p0;
-                this.P1 = p1;
-                this.P2 = p2;
-                this.P3 = p3;
-            }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param4 Lerp(in Param4 b, float t) => new(
-                Mathf.LerpUnclamped(this.P0, b.P0, t),
-                Mathf.LerpUnclamped(this.P1, b.P1, t),
-                Mathf.LerpUnclamped(this.P2, b.P2, t),
-                Mathf.LerpUnclamped(this.P3, b.P3, t));
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param4 Add(in Param4 b) => new(this.P0 + b.P0, this.P1 + b.P1, this.P2 + b.P2, this.P3 + b.P3);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Param4 Sub(in Param4 b) => new(this.P0 - b.P0, this.P1 - b.P1, this.P2 - b.P2, this.P3 - b.P3);
-        }
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct ParamQ : IParam<ParamQ>
-        {
-            internal readonly Quaternion Q;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Length => Quaternion.Angle(Quaternion.identity, this.Q); // 角度にしておく
-            internal ParamQ(Quaternion q) => this.Q = q;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public ParamQ Lerp(in ParamQ b, float t) 
-                => new(Quaternion.SlerpUnclamped(this.Q, b.Q, t));
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public ParamQ Add(in ParamQ b) => new(this.Q * b.Q); // 順変換にしておく
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public ParamQ Sub(in ParamQ b) => new(this.Q * Quaternion.Inverse(b.Q)); // 逆変換にしておく
-        }
-
-        // carrier ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface ICarrier<T>
@@ -928,22 +781,20 @@ namespace Omochaya.HiddenStory
             void SetCurrent(T current);
         }
 
-        // mapper ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface IMapper<T, P>
-            where P : struct, IParam<P>
+        public interface IMapper<T>
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            P Get(T current);
+            float GetLength(T to, T from);
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            T Set(T current, P prm);
+            T Lerp(T current, T to, T diff, float rt);
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            (T, T) GetParam(T from, T to, bool isDelta);
         }
-
-        // plan ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -956,16 +807,19 @@ namespace Omochaya.HiddenStory
                 where E : struct, Story.IEase;
         }
 
-        internal readonly struct PlanArg<T, C>
+        internal readonly struct PlanArg<C, M, T>
             where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
         {
-            internal readonly T To;
             internal readonly C Carrier;
+            internal readonly M Mapper;
+            internal readonly T To;
             internal readonly bool IsDelta;
-            internal PlanArg(C carrier, T to, bool isDelta)
+            internal PlanArg(C carrier, M mapper, T to, bool isDelta)
             {
-                this.To = to;
                 this.Carrier = carrier;
+                this.Mapper = mapper;
+                this.To = to;
                 this.IsDelta = isDelta;
             }
         }
@@ -995,55 +849,40 @@ namespace Omochaya.HiddenStory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Story.Task Create<S, T, P, M, C, E>(in PlanArg<T, C> planArg, in TimeArg timeArg, E ease, ref double start)
+        internal static Story.Task Create<S, C, M, T, E>(in PlanArg<C, M, T> planArg, in TimeArg timeArg, E ease, ref double start)
             where S : struct, Story.IStepper
-            where P : struct, IParam<P>
-            where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
             where E : struct, Story.IEase
-            => Task(new Builder<S, T, P, M, C>(planArg, timeArg, ref start), ease);
+            => Task(new Creator<S, C, M, T>(planArg, timeArg, ref start), ease);
 
-        static async Story.Task Task<S, T, P, M, C, E>(Builder<S, T, P, M, C> builder, E ease)
+        static async Story.Task Task<S, C, M, T, E>(Creator<S, C, M, T> creator, E ease)
             where S : struct, Story.IStepper
-            where P : struct, IParam<P>
-            where M : struct, IMapper<T, P>
             where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
             where E : struct, Story.IEase
         {
-            var kit = builder.Build();
-            while (kit.Step(ease)) { await Story.Yield; }
+            var updater = creator.CreateUpdater();
+            while (updater.Step(ease)) { await Story.Yield; }
         }
 
-        readonly struct Target<T, P, M>
-            where P : struct, IParam<P>
-            where M : struct, IMapper<T, P>
-        {
-            readonly P to;
-            internal P To => this.to;
-            internal Target(T to) => this.to = new M().Get(to);
-            internal P Get(T p) => new M().Get(p);
-            internal float Distance(T p) => this.To.Sub(this.Get(p)).Length;
-        }
-
-        readonly struct Builder<S, T, P, M, C>
-            where S : struct, Story.IStepper
-            where P : struct, IParam<P>
-            where M : struct, IMapper<T, P>
+        readonly struct Creator<S, C, M, T>
             where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
+            where S : struct, Story.IStepper
         {
-            readonly PlanArg<T, C> planArg;
+            readonly PlanArg<C, M, T> planArg;
             readonly TimeArg timeArg;
             readonly double start;
-            // internal Builder(Target<T, P, M> target, C carrier, bool isDelta, in TimeArg arg, ref double start)
-            internal Builder(in PlanArg<T, C> planArg, in TimeArg timeArg, ref double start)
+            // internal Creator(Target<T, P, M> target, C carrier, bool isDelta, in TimeArg arg, ref double start)
+            internal Creator(in PlanArg<C, M, T> planArg, in TimeArg timeArg, ref double start)
             {
                 this.planArg = planArg;
                 this.timeArg = timeArg;
                 this.start = start;
                 if (float.Epsilon < this.timeArg.Speed)
                 {
-                    var target = new Target<T, P, M>(planArg.To);
-                    var length = planArg.IsDelta ? target.To.Length : target.Distance(planArg.Carrier.Current);
+                    var length = planArg.Mapper.GetLength(planArg.To , planArg.IsDelta ? planArg.Carrier.Current : default);
                     start += length / this.timeArg.Speed;
                 }
                 else
@@ -1052,22 +891,21 @@ namespace Omochaya.HiddenStory
                 }
             }
 
-            internal Updater<S, T, P, M, C> Build()
+            internal Updater<S, C, M, T> CreateUpdater()
             {
                 // owner 確定
                 TryKeep(this.planArg.Carrier.Self);
 
                 // from 確定
-                var target = new Target<T, P, M>(this.planArg.To);
-                var from = target.Get(this.planArg.Carrier.Current);
-                var to = target.To;
+                var from = this.planArg.Carrier.Current;
+                var to = this.planArg.To;
 
                 // interval 確定
                 var interval = this.timeArg.Interval;
                 if (float.Epsilon < this.timeArg.Speed)
                 {
-                    if (this.planArg.IsDelta) { interval = to.Length / this.timeArg.Speed; }
-                    else { interval = from.Sub(to).Length / this.timeArg.Speed; }
+                    var length = this.planArg.Mapper.GetLength(this.planArg.To , this.planArg.IsDelta ? this.planArg.Carrier.Current : default);
+                    interval = length / this.timeArg.Speed;
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
@@ -1076,14 +914,12 @@ namespace Omochaya.HiddenStory
 
                 }
 
-                // to 確定
-                if (this.planArg.IsDelta) { to = from.Add(to); }
-
                 // 生成
                 var stepper = new S();
                 var start = this.start;
                 stepper.Setup(interval, ref start);
-                return new(stepper, this.planArg.Carrier, from, to);
+                var prm = this.planArg.Mapper.GetParam(from, to, this.planArg.IsDelta);
+                return new(stepper, this.planArg, prm.Item1, prm.Item2);
             }
         }
 
@@ -1096,21 +932,22 @@ namespace Omochaya.HiddenStory
             }
         }
 
-        struct Updater<S, T, P, M, C> : Story.IUpdater
-            where S : struct, Story.IStepper
-            where P : struct, IParam<P>
-            where M : struct, IMapper<T, P>
+        struct Updater<S, C, M, T> : Story.IUpdater
             where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
+            where S : struct, Story.IStepper
         {
             S stepper;
-            C carrier; // 読み取り専用にできるらしいが、したら Update で更新されなくならないか？
-            readonly P from, to;
-            internal Updater(in S stepper, C carrier, P from, P to)
+            C carrier;
+            readonly M mapper;
+            readonly T to, diff;
+            internal Updater(in S stepper, PlanArg<C, M, T> planArg, T to, T diff)
             {
                 this.stepper = stepper;
-                this.carrier = carrier;
-                this.from = from;
+                this.carrier = planArg.Carrier;
+                this.mapper = planArg.Mapper;
                 this.to = to;
+                this.diff = diff;
             }
             internal bool Step<E>(E ease)
                 where E : struct, Story.IEase
@@ -1119,7 +956,7 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public void Update(float now)
-                => this.carrier.SetCurrent(new M().Set(this.carrier.Current, this.from.Lerp(this.to, now)));
+                => this.carrier.SetCurrent(this.mapper.Lerp(this.carrier.Current, this.to, this.diff, 1f - now));
         }
     }
 }

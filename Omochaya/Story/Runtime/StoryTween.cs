@@ -463,8 +463,8 @@ namespace Omochaya
                 if (diff <= 0)
                 {
 #if UNITY_EDITOR
-                    if (diff == 0f) { Dev.Log($"巻き戻ってるので実行しない(interrupt？)：{diff}"); }
-                    else if (timeAsDouble <= this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動？)：{diff}"); }
+                    if (timeAsDouble == this.start) { } // 初回
+                    else if (timeAsDouble < this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動)：{diff}"); }
                     else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
 #endif
                     this.seek = -1f;
@@ -493,8 +493,8 @@ namespace Omochaya
                 if (diff <= 0)
                 {
 #if UNITY_EDITOR
-                    if (diff == 0f) { Dev.Log($"巻き戻ってるので実行しない(interrupt？)：{diff}"); }
-                    else if (timeAsDouble <= this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動？)：{diff}"); }
+                    if (timeAsDouble == this.start) { } // 初回
+                    else if (timeAsDouble < this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動)：{diff}"); }
                     else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
 #endif
                     this.seek = -1f;

@@ -245,22 +245,6 @@ namespace Omochaya
         public static Carrier0 TweenAnchoredPosition(this RectTransform self)
             => new(self);
 
-        // /// <summary></summary>
-        // public static Plan<Carrier0> TweenAnchoredPositionTo(this RectTransform self, bool _ = false, float? x = null, float? y = null)
-        //     => new(new(self), false, x, y);
-
-        // /// <summary></summary>
-        // public static Plan<Carrier0> TweenAnchoredPositionBy(this RectTransform self, bool _ = true, float? x=null, float? y=null)
-        //     => new(new(self), true, x, y);
-
-        // /// <summary></summary>
-        // public static Plan<Carrier0> TweenAnchoredPositionTo(this RectTransform self, Vector2 p = default)
-        //     => new(new(self), false, p);
-
-        // /// <summary></summary>
-        // public static Plan<Carrier0> TweenAnchoredPositionBy(this RectTransform self, Vector2 p = default)
-        //     => new(new(self), true, p);
-
         // Carrier1:RectTransform.sizeDelta -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

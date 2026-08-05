@@ -14,7 +14,8 @@ namespace Omochaya
 
     public static partial class Story
     {
-        /// <summary></summary>
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IEase
         {
             /// <summary>Don't touch! Only for system.</summary>

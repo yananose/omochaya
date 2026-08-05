@@ -186,58 +186,40 @@ namespace Omochaya
             }
             
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static (Vector2, Vector2) GetParamCore(Vector2 from, Vector2 to, bool isDelta)
+            public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta)
             {
                 if (isDelta) { to += from; }
                 return (to, from - to);
             }
 
-            internal readonly struct X_ : Mover.IMapper<Vector2>
+            partial struct X_ { public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.x - from.x); }
+            partial struct _Y { public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.y - from.y); }
+            partial struct XY { public float GetLength(Vector2 to, Vector2 from) => (to - from).magnitude; }
+            partial struct X_ { public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => new Mapper().GetParam(from, to, isDelta); }
+            partial struct _Y { public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => new Mapper().GetParam(from, to, isDelta); }
+            partial struct XY { public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => new Mapper().GetParam(from, to, isDelta); }
+            internal readonly partial struct X_ : Mover.IMapper<Vector2>
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.x - from.x);
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
                 {
                     current.x = to.x + diff.x * rt;
                     return current;
                 }
-                
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
             }
-
-            internal readonly struct _Y : Mover.IMapper<Vector2>
+            internal readonly partial struct _Y : Mover.IMapper<Vector2>
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.y - from.y);
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
                 {
                     current.y = to.y + diff.y * rt;
                     return current;
                 }
-                
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
             }
-
-            internal readonly struct XY : Mover.IMapper<Vector2>
+            internal readonly partial struct XY : Mover.IMapper<Vector2>
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public float GetLength(Vector2 to, Vector2 from) => (to - from).magnitude;
-
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
-                    => to + diff * rt;
-                
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
+                {
+                    return to + diff * rt;
+                }
             }
         }
     }

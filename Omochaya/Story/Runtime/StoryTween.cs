@@ -687,7 +687,8 @@ namespace Omochaya
             return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
         }
 
-#if !STORY_NO_TIME_CACHE
+#if STORY_NO_TIME_CACHE
+#else
 
         static class Time
         {
@@ -819,6 +820,13 @@ namespace Omochaya.HiddenStory
             {
                 this.Carrier = carrier;
                 this.Mapper = mapper;
+                this.To = to;
+                this.IsDelta = isDelta;
+            }
+            internal PlanArg(C carrier, T to, bool isDelta)
+            {
+                this.Carrier = carrier;
+                this.Mapper = default;
                 this.To = to;
                 this.IsDelta = isDelta;
             }

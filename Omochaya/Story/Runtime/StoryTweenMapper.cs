@@ -34,7 +34,7 @@ namespace Omochaya
             readonly Mover.PlanArg<C, Mapper, float> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
+            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -47,17 +47,8 @@ namespace Omochaya
 
         readonly struct Mapper : Mover.IMapper<float>
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(float to, float from) => Mathf.Abs(to - from);
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (float, float) GetParam(float from, float to, bool isDelta)
             {
                 if (isDelta) { to += from; }
@@ -101,25 +92,48 @@ namespace Omochaya
         public readonly struct Plan<C> : Mover.IPlan
             where C : struct, ICarrier
         {
-            readonly Mover.PlanArg<C, Mapper, Vector2> planArg;
+            readonly C carrier;
+            readonly bool isDelta;
+            readonly Comb comb;
+            readonly Vector2 to;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, float? x, float? y)
             {
+                this.carrier = carrier;
+                this.isDelta = isDelta;
                 var result = Analyze(x, y);
-                this.planArg = new(carrier, new Mapper(result.Item1), result.Item2, isDelta);
+                this.comb = result.Item1;
+                this.to = result.Item2;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Plan(in C carrier, bool isDelta, Vector2 p)
-                => this.planArg = new(carrier, new Mapper(Comb.XY), p, isDelta);
+            {
+                this.carrier = carrier;
+                this.isDelta = isDelta;
+                this.comb = Comb.XY;
+                this.to = p;
+            }
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
-                => Mover.Create<S, C, Mapper, Vector2, E>(this.planArg, timeArg, ease, ref start);
+            {
+#if STORY_MOVER_FAST
+                switch (this.comb)
+                {
+                    case Comb.X_: return Mover.Create<S, C, Mapper.X_, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start);
+                    case Comb._Y: return Mover.Create<S, C, Mapper._Y, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start);
+                    case Comb.XY: return Mover.Create<S, C, Mapper.XY, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start);
+                    default: return default;
+                }
+#else
+                return Mover.Create<S, C, Mapper, Vector2, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+#endif
+            }
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -147,47 +161,83 @@ namespace Omochaya
             readonly Comb comb;
             internal Mapper(Comb comb) => this.comb = comb;
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Vector2 to, Vector2 from)
             {
-                var diff = to - from;
                 switch (this.comb)
                 {
-                    case Comb.X_: return Mathf.Abs(diff.x);
-                    case Comb._Y: return Mathf.Abs(diff.y);
-                    case Comb.XY: return diff.magnitude;
+                    case Comb.X_: return new X_().GetLength(to, from);
+                    case Comb._Y: return new _Y().GetLength(to, from);
+                    case Comb.XY: return new XY().GetLength(to, from);
                     default: return default;
                 }
             }
 
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
             {
                 switch (this.comb)
                 {
-                    case Comb.X_:
-                        current.x = to.x + diff.x * rt;
-                        return current;
-                    case Comb._Y:
-                        current.y = to.y + diff.y * rt;
-                        return current;
-                    case Comb.XY:
-                        return to + diff * rt;
+                    case Comb.X_: return new X_().Lerp(current, to, diff, rt);
+                    case Comb._Y: return new _Y().Lerp(current, to, diff, rt);
+                    case Comb.XY: return new XY().Lerp(current, to, diff, rt);
                     default: return current;
                 }
             }
             
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta)
+            public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static (Vector2, Vector2) GetParamCore(Vector2 from, Vector2 to, bool isDelta)
             {
                 if (isDelta) { to += from; }
                 return (to, from - to);
+            }
+
+            internal readonly struct X_ : Mover.IMapper<Vector2>
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.x - from.x);
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
+                {
+                    current.x = to.x + diff.x * rt;
+                    return current;
+                }
+                
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
+            }
+
+            internal readonly struct _Y : Mover.IMapper<Vector2>
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public float GetLength(Vector2 to, Vector2 from) => Mathf.Abs(to.y - from.y);
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
+                {
+                    current.y = to.y + diff.y * rt;
+                    return current;
+                }
+                
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
+            }
+
+            internal readonly struct XY : Mover.IMapper<Vector2>
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public float GetLength(Vector2 to, Vector2 from) => (to - from).magnitude;
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
+                    => to + diff * rt;
+                
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => GetParamCore(from, to, isDelta);
             }
         }
     }
@@ -246,30 +296,6 @@ namespace Omochaya
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
                 => Mover.Create<S, C, Mapper, Vector3, E>(this.planArg, timeArg, ease, ref start);
-
-
-            // これだと芋づる式に全部のステートマシンのコードが作られる...ヤバすぎ
-            // 毎回分岐を挟むとしてもまとめるしかないのか...（仮想メソッドよりはマシだけど）
-            // To(x:10f) とかでなく ToX(10f) と書いてもらうなら対象のステートマシンのみコードが作られるようにできるけど、折角のオシャレ感が...
-            // STORY_EASE_COMPACT があるならそれほど膨らまないのでこのままにする手も...
-            // 
-            // public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
-            //     where S : struct, Story.IStepper
-            //     where E : struct, Story.IEase
-            // {
-            //     switch (this.comb)
-            //     {
-            //         case Comb.X__: return Mover.Create<S, Vector3, Mover.Param1, Mapper.X__, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb._Y_: return Mover.Create<S, Vector3, Mover.Param1, Mapper._Y_, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb.__Z: return Mover.Create<S, Vector3, Mover.Param1, Mapper.__Z, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb._YZ: return Mover.Create<S, Vector3, Mover.Param2, Mapper._YZ, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb.X_Z: return Mover.Create<S, Vector3, Mover.Param2, Mapper.X_Z, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb.XY_: return Mover.Create<S, Vector3, Mover.Param2, Mapper.XY_, C, E>(this.planArg, timeArg, ease, ref start);
-            //         case Comb.XYZ: return Mover.Create<S, Vector3, Mover.Param3, Mapper.XYZ, C, E>(this.planArg, timeArg, ease, ref start);
-            //     }
-            //     return default;
-            // }
-
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -590,7 +616,7 @@ namespace Omochaya
             readonly Mover.PlanArg<C, Mapper, Quaternion> planArg;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Quaternion p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
+            internal Plan(in C carrier, bool isDelta, Quaternion p) => this.planArg = new(carrier, p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -601,7 +627,6 @@ namespace Omochaya
                 => Mover.Create<S, C, Mapper, Quaternion, E>(this.planArg, timeArg, ease, ref start);
         }
 
-        // ToDo. 合ってるか要確認！！
         readonly struct Mapper : Mover.IMapper<Quaternion>
         {
             /// <summary>Don't touch! Only for system.</summary>
@@ -668,7 +693,7 @@ namespace Omochaya
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Rect p) => this.planArg = new(carrier, new Mapper(), p, isDelta);
+            internal Plan(in C carrier, bool isDelta, Rect p) => this.planArg = new(carrier, p, isDelta);
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -737,7 +762,7 @@ namespace Omochaya
                     case Comb.___H: return Mathf.Abs(diff.height);
                     case Comb.XY__: return Mathf.Sqrt(diff.x * diff.x + diff.y * diff.y);
                     case Comb.__WH: return Mathf.Sqrt(diff.width * diff.width + diff.height * diff.height);
-                    case Comb.X_W_: return Mathf.Sqrt(diff.x * diff.x + diff.width * diff.width); // position と size が混じった時の長さはこれでいいのか？
+                    case Comb.X_W_: return Mathf.Sqrt(diff.x * diff.x + diff.width * diff.width);
                     case Comb._Y_H: return Mathf.Sqrt(diff.y * diff.y + diff.height * diff.height);
                     case Comb.X__H: return Mathf.Sqrt(diff.x * diff.x + diff.height * diff.height);
                     case Comb._YW_: return Mathf.Sqrt(diff.y * diff.y + diff.width * diff.width);

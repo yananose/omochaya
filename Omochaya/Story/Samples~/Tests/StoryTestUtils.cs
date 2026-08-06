@@ -6,7 +6,68 @@ namespace OmochayaTests
     using System;
     using UnityEngine.TestTools;
     using System.Diagnostics;
+    using Omochaya;
 
+    // ------------------------------------------------------------------------
+    // テスト用のランナー（共有）
+    // ------------------------------------------------------------------------
+    internal class StoryTestRunner : MonoBehaviour
+    {
+        static StoryTestRunner instance;
+
+        internal static void Require()
+        {
+            if (instance == null)
+            {
+                instance = new GameObject("StoryTestRunner").AddComponent<StoryTestRunner>();
+            }
+        }
+
+        internal static void Dispose()
+        {
+            if (instance != null)
+            {
+                UnityEngine.Object.DestroyImmediate(instance.gameObject);
+                instance = null;
+            }
+        }
+
+        void Awake()
+        {
+            // 【任意】キャンセルモードの指定
+            Story.DefaultCancelMode = Story.CancelMode.Safe;
+
+            // 【任意】一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
+            Story.Warmup(1024);
+
+            // 【任意】各タスクのプールの事前確保
+            using (Story.WarmupMode())
+            {
+                // 使用するタスクのプールを事前確保する
+                // ※Capacity属性が設定されていればそのサイズ、引数で上書きも可能
+                Story.WaitTime(0f).Warmup();
+            }
+        }
+
+        void Update() 
+        { 
+            using (Utils.Check()) { Story.Update(); }
+        }
+
+        void LateUpdate()
+        {
+            using (Utils.Check()) { Story.LateUpdate(); }
+        }
+
+        void FixedUpdate()
+        {
+            using (Utils.Check()) { Story.FixedUpdate(); }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // ユーティリティ
+    // ------------------------------------------------------------------------
     static class Utils
     {
         // inner classes

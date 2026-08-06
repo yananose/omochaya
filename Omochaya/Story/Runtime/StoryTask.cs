@@ -230,7 +230,7 @@ namespace Omochaya
             public void Keep(Component owner)
             {
                 if (IsValid) { this.Info().Keep(owner); }
-                else { Dev.LogError(Messages.Exceptions.CannotOperateInvalidTask); }
+                else if (!TaskWarmup.IsValid) { Dev.LogError(Messages.Exceptions.CannotOperateInvalidTask); }
             }
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>

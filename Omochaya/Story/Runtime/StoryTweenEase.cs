@@ -90,6 +90,34 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly struct ReverseImpl<C> : IEase
+                where C : struct, IEase
+            {
+                // for iease
+
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public readonly float Calc(float now)
+                {
+                    now = 1f - now;
+                    now = this.calc.Calc(now);
+                    return now;
+                }
+
+                // fields
+                readonly C calc;
+
+                // constructors
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                internal ReverseImpl(C calc)
+                {
+                    this.calc = calc;
+                }
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct InverseImpl<C> : IEase
                 where C : struct, IEase
             {
@@ -213,7 +241,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public readonly struct JoinImpl<E, C> : IEase
+            public readonly struct StitchImpl<E, C> : IEase
                 where E : struct, IEase
                 where C : struct, IEase
             {
@@ -226,16 +254,16 @@ namespace Omochaya
                 {
                     if (now <= 0f) { return 0f; }
                     if (1f <= now) { return 1f; }
-                    if (now < this.split)
+                    if (now < this.seam)
                     {
                         // 前半
-                        var t = now / this.split;
+                        var t = now / this.seam;
                         return this.prev.Calc(t) * this.weight;
                     }
                     else
                     {
                         // 後半
-                        var t = (now - this.split) / (1f - this.split);
+                        var t = (now - this.seam) / (1f - this.seam);
                         return this.weight + this.calc.Calc(t) * (1f - this.weight);
                     }
                 }
@@ -243,17 +271,17 @@ namespace Omochaya
                 // fields
                 readonly E prev;
                 readonly C calc;
-                readonly float split;
+                readonly float seam;
                 readonly float weight;
 
                 // properties
 
-                /// <summary>Calculates the optimal split point for joining multiple easing functions evenly.</summary>
-                internal float EvenSplit
+                /// <summary>Calculates the optimal seam point for stitching multiple easing functions evenly.</summary>
+                internal float EvenSeam
                 {
                     get
                     {
-                        var b = 1f - this.split;
+                        var b = 1f - this.seam;
                         if (Mathf.Approximately(b, 0f)) { return 1f; }
                         var count = Mathf.RoundToInt(1f / b);
                         return 1f - 1f / (count + 1);
@@ -262,17 +290,17 @@ namespace Omochaya
 
                 // constructors
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                internal JoinImpl(E prev, C calc, float split)
+                internal StitchImpl(E prev, C calc, float seam)
                 {
                     this.prev = prev;
                     this.calc = calc;
-                    this.weight = GetWeight(ref split, prev, calc);
-                    this.split = split;
+                    this.weight = GetWeight(ref seam, prev, calc);
+                    this.seam = seam;
                 }
-                static float GetWeight(ref float split, in E prev, in C calc)
+                static float GetWeight(ref float seam, in E prev, in C calc)
                 {
-                    if (split <= 0f) { split = 0f; return 0f; }
-                    if (1f <= split) { split = 1f; return 1f; }
+                    if (seam <= 0f) { seam = 0f; return 0f; }
+                    if (1f <= seam) { seam = 1f; return 1f; }
 
                     const float tip = 1f / 128;
                     var p = prev.Calc(1f) - prev.Calc(1f - tip);
@@ -280,12 +308,11 @@ namespace Omochaya
                     p /= tip;
                     q /= tip;
 
-                    // 傾きがゼロに近いときは計算誤差が暴発するので split をそのまま適用する
-                    if (-tip < p*q && p*q < tip) { return split; }
+                    // 傾きがゼロに近いときは計算誤差が暴発するので seam をそのまま適用する
+                    if (-tip < p*q && p*q < tip) { return seam; }
 
-                    var a = q * split;
-                    var b = p - p * split + q * split;
-
+                    var a = q * seam;
+                    var b = p - p * seam + q * seam;
                     if (!Mathf.Approximately(b, 0f)) { return a / b; }
                     Dev.LogError(Messages.Exceptions.CannotJoinEase);
                     return 1f;
@@ -720,31 +747,31 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.FixImpl<E> Fix<E>(this E prev) where E : struct, IEase => new(prev);
 
-        /// <summary>Combines two easing functions at the default midpoint split ratio of 0.5.</summary>
+        /// <summary>Combines two easing functions at the default midpoint seam ratio of 0.5.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.JoinImpl<E, C> Join<E, C>(this E prev, C calc)
+        public static Ease.StitchImpl<E, C> Stitch<E, C>(this E prev, C calc)
             where E : struct, IEase
             where C : struct, IEase
             => new(prev, calc, 0.5f);
 
-        /// <summary>Combines two easing functions at a custom split ratio.</summary>
+        /// <summary>Combines two easing functions at a custom seam ratio.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.JoinImpl<E, C> Join<E, C>(this E prev, float split, C calc)
+        public static Ease.StitchImpl<E, C> Stitch<E, C>(this E prev, float seam, C calc)
             where E : struct, IEase
             where C : struct, IEase
-            => new(prev, calc, split);
+            => new(prev, calc, seam);
 
-        /// <summary>Chains a third easing function into an existing joined easing composition using even split distribution.</summary>
+        /// <summary>Chains a third easing function into an existing stitched easing composition using even seam distribution.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.JoinImpl<Ease.JoinImpl<A, B>, C> Join<A, B, C>(this Ease.JoinImpl<A, B> prev, C calc)
+        public static Ease.StitchImpl<Ease.StitchImpl<A, B>, C> Stitch<A, B, C>(this Ease.StitchImpl<A, B> prev, C calc)
             where A : struct, IEase
             where B : struct, IEase
             where C : struct, IEase
-            => new(prev, calc, prev.EvenSplit);
+            => new(prev, calc, prev.EvenSeam);
 
-        /// <summary>Combines two existing joined easing pairs into a four-stage easing sequence.</summary>
+        /// <summary>Combines two existing stitched easing pairs into a four-stage easing sequence.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.JoinImpl<Ease.JoinImpl<A, B>, Ease.JoinImpl<C, D>> Join<A, B, C, D>(this Ease.JoinImpl<A, B> prev, Ease.JoinImpl<C, D> calc)
+        public static Ease.StitchImpl<Ease.StitchImpl<A, B>, Ease.StitchImpl<C, D>> Stitch<A, B, C, D>(this Ease.StitchImpl<A, B> prev, Ease.StitchImpl<C, D> calc)
             where A : struct, IEase
             where B : struct, IEase
             where C : struct, IEase
@@ -753,7 +780,7 @@ namespace Omochaya
 
         /// <summary>Applies a reversal modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.ReverseImpl> Reverse<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.ReverseImpl<E> Reverse<E>(this E prev) where E : struct, IEase => new(new());
 
         /// <summary>Applies sinusoidal acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

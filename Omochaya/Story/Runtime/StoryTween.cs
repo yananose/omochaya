@@ -482,11 +482,10 @@ namespace Omochaya
             {
                 var timeAsDouble = Time.timeAsDouble;
                 var diff = timeAsDouble - this.prev;
-                if (diff <= 0)
+                if (diff < 0)
                 {
 #if UNITY_EDITOR
-                    if (timeAsDouble == this.start) { } // 初回
-                    else if (timeAsDouble < this.start) { Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff)); }
+                    if (timeAsDouble < this.start) { Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff)); }
                     else { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundA, diff)); }
 #endif
                     this.seek = -1f;
@@ -603,7 +602,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new Stepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation task driven by movement speed and easing, starting immediately.</summary>
@@ -613,7 +612,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetStart();
-            return plan.CreateTask(new Stepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task driven by movement speed, starting at a designated time.</summary>
@@ -622,7 +621,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task driven by movement speed, starting immediately.</summary>
@@ -632,7 +631,7 @@ namespace Omochaya
         {
             var start = GetStart();
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task executed over a specific interval with easing, starting at a designated time.</summary>
@@ -679,7 +678,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task driven by movement speed and easing, starting immediately.</summary>
@@ -689,7 +688,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetUnscaledStart();
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task driven by movement speed, starting at a designated time.</summary>
@@ -698,7 +697,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task driven by movement speed, starting immediately.</summary>
@@ -708,11 +707,12 @@ namespace Omochaya
         {
             var start = GetUnscaledStart();
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
+            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
         }
 
+        /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Component GetOwner(Component self, Component owner)
+        public static Component GetOwner(Component self, Component owner)
         {
             if (owner != null) { return owner; }
             if (self.TryGetComponent<ITaskOwner>(out var other)) { return (Component)other; }
@@ -892,16 +892,21 @@ namespace Omochaya.HiddenStory
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly float Speed;
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public readonly bool IsSpeed;
 
             // constructors
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public TimeArg(float interval = 0f, float speed = 0f)
+            public TimeArg(float interval = 0f, float speed = 0f, bool isSpeed = false)
             {
+                Dev.Assert(0f <= interval && 0f <= speed);
                 this.Interval = interval;
                 this.Speed = speed;
+                this.IsSpeed = isSpeed;
             }
         }
 
@@ -921,6 +926,7 @@ namespace Omochaya.HiddenStory
             where E : struct, Story.IEase
         {
             var updater = creator.CreateUpdater();
+            if (!updater.IsValid) { return; }
             while (updater.Step(ease)) { await Story.Yield; }
         }
 
@@ -943,14 +949,14 @@ namespace Omochaya.HiddenStory
                 this.planArg = planArg;
                 this.timeArg = timeArg;
                 this.start = start;
-                if (float.Epsilon < this.timeArg.Speed)
+                if (!this.timeArg.IsSpeed)
+                {
+                    start += this.timeArg.Interval;
+                }
+                else if (float.Epsilon < this.timeArg.Speed)
                 {
                     var length = planArg.Mapper.GetLength(planArg.To , planArg.IsDelta ? planArg.Carrier.Current : default);
                     start += length / this.timeArg.Speed;
-                }
-                else
-                {
-                    start += this.timeArg.Interval;
                 }
             }
 
@@ -974,7 +980,18 @@ namespace Omochaya.HiddenStory
                     // 変化したら警告
                     if ((float.Epsilon < this.timeArg.Interval) && this.timeArg.Interval != interval) { Dev.LogWarning(Messages.Warnings.MovementDurationChanged); }
 #endif
-
+                }
+                else if (this.timeArg.IsSpeed)
+                {
+                    // 速度が小さい場合は開始地点で終了させる
+                    this.planArg.Carrier.SetCurrent(from);
+                    return default;
+                }
+                else if (interval <= float.Epsilon)
+                {
+                    // 間隔が小さい場合は終了地点で終了させる
+                    this.planArg.Carrier.SetCurrent(to);
+                    return default;
                 }
 
                 // 生成
@@ -998,6 +1015,7 @@ namespace Omochaya.HiddenStory
             C carrier;
             readonly M mapper;
             readonly T to, diff;
+            internal readonly bool IsValid;
 
             // constructors
 
@@ -1009,6 +1027,7 @@ namespace Omochaya.HiddenStory
                 this.mapper = planArg.Mapper;
                 this.to = to;
                 this.diff = diff;
+                this.IsValid = true;
             }
 
             // methods

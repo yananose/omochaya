@@ -513,11 +513,10 @@ namespace Omochaya
             {
                 var timeAsDouble = Time.unscaledTimeAsDouble;
                 var diff = timeAsDouble - this.prev;
-                if (diff <= 0)
+                if (diff < 0)
                 {
 #if UNITY_EDITOR
-                    if (timeAsDouble == this.start) { } // 初回
-                    else if (timeAsDouble < this.start) { /*Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff));*/ }
+                    if (timeAsDouble < this.start) { /*Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff));*/ }
                     else { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundA, diff)); }
 #endif
                     this.seek = -1f;

@@ -557,7 +557,6 @@ namespace Omochaya.HiddenStory
             WillCancel = 1 << 5,
             CancelMode0 = 1 << 6,
             CancelMode1 = 1 << 7,
-            IsTryKeeped = 1 << 8,
         }
 
         // fields
@@ -664,16 +663,6 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public bool IsTryKeeped
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            readonly get => (this.flags & Flags.IsTryKeeped) != 0;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { if (value) { this.flags |= Flags.IsTryKeeped; } else { this.flags &= ~Flags.IsTryKeeped; } }
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -732,7 +721,6 @@ namespace Omochaya.HiddenStory
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;
             IsPinned = false; // ピン留めを外してオーナー依存に戻す
-            IsTryKeeped = false;
         }
 
         /// <summary>Don't touch! Only for system.</summary>

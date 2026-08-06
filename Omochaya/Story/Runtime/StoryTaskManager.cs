@@ -383,7 +383,6 @@ Dev.LoopBreak.Check(topInfo.GetMethodName());
             ref var runningInfo = ref GetRunningInfo();
             if (runningInfo.IsPinned) { info.IsPinned = true; } // ピン留めされてるタスクから起動されたらピン留めする
             else { info.Keep(runningInfo.Owner); }
-            info.IsTryKeeped = true;
         }
 
         // ここから出ると

@@ -711,6 +711,14 @@ namespace Omochaya
             return plan.CreateTask(new UnscaledStepper(), new(0f, speed), ease, ref start);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Component GetOwner(Component self, Component owner)
+        {
+            if (owner != null) { return owner; }
+            if (self.TryGetComponent<ITaskOwner>(out var other)) { return (Component)other; }
+            return self;
+        }
+
 #if STORY_NO_TIME_CACHE
 #else
 
@@ -803,7 +811,7 @@ namespace Omochaya.HiddenStory
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            Component Self { get; }
+            Component Owner { get; }
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             T Current { get; }
@@ -903,7 +911,7 @@ namespace Omochaya.HiddenStory
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
             where E : struct, Story.IEase
-            => Task(new Creator<S, C, M, T>(planArg, timeArg, ref start), ease);
+            => Task(new Creator<S, C, M, T>(planArg, timeArg, ref start), ease).At(planArg.Carrier.Owner);
 
         // task
         static async Story.Task Task<S, C, M, T, E>(Creator<S, C, M, T> creator, E ease)
@@ -951,9 +959,6 @@ namespace Omochaya.HiddenStory
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる（インライン化するとeaseごとに生成されるので）
             internal Updater<S, C, M, T> CreateUpdater()
             {
-                // owner 確定
-                TryKeep(this.planArg.Carrier.Self);
-
                 // from 確定
                 var from = this.planArg.Carrier.Current;
                 var to = this.planArg.To;
@@ -978,16 +983,6 @@ namespace Omochaya.HiddenStory
                 stepper.Setup(interval, ref start);
                 var prm = this.planArg.Mapper.GetParam(from, to, this.planArg.IsDelta);
                 return new(stepper, this.planArg, prm.Item1, prm.Item2);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-        static void TryKeep(Component self)
-        {
-            if (Story.IsTryKeeped)
-            {
-                if (self.TryGetComponent<Story.ITaskOwner>(out var owner)) { Story.At((Component)owner); }
-                else { Story.At(self); }
             }
         }
 

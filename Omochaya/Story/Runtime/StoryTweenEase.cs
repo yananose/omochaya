@@ -315,7 +315,7 @@ namespace Omochaya
                     var b = p - p * seam + q * seam;
                     if (!Mathf.Approximately(b, 0f)) { return a / b; }
                     Dev.LogError(Messages.Exceptions.CannotJoinEase);
-                    return 1f;
+                    return seam;
                 }
             }
 
@@ -780,7 +780,7 @@ namespace Omochaya
 
         /// <summary>Applies a reversal modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.ReverseImpl<E> Reverse<E>(this E prev) where E : struct, IEase => new(new());
+        public static Ease.ReverseImpl<E> Reverse<E>(this E prev) where E : struct, IEase => new(prev);
 
         /// <summary>Applies sinusoidal acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

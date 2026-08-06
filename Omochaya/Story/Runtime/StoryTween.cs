@@ -486,8 +486,8 @@ namespace Omochaya
                 {
 #if UNITY_EDITOR
                     if (timeAsDouble == this.start) { } // 初回
-                    else if (timeAsDouble < this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動)：{diff}"); }
-                    else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
+                    else if (timeAsDouble < this.start) { Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff)); }
+                    else { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundA, diff)); }
 #endif
                     this.seek = -1f;
                     return;
@@ -497,14 +497,14 @@ namespace Omochaya
                 if (delta * 1.25 < diff)
                 {
                     diff -= delta;
-                    Dev.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
+                    Dev.LogWarning(string.Format(Messages.Warnings.SkippedUnexecutedFrames, diff));
                     this.start += diff;
                 }
                 this.prev = timeAsDouble;
 
                 var seek = (float)(timeAsDouble - this.start);
 #if UNITY_EDITOR
-                if (seek < 0f) { Dev.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
+                if (seek < 0f) { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundB, seek)); }
 #endif
                 this.seek = seek;
             }
@@ -518,8 +518,8 @@ namespace Omochaya
                 {
 #if UNITY_EDITOR
                     if (timeAsDouble == this.start) { } // 初回
-                    else if (timeAsDouble < this.start) { Dev.Log($"巻き戻ってるので実行しない(SetStart で遅延起動)：{diff}"); }
-                    else { Dev.LogWarning($"巻き戻ってるので実行しない(A)：{diff}"); }
+                    else if (timeAsDouble < this.start) { Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff)); }
+                    else { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundA, diff)); }
 #endif
                     this.seek = -1f;
                     return;
@@ -529,14 +529,14 @@ namespace Omochaya
                 if (delta * 1.25 < diff)
                 {
                     diff -= delta;
-                    Dev.LogWarning($"実行してないフレームがあったので飛ばす：{diff}");
+                    Dev.LogWarning(string.Format(Messages.Warnings.SkippedUnexecutedFrames, diff));
                     this.start += diff;
                 }
                 this.prev = timeAsDouble;
 
                 var seek = (float)(timeAsDouble - this.start);
 #if UNITY_EDITOR
-                if (seek < 0f) { Dev.LogWarning($"巻き戻ってるので実行しない(B)：{seek}"); }
+                if (seek < 0f) { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundB, seek)); }
 #endif
                 this.seek = seek;
             }
@@ -743,7 +743,7 @@ namespace Omochaya
                 var customLoop = new PlayerLoopSystem { type = typeof(Time), updateDelegate = Time.UpdateCache };
 
                 if (PlayerLoopUtility.AppendToPhase<EarlyUpdate>(ref defaultLoop, customLoop)) { PlayerLoop.SetPlayerLoop(defaultLoop); }
-                else { Dev.LogError("[TimeCache] プレイヤーループへの挿入に失敗しました。"); }
+                else { Dev.LogError(Messages.Exceptions.TimeCacheInjectionFailed); }
             }
         }
 
@@ -967,7 +967,7 @@ namespace Omochaya.HiddenStory
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
                     // 変化したら警告
-                    if ((float.Epsilon < this.timeArg.Interval) && this.timeArg.Interval != interval) { Dev.LogWarning("移動期間が変化しました"); }
+                    if ((float.Epsilon < this.timeArg.Interval) && this.timeArg.Interval != interval) { Dev.LogWarning(Messages.Warnings.MovementDurationChanged); }
 #endif
 
                 }

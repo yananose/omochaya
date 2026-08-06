@@ -104,7 +104,7 @@ namespace Omochaya
             var bits = 0;
             bits <<= 1; if (x != null) { bits |= 1; } 
             bits <<= 1; if (y != null) { bits |= 1; } 
-            Dev.Assert(bits == 0, "引数が不正");
+            Dev.Assert(bits == 0, Messages.Exceptions.InvalidArguments);
             return bits switch
                 {
                     0b10 => Comb.X_,
@@ -283,7 +283,7 @@ namespace Omochaya
             bits <<= 1; if (x != null) { bits |= 1; } 
             bits <<= 1; if (y != null) { bits |= 1; } 
             bits <<= 1; if (z != null) { bits |= 1; } 
-            Dev.Assert(bits == 0, "引数が不正");
+            Dev.Assert(bits == 0, Messages.Exceptions.InvalidArguments);
             return bits switch
                 {
                     0b100 => Comb.X__,
@@ -529,7 +529,7 @@ namespace Omochaya
             bits <<= 1; if (g != null) { bits |= 1; } 
             bits <<= 1; if (b != null) { bits |= 1; } 
             bits <<= 1; if (a != null) { bits |= 1; } 
-            Dev.Assert(bits == 0, "引数が不正");
+            Dev.Assert(bits == 0, Messages.Exceptions.InvalidArguments);
             return bits switch
                 {
                     0b1000 => Comb.R___,
@@ -966,7 +966,7 @@ namespace Omochaya
             bits <<= 1; if (y != null) { bits |= 1; } 
             bits <<= 1; if (width != null) { bits |= 1; } 
             bits <<= 1; if (height != null) { bits |= 1; } 
-            Dev.Assert(bits == 0, "引数が不正");
+            Dev.Assert(bits == 0, Messages.Exceptions.InvalidArguments);
             return bits switch
                 {
                     0b1000 => Comb.X___,

@@ -44,6 +44,10 @@ namespace Omochaya.HiddenStory
             internal const string MustWarmupInBlock = "using(WarmupMode()){{}} 内で作成したタスクはブロック内で Warmup() してください";
             internal const string MustWarmupImmediately = "using(WarmupMode()){{}} 内で作成したタスクは Warmup() 以外の目的で使用することはできません。即座に Warmup() してください : {0}";
             internal const string MustSpecifyTaskInWarmupMode = "Warmupモード中に作成したタスクを指定してください";
+            internal const string InvalidArguments = "引数が不正です。";
+            internal const string CannotNormalizeEase = "始点と終点が近すぎるため正規化できません。";
+            internal const string CannotJoinEase = "イージング関数を結合できません。";
+            internal const string TimeCacheInjectionFailed = "[TimeCache] プレイヤーループへの挿入に失敗しました。";
         }
 
         // ------------------------------------------------------------------------
@@ -57,7 +61,12 @@ namespace Omochaya.HiddenStory
             internal const string UnhandledResult = "結果が受け取られませんでした：{0}";
             internal const string ResizingAllocatedPool = "割り当て済みのプールをリサイズします。初期容量を指定したい場合は using(WarmupMode()){{}} 内で Warmup() してください : {0}";
             internal const string IgnoredWarmupForAllocatedPool = "割り当て済みのプールを Warmup() しようとしたため無視します : {0}";
-            internal const string PoolCapacityInitFailed = "Pool capacity initialization failed for {0}";
+            internal const string PoolCapacityInitFailed = "{0} のプール容量の初期化に失敗しました。";
+            internal const string TimeRewoundDelayedStart = "巻き戻ってるので実行しない(SetStart で遅延起動)：{0}";
+            internal const string TimeRewoundA = "巻き戻ってるので実行しない(A)：{0}";
+            internal const string TimeRewoundB = "巻き戻ってるので実行しない(B)：{0}";
+            internal const string SkippedUnexecutedFrames = "実行してないフレームがあったので飛ばす：{0}";
+            internal const string MovementDurationChanged = "移動期間が変化しました。";
         }
 
         // ------------------------------------------------------------------------
@@ -129,6 +138,10 @@ namespace Omochaya.HiddenStory
             internal const string MustWarmupInBlock = "Tasks created inside using(WarmupMode()){{}} must be warmed up within the block.";
             internal const string MustWarmupImmediately = "Tasks created inside using(WarmupMode()){{}} cannot be used for any purpose other than Warmup(). Please call Warmup() immediately : {0}";
             internal const string MustSpecifyTaskInWarmupMode = "Please specify a task created during Warmup mode.";
+            internal const string InvalidArguments = "Invalid arguments.";
+            internal const string CannotNormalizeEase = "Cannot normalize because the start and end points are too close.";
+            internal const string CannotJoinEase = "Cannot join easing functions.";
+            internal const string TimeCacheInjectionFailed = "[TimeCache] Failed to inject into the PlayerLoop.";
         }
 
         // ------------------------------------------------------------------------
@@ -143,6 +156,11 @@ namespace Omochaya.HiddenStory
             internal const string ResizingAllocatedPool = "Resizing an already allocated pool. If you want to specify the initial capacity, please call Warmup() inside using(WarmupMode()){{}} : {0}";
             internal const string IgnoredWarmupForAllocatedPool = "Ignored an attempt to call Warmup() on an already allocated pool : {0}";
             internal const string PoolCapacityInitFailed = "Pool capacity initialization failed for {0}";
+            internal const string TimeRewoundDelayedStart = "Time has rewound, execution skipped (Delayed start via SetStart): {0}";
+            internal const string TimeRewoundA = "Time has rewound, execution skipped (A): {0}";
+            internal const string TimeRewoundB = "Time has rewound, execution skipped (B): {0}";
+            internal const string SkippedUnexecutedFrames = "Skipping unexecuted frames: {0}";
+            internal const string MovementDurationChanged = "Movement duration has changed.";
         }
 
         // ------------------------------------------------------------------------

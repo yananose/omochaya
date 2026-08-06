@@ -205,7 +205,7 @@ namespace Omochaya
                     this.length = prev.Calc(1f) - this.start;
                     if (Mathf.Approximately(this.length, 0f))
                     {
-                        Dev.LogError("始点と終点が近すぎるため正規化できません");
+                        Dev.LogError(Messages.Exceptions.CannotNormalizeEase);
                         this.length = this.length < 0f ? -float.Epsilon : float.Epsilon;
                     }
                 }
@@ -287,7 +287,7 @@ namespace Omochaya
                     var b = p - p * split + q * split;
 
                     if (!Mathf.Approximately(b, 0f)) { return a / b; }
-                    Dev.LogError("結合できない");
+                    Dev.LogError(Messages.Exceptions.CannotJoinEase);
                     return 1f;
                 }
             }

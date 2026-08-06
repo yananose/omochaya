@@ -4,6 +4,7 @@
 //   Licensed under the MIT License. See LICENSE in the project root for license information.
 // </copyright>
 // <summary>
+// Defines zero-allocation, type-specialized tween mapping extensions and structural plans for various Unity mathematical types.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 namespace Omochaya
@@ -12,13 +13,15 @@ namespace Omochaya
     using Omochaya.HiddenStory;
     using System.Runtime.CompilerServices;
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryFloat ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, float p) where C : struct, ICarrier => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, float p) where C : struct, ICarrier => new(self, true, p);
 
@@ -38,7 +41,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -47,41 +50,46 @@ namespace Omochaya
 
         readonly struct Mapper : Mover.IMapper<float>
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(float to, float from) => Mathf.Abs(to - from);
-            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (float, float) GetParam(float from, float to, bool isDelta)
             {
                 if (isDelta) { to += from; }
                 return (to, from - to);
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
         }
     }
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
-            where C : struct, ICarrier
-            => new(self, false, x, y);
-
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null)
-            where C : struct, ICarrier
-            => new(self, true, x, y);
-
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, Vector2 p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, Vector2 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
+            where C : struct, ICarrier
+            => new(self, false, x, y);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null)
+            where C : struct, ICarrier
+            => new(self, true, x, y);
 
         enum Comb
         {
@@ -90,6 +98,7 @@ namespace Omochaya
             XY
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
         static Comb Analyze(float? x, float? y)
         {
             var bits = 0;
@@ -139,6 +148,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -160,6 +170,8 @@ namespace Omochaya
         readonly struct Mapper : Mover.IMapper<Vector2>
         {
             readonly Comb comb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -228,31 +240,33 @@ namespace Omochaya
         }
     }
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
-            where C : struct, ICarrier
-            => new(self, false, x, y, z);
-
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? z = null)
-            where C : struct, ICarrier
-            => new(self, true, x, y, z);
-
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Vector3 p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Vector3 p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
+            where C : struct, ICarrier
+            => new(self, false, x, y, z);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? z = null)
+            where C : struct, ICarrier
+            => new(self, true, x, y, z);
 
         enum Comb
         {
@@ -262,6 +276,7 @@ namespace Omochaya
             XYZ
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
         static Comb Analyze(float? x, float? y, float? z)
         {
             var bits = 0;
@@ -316,6 +331,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -341,6 +357,8 @@ namespace Omochaya
         readonly struct Mapper : Mover.IMapper<Vector3>
         {
             readonly Comb comb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -464,31 +482,33 @@ namespace Omochaya
         }
     }
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
-            where C : struct, ICarrier
-            => new(self, false, r, g, b, a);
-
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? r = null, float? g = null, float? b = null, float? a = null)
-            where C : struct, ICarrier
-            => new(self, true, r, g, b, a);
-
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Color p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Color p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
+            where C : struct, ICarrier
+            => new(self, false, r, g, b, a);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> By<C>(this C self, bool _ = true, float? r = null, float? g = null, float? b = null, float? a = null)
+            where C : struct, ICarrier
+            => new(self, true, r, g, b, a);
 
         enum Comb
         {
@@ -501,6 +521,7 @@ namespace Omochaya
             RGBA
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
         static Comb Analyze(float? r, float? g, float? b, float? a)
         {
             var bits = 0;
@@ -564,6 +585,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -597,6 +619,8 @@ namespace Omochaya
         readonly struct Mapper : Mover.IMapper<Color>
         {
             readonly Comb comb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -835,15 +859,17 @@ namespace Omochaya
         }
     }
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Quaternion p)
             where C : struct, ICarrier
             => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Quaternion p)
             where C : struct, ICarrier
@@ -865,7 +891,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -893,31 +919,33 @@ namespace Omochaya
         }
     }
 
+    /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? width = null, float? height = null)
-            where C : struct, ICarrier
-            => new(self, false, x, y, width, height);
-
-        /// <summary></summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? width = null, float? height = null)
-            where C : struct, ICarrier
-            => new(self, true, x, y, width, height);
-
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> To<C>(this C self, in Rect p = default)
             where C : struct, ICarrier
             => new(self, false, p);
 
-        /// <summary></summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Plan<C> By<C>(this C self, in Rect p = default)
             where C : struct, ICarrier
             => new(self, true, p);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? width = null, float? height = null)
+            where C : struct, ICarrier
+            => new(self, false, x, y, width, height);
+
+        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? width = null, float? height = null)
+            where C : struct, ICarrier
+            => new(self, true, x, y, width, height);
 
         enum Comb
         {
@@ -930,6 +958,7 @@ namespace Omochaya
             XYWH
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
         static Comb Analyze(float? x, float? y, float? width, float? height)
         {
             var bits = 0;
@@ -993,6 +1022,7 @@ namespace Omochaya
 
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
             public Story.Task CreateTask<S, E>(in S _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where S : struct, Story.IStepper
                 where E : struct, Story.IEase
@@ -1026,6 +1056,8 @@ namespace Omochaya
         readonly struct Mapper : Mover.IMapper<Rect>
         {
             readonly Comb comb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1277,8 +1309,12 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float GetLength(float a0, float b0, float a1, float b1)
             => Mathf.Sqrt((a0 - b0) * (a0 - b0) + (a1 - b1) * (a1 - b1));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float GetLength(float a0, float b0, float a1, float b1, float a2, float b2)
             => Mathf.Sqrt((a0 - b0) * (a0 - b0) + (a1 - b1) * (a1 - b1) + (a2 - b2) * (a2 - b2));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float GetLength(float a0, float b0, float a1, float b1, float a2, float b2, float a3, float b3)
             => Mathf.Sqrt((a0 - b0) * (a0 - b0) + (a1 - b1) * (a1 - b1) + (a2 - b2) * (a2 - b2) + (a3 - b3) * (a3 - b3));
     }

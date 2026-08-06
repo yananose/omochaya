@@ -60,10 +60,10 @@ RPGイベント / 会話システム / ターン制バトル / カットシー�
 ## ⚙️ 動作要件 (Requirements)
 
 * **Tested on:** Unity 6.3
-* **Language:** C# 8.0 以上
+* **Language:** C# 9.0 以上
 
 > **Note:**
-> 本フレームワークは C# 8.0 の機能や `System.Runtime.CompilerServices.Unsafe` などを利用しているため、理論上は **Unity 2021.3 LTS 以降** であれば動作するはずです。
+> 本フレームワークは C# 9.0 の機能や `System.Runtime.CompilerServices.Unsafe` などを利用しているため、理論上は **Unity 2022.3 LTS 以降** であれば動作するはずです。
 
 ---
 
@@ -194,6 +194,7 @@ public class HeavyActor : Story.TaskBehaviour
 * `STORY_FULL_TUNE` ：エディタ実行でない場合に `Story` が行うエラーや例外の出力を無効化します。無駄を完全に排除しますが `crashlytics` 等で `Story` が行うエラーや例外が検知できなくなります。
 * `STORY_NO_TIME_CACHE` ： `Tween` で使用する `Time.deltaTime` 等のキャッシュを無効化します。キャッシュは `PlayerLoop` を利用し `EarlyUpdate` の最後で行っており、それが都合が悪い場合に使用してください。トレードオフで実行速度が低下します。
 * `STORY_EASE_COMPACT` ： `Tween` で使用する `Ease` を共通化しコンパイル時間とバイナリサイズを節約します。トレードオフで実行速度が低下します。
+* `STORY_MOVER_FAST` ： `Tween` で使用するタスクを細分化し実行速度を向上させます。トレードオフでコンパイル時間とバイナリサイズが増加します。
 
 ---
 

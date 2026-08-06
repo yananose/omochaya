@@ -46,7 +46,7 @@ namespace Omochaya.HiddenStory
             internal const string MustSpecifyTaskInWarmupMode = "Warmupモード中に作成したタスクを指定してください";
             internal const string InvalidArguments = "引数が不正です。";
             internal const string CannotNormalizeEase = "始点と終点が近すぎるため正規化できません。";
-            internal const string CannotJoinEase = "イージング関数を結合できません。";
+            internal const string CannotStitchEase = "傾きが相反するイージング関数同士は縫い合わせる（Stitch）ことができません。";
             internal const string TimeCacheInjectionFailed = "[TimeCache] プレイヤーループへの挿入に失敗しました。";
         }
 
@@ -140,7 +140,7 @@ namespace Omochaya.HiddenStory
             internal const string MustSpecifyTaskInWarmupMode = "Please specify a task created during Warmup mode.";
             internal const string InvalidArguments = "Invalid arguments.";
             internal const string CannotNormalizeEase = "Cannot normalize because the start and end points are too close.";
-            internal const string CannotJoinEase = "Cannot join easing functions.";
+            internal const string CannotStitchEase = "Cannot stitch easing functions with opposing slopes.";;
             internal const string TimeCacheInjectionFailed = "[TimeCache] Failed to inject into the PlayerLoop.";
         }
 

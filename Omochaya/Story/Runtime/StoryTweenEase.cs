@@ -314,7 +314,7 @@ namespace Omochaya
                     var a = q * seam;
                     var b = p - p * seam + q * seam;
                     if (!Mathf.Approximately(b, 0f)) { return a / b; }
-                    Dev.LogError(Messages.Exceptions.CannotJoinEase);
+                    Dev.LogError(Messages.Exceptions.CannotStitchEase);
                     return seam;
                 }
             }
@@ -747,21 +747,21 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.FixImpl<E> Fix<E>(this E prev) where E : struct, IEase => new(prev);
 
-        /// <summary>Combines two easing functions at the default midpoint seam ratio of 0.5.</summary>
+        /// <summary>Stitches two easing functions seamlessly at the default midpoint seam ratio of 0.5.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.StitchImpl<E, C> Stitch<E, C>(this E prev, C calc)
             where E : struct, IEase
             where C : struct, IEase
             => new(prev, calc, 0.5f);
 
-        /// <summary>Combines two easing functions at a custom seam ratio.</summary>
+        /// <summary>Stitches two easing functions seamlessly at a custom seam ratio.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.StitchImpl<E, C> Stitch<E, C>(this E prev, float seam, C calc)
             where E : struct, IEase
             where C : struct, IEase
             => new(prev, calc, seam);
 
-        /// <summary>Chains a third easing function into an existing stitched easing composition using even seam distribution.</summary>
+        /// <summary>Stitches a third easing function into an existing stitched easing composition using even seam distribution.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.StitchImpl<Ease.StitchImpl<A, B>, C> Stitch<A, B, C>(this Ease.StitchImpl<A, B> prev, C calc)
             where A : struct, IEase
@@ -769,7 +769,7 @@ namespace Omochaya
             where C : struct, IEase
             => new(prev, calc, prev.EvenSeam);
 
-        /// <summary>Combines two existing stitched easing pairs into a four-stage easing sequence.</summary>
+        /// <summary>Stitches two existing stitched easing pairs into a four-stage easing sequence.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Ease.StitchImpl<Ease.StitchImpl<A, B>, Ease.StitchImpl<C, D>> Stitch<A, B, C, D>(this Ease.StitchImpl<A, B> prev, Ease.StitchImpl<C, D> calc)
             where A : struct, IEase

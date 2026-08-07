@@ -374,70 +374,70 @@ namespace Omochaya
             // shared
 
             /// <summary>Linear easing with no acceleration or deceleration.</summary>
-            public static readonly NoneImpl None = new();
+            public static readonly NoneImpl None = default;
 
             /// <summary>Inverted linear easing running from 1 to 0.</summary>
-            public static readonly ReverseImpl Reverse = new();
+            public static readonly ReverseImpl Reverse = default;
 
             /// <summary>Sinusoidal acceleration easing.</summary>
-            public static readonly Ease.InverseImpl<SineImpl> SineAcc = new();
+            public static readonly Ease.InverseImpl<SineImpl> SineAcc = default;
 
             /// <summary>Sinusoidal deceleration easing.</summary>
-            public static readonly SineImpl SineDec = new();
+            public static readonly SineImpl SineDec = default;
 
             /// <summary>Quadratic acceleration easing.</summary>
-            public static readonly QuadImpl QuadAcc = new();
+            public static readonly QuadImpl QuadAcc = default;
 
             /// <summary>Quadratic deceleration easing.</summary>
-            public static readonly Ease.InverseImpl<QuadImpl> QuadDec = new();
+            public static readonly Ease.InverseImpl<QuadImpl> QuadDec = default;
 
             /// <summary>Cubic acceleration easing.</summary>
-            public static readonly CubicImpl CubicAcc = new();
+            public static readonly CubicImpl CubicAcc = default;
 
             /// <summary>Cubic deceleration easing.</summary>
-            public static readonly Ease.InverseImpl<CubicImpl> CubicDec = new();
+            public static readonly Ease.InverseImpl<CubicImpl> CubicDec = default;
 
             /// <summary>Quartic acceleration easing.</summary>
-            public static readonly QuartImpl QuartAcc = new();
+            public static readonly QuartImpl QuartAcc = default;
 
             /// <summary>Quartic deceleration easing.</summary>
-            public static readonly Ease.InverseImpl<QuartImpl> QuartDec = new();
+            public static readonly Ease.InverseImpl<QuartImpl> QuartDec = default;
 
             /// <summary>Square root acceleration easing.</summary>
-            public static readonly Ease.InverseImpl<SqrtImpl> SqrtAcc = new();
+            public static readonly Ease.InverseImpl<SqrtImpl> SqrtAcc = default;
 
             /// <summary>Square root deceleration easing.</summary>
-            public static readonly SqrtImpl SqrtDec = new();
+            public static readonly SqrtImpl SqrtDec = default;
 
             /// <summary>Exponential acceleration easing.</summary>
-            public static readonly ExpoImpl ExpoAcc = new();
+            public static readonly ExpoImpl ExpoAcc = default;
 
             /// <summary>Exponential deceleration easing.</summary>
-            public static readonly Ease.InverseImpl<ExpoImpl> ExpoDec = new();
+            public static readonly Ease.InverseImpl<ExpoImpl> ExpoDec = default;
 
             /// <summary>Circular acceleration easing.</summary>
-            public static readonly Ease.InverseImpl<CircImpl> CircAcc = new();
+            public static readonly Ease.InverseImpl<CircImpl> CircAcc = default;
 
             /// <summary>Circular deceleration easing.</summary>
-            public static readonly CircImpl CircDec = new();
+            public static readonly CircImpl CircDec = default;
 
             /// <summary>Backing acceleration easing that slightly overshoots the initial point.</summary>
-            public static readonly BackImpl BackAcc = new();
+            public static readonly BackImpl BackAcc = default;
 
             /// <summary>Backing deceleration easing that slightly overshoots the target point.</summary>
-            public static readonly Ease.InverseImpl<BackImpl> BackDec = new();
+            public static readonly Ease.InverseImpl<BackImpl> BackDec = default;
 
             /// <summary>Elastic acceleration easing simulating an oscillating spring.</summary>
-            public static readonly ElasticImpl ElasticAcc = new();
+            public static readonly ElasticImpl ElasticAcc = default;
 
             /// <summary>Elastic deceleration easing simulating an oscillating spring.</summary>
-            public static readonly Ease.InverseImpl<ElasticImpl> ElasticDec = new();
+            public static readonly Ease.InverseImpl<ElasticImpl> ElasticDec = default;
 
             /// <summary>Bouncing acceleration easing simulating an inverted bounce effect.</summary>
-            public static readonly Ease.InverseImpl<BounceImpl> BounceAcc = new();
+            public static readonly Ease.InverseImpl<BounceImpl> BounceAcc = default;
 
             /// <summary>Bouncing deceleration easing simulating a decay bounce effect.</summary>
-            public static readonly BounceImpl BounceDec = new();
+            public static readonly BounceImpl BounceDec = default;
 
             // implementations
 
@@ -784,43 +784,43 @@ namespace Omochaya
 
         /// <summary>Applies sinusoidal acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.SineImpl> SineAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.SineImpl> SineAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies sinusoidal deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.SineImpl> SineDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.SineImpl> SineDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies quadratic acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.QuadImpl> QuadAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.QuadImpl> QuadAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies quadratic deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.QuadImpl> QuadDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.QuadImpl> QuadDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies cubic acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.CubicImpl> CubicAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.CubicImpl> CubicAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies cubic deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.CubicImpl> CubicDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.CubicImpl> CubicDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies quartic acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.QuartImpl> QuartAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.QuartImpl> QuartAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies quartic deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.QuartImpl> QuartDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.QuartImpl> QuartDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies square root acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.SqrtImpl> SqrtAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.SqrtImpl> SqrtAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies square root deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.SqrtImpl> SqrtDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.SqrtImpl> SqrtDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies a custom power acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -832,43 +832,43 @@ namespace Omochaya
 
         /// <summary>Applies exponential acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.ExpoImpl> ExpoAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.ExpoImpl> ExpoAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies exponential deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.ExpoImpl> ExpoDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.ExpoImpl> ExpoDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies circular acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.CircImpl> CircAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.CircImpl> CircAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies circular deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.CircImpl> CircDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.CircImpl> CircDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies backing acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.BackImpl> BackAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.BackImpl> BackAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies backing deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.BackImpl> BackDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.BackImpl> BackDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies elastic acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.ElasticImpl> ElasticAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.ElasticImpl> ElasticAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies elastic deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.ElasticImpl> ElasticDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.ElasticImpl> ElasticDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies bouncing acceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.InverseImpl<E, EaseFast.BounceImpl> BounceAcc<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.InverseImpl<E, EaseFast.BounceImpl> BounceAcc<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         /// <summary>Applies bouncing deceleration as a modifier to an existing easing function.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Ease.DirectImpl<E, EaseFast.BounceImpl> BounceDec<E>(this E prev) where E : struct, IEase => new(prev, new());
+        public static Ease.DirectImpl<E, EaseFast.BounceImpl> BounceDec<E>(this E prev) where E : struct, IEase => new(prev, default);
 
         // 〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜〜
         // utils

@@ -33,7 +33,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             Dev.Assert(0f <= interval);
-            return float.Epsilon < interval ? TweenTask(new Stepper(), interval, updater, ease, ref start)
+            return float.Epsilon < interval ? TweenTask(default(ScaledTime), interval, updater, ease, ref start)
                 : ImmediateTask(updater, ease.Calc(1f)); // interval = 0 : 即終了
         }
 
@@ -109,7 +109,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             Dev.Assert(0f <= speed);
-            return float.Epsilon < speed ? TweenTask(new Stepper(), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
+            return float.Epsilon < speed ? TweenTask(default(ScaledTime), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
                 : ImmediateTask(updater, from); // speed = 0 : 始まらない
         }
 
@@ -184,7 +184,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             Dev.Assert(0f <= interval);
-            return float.Epsilon < interval ? TweenTask(new UnscaledStepper(), interval, updater, ease, ref start)
+            return float.Epsilon < interval ? TweenTask(default(UnscaledTime), interval, updater, ease, ref start)
                 : ImmediateTask(updater, ease.Calc(1f)); // interval = 0 : 即終了
         }
 
@@ -260,7 +260,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             Dev.Assert(0f <= speed);
-            return float.Epsilon < speed ? TweenTask(new UnscaledStepper(), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
+            return float.Epsilon < speed ? TweenTask(default(UnscaledTime), Mathf.Abs((to - from) / speed), updater, ease.FromTo(from, to), ref start)
                 : ImmediateTask(updater, from); // speed = 0 : 始まらない
         }
 
@@ -346,7 +346,7 @@ namespace Omochaya
             // constructors
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public UpdaterImpl(T args, Action<T, float> action)
+            internal UpdaterImpl(T args, Action<T, float> action)
             {
                 this.args = args;
                 this.action = action;
@@ -370,85 +370,47 @@ namespace Omochaya
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Task TweenTask<S, U, E>(S stepper, float interval, in U updater, E ease, ref double start)
-            where S : struct, IStepper
+        static Task TweenTask<TS, U, E>(TS _, float interval, in U updater, E ease, ref double start)
+            where TS : struct, ITimeSource
             where U : struct, IUpdater
             where E : struct, IEase
         {
-            stepper.Setup(interval, ref start);
+            var stepper = new Stepper<TS>(interval, ref start);
             return IntervalTask(stepper, updater, ease);
         }
 
         // task
-        static async Task IntervalTask<S, U, E>(S stepper, U updater, E ease)
-            where S : struct, IStepper
+        static async Task IntervalTask<TS, U, E>(Stepper<TS> stepper, U updater, E ease)
+            where TS : struct, ITimeSource
             where U : struct, IUpdater
             where E : struct, IEase
         {
             while (stepper.Step(updater, ease)) { await Yield; }
         }
 
-        internal struct Stepper : IStepper
-        {
-
-            // fields
-
-            StepperImpl impl;
-
-            // methods
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Setup(float interval, ref double start) => this.impl = new(interval, ref start);
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Step<U, E>(in U updater, E ease)
-                where U : struct, IUpdater
-                where E : struct, IEase
-            {
-                this.impl.Proceed();
-                return this.impl.Step(updater, ease);
-            }
-        }
-        internal struct UnscaledStepper : IStepper
-        {
-
-            // fields
-
-            StepperImpl impl;
-
-            // methods
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Setup(float interval, ref double start) => this.impl = new(interval, ref start);
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Step<U, E>(in U updater, E ease)
-                where U : struct, IUpdater
-                where E : struct, IEase
-            {
-                this.impl.UnscaledProceed();
-                return this.impl.Step(updater, ease);
-            }
-        }
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public interface IStepper
+        public interface ITimeSource
         {
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            void Setup(float interval, ref double start);
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            bool Step<U, E>(in U updater, E ease)
-                where U : struct, IUpdater
-                where E : struct, IEase;
+            double TimeAsDouble { get; }
+            double DeltaTime { get; }
         }
 
-        struct StepperImpl
+        internal readonly struct ScaledTime : ITimeSource
         {
+            public double TimeAsDouble => Time.timeAsDouble;
+            public double DeltaTime => Time.deltaTime;
+        }
 
+        internal readonly struct UnscaledTime : ITimeSource
+        {
+            public double TimeAsDouble => Time.unscaledTimeAsDouble;
+            public double DeltaTime => Time.unscaledDeltaTime;
+        }
+
+        internal struct Stepper<TS>
+            where TS : struct, ITimeSource
+        {
             // fields
 
             double prev;
@@ -467,7 +429,7 @@ namespace Omochaya
             // constructors
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal StepperImpl(float interval, ref double start)
+            internal Stepper(float interval, ref double start)
             {
                 prev = this.start = start;
                 this.interval = interval;
@@ -480,7 +442,7 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
             internal void Proceed()
             {
-                var timeAsDouble = Time.timeAsDouble;
+                var timeAsDouble = default(TS).TimeAsDouble;
                 var diff = timeAsDouble - this.prev;
                 if (diff < 0)
                 {
@@ -492,38 +454,7 @@ namespace Omochaya
                     return;
                 }
 
-                double delta = Time.deltaTime;
-                if (delta * 1.25 < diff)
-                {
-                    diff -= delta;
-                    Dev.LogWarning(string.Format(Messages.Warnings.SkippedUnexecutedFrames, diff));
-                    this.start += diff;
-                }
-                this.prev = timeAsDouble;
-
-                var seek = (float)(timeAsDouble - this.start);
-#if UNITY_EDITOR
-                if (seek < 0f) { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundB, seek)); }
-#endif
-                this.seek = seek;
-            }
-
-            [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-            internal void UnscaledProceed()
-            {
-                var timeAsDouble = Time.unscaledTimeAsDouble;
-                var diff = timeAsDouble - this.prev;
-                if (diff < 0)
-                {
-#if UNITY_EDITOR
-                    if (timeAsDouble < this.start) { /*Dev.Log(string.Format(Messages.Warnings.TimeRewoundDelayedStart, diff));*/ }
-                    else { Dev.LogWarning(string.Format(Messages.Warnings.TimeRewoundA, diff)); }
-#endif
-                    this.seek = -1f;
-                    return;
-                }
-
-                double delta = Time.unscaledDeltaTime;
+                double delta = default(TS).DeltaTime;
                 if (delta * 1.25 < diff)
                 {
                     diff -= delta;
@@ -544,6 +475,7 @@ namespace Omochaya
                 where U : struct, IUpdater
                 where E : struct, IEase
             {
+                Proceed();
                 if (0f <= this.seek)
                 {
                     if (this.interval <= this.seek)
@@ -563,7 +495,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new Stepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation task executed over a specific interval with easing, starting immediately.</summary>
@@ -573,7 +505,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetStart();
-            return plan.CreateTask(new Stepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task executed over a specific interval, starting at a designated time.</summary>
@@ -582,7 +514,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task executed over a specific interval, starting immediately.</summary>
@@ -592,7 +524,7 @@ namespace Omochaya
         {
             var start = GetStart();
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation task driven by movement speed and easing, starting at a designated time.</summary>
@@ -601,7 +533,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation task driven by movement speed and easing, starting immediately.</summary>
@@ -611,7 +543,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetStart();
-            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task driven by movement speed, starting at a designated time.</summary>
@@ -620,7 +552,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation linear task driven by movement speed, starting immediately.</summary>
@@ -630,7 +562,7 @@ namespace Omochaya
         {
             var start = GetStart();
             var ease = Ease.None;
-            return plan.CreateTask(new Stepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(ScaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task executed over a specific interval with easing, starting at a designated time.</summary>
@@ -639,7 +571,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new UnscaledStepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task executed over a specific interval with easing, starting immediately.</summary>
@@ -649,7 +581,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetUnscaledStart();
-            return plan.CreateTask(new UnscaledStepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task executed over a specific interval, starting at a designated time.</summary>
@@ -658,7 +590,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task executed over a specific interval, starting immediately.</summary>
@@ -668,7 +600,7 @@ namespace Omochaya
         {
             var start = GetUnscaledStart();
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(interval, 0f), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(interval, 0f), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task driven by movement speed and easing, starting at a designated time.</summary>
@@ -677,7 +609,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
             where E : struct, IEase
         {
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled time task driven by movement speed and easing, starting immediately.</summary>
@@ -687,7 +619,7 @@ namespace Omochaya
             where E : struct, IEase
         {
             var start = GetUnscaledStart();
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task driven by movement speed, starting at a designated time.</summary>
@@ -696,7 +628,7 @@ namespace Omochaya
             where P : struct, Mover.IPlan
         {
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Converts a structural tween plan into a zero-allocation unscaled linear time task driven by movement speed, starting immediately.</summary>
@@ -706,7 +638,7 @@ namespace Omochaya
         {
             var start = GetUnscaledStart();
             var ease = Ease.None;
-            return plan.CreateTask(new UnscaledStepper(), new(0f, speed, true), ease, ref start);
+            return plan.CreateTask(default(UnscaledTime), new(0f, speed, true), ease, ref start);
         }
 
         /// <summary>Don't touch! Only for system.</summary>
@@ -726,15 +658,15 @@ namespace Omochaya
 
             // static
 
-            public static double timeAsDouble;
-            public static double unscaledTimeAsDouble;
-            public static float deltaTime;
-            public static float unscaledDeltaTime;
-            public static int frameCount;
+            internal static double timeAsDouble;
+            internal static double unscaledTimeAsDouble;
+            internal static float deltaTime;
+            internal static float unscaledDeltaTime;
+            internal static int frameCount;
 
             // methods
 
-            public static void UpdateCache()
+            static void UpdateCache()
             {
                 timeAsDouble = UnityEngine.Time.timeAsDouble;
                 unscaledTimeAsDouble = UnityEngine.Time.unscaledTimeAsDouble;
@@ -759,7 +691,7 @@ namespace Omochaya
             /// <summary>
             /// 指定したメインフェーズの「一番最後」にカスタムループを追加します。
             /// </summary>
-            public static bool AppendToPhase<TTargetPhase>(ref PlayerLoopSystem rootLoop, PlayerLoopSystem customLoop)
+            internal static bool AppendToPhase<TTargetPhase>(ref PlayerLoopSystem rootLoop, PlayerLoopSystem customLoop)
                 where TTargetPhase : struct
             {
                 if (rootLoop.subSystemList == null) return false;
@@ -821,6 +753,58 @@ namespace Omochaya.HiddenStory
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public interface ICarrierProperty<C, T>
+        {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            T Get(C component);
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            void Set(C component, T value);
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct Carrier<CS, T, CP> : ICarrier<T>
+            where CS : Component
+            where CP : struct, ICarrierProperty<CS, T>
+        {
+            // fields
+
+            readonly CS self;
+            readonly Component owner;
+
+            // properties
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public Component Owner => this.owner;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            public T Current => default(CP).Get(this.self);
+
+            // constructors
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Carrier(CS self, Component owner) 
+            { 
+                this.self = self; 
+                this.owner = Story.GetOwner(self, owner); 
+            }
+
+            // methods
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void SetCurrent(T value) => default(CP).Set(this.self, value);
+        }
+
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IMapper<T>
         {
             /// <summary>Don't touch! Only for system.</summary>
@@ -834,14 +818,42 @@ namespace Omochaya.HiddenStory
             (T, T) GetParam(T from, T to, bool isDelta);
         }
 
+        internal interface IAxisFlag
+        {
+            float Lerp(float current, float to, float diff, float rt);
+            float GetSqDiff(float to, float from);
+        }
+
+        internal readonly struct AxisUse : IAxisFlag
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float GetSqDiff(float to, float from)
+            {
+                var diff = to - from;
+                return diff * diff;
+            }
+        }
+
+        internal readonly struct AxisIgnore : IAxisFlag
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float Lerp(float current, float to, float diff, float rt) => current;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float GetSqDiff(float to, float from) => 0f;
+        }
+
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public interface IPlan
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            Story.Task CreateTask<S, E>(in S spepper, in TimeArg arg, E ease, ref double start)
-                where S : struct, Story.IStepper
+            Story.Task CreateTask<TS, E>(in TS spepper, in TimeArg arg, E ease, ref double start)
+                where TS : struct, Story.ITimeSource
                 where E : struct, Story.IEase;
         }
 
@@ -849,7 +861,6 @@ namespace Omochaya.HiddenStory
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
         {
-
             // fields
 
             internal readonly C Carrier;
@@ -882,7 +893,6 @@ namespace Omochaya.HiddenStory
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly struct TimeArg
         {
-
             // fields
 
             /// <summary>Don't touch! Only for system.</summary>
@@ -910,16 +920,16 @@ namespace Omochaya.HiddenStory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Story.Task Create<S, C, M, T, E>(in PlanArg<C, M, T> planArg, in TimeArg timeArg, E ease, ref double start)
-            where S : struct, Story.IStepper
+        internal static Story.Task Create<TS, C, M, T, E>(in PlanArg<C, M, T> planArg, in TimeArg timeArg, E ease, ref double start)
+            where TS : struct, Story.ITimeSource
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
             where E : struct, Story.IEase
-            => Task(new Creator<S, C, M, T>(planArg, timeArg, ref start), ease).At(planArg.Carrier.Owner);
+            => Task(new Creator<TS, C, M, T>(planArg, timeArg, ref start), ease).At(planArg.Carrier.Owner);
 
         // task
-        static async Story.Task Task<S, C, M, T, E>(Creator<S, C, M, T> creator, E ease)
-            where S : struct, Story.IStepper
+        static async Story.Task Task<TS, C, M, T, E>(Creator<TS, C, M, T> creator, E ease)
+            where TS : struct, Story.ITimeSource
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
             where E : struct, Story.IEase
@@ -929,10 +939,10 @@ namespace Omochaya.HiddenStory
             while (updater.Step(ease)) { await Story.Yield; }
         }
 
-        readonly struct Creator<S, C, M, T>
+        readonly struct Creator<TS, C, M, T>
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
-            where S : struct, Story.IStepper
+            where TS : struct, Story.ITimeSource
         {
             // fields
 
@@ -962,7 +972,7 @@ namespace Omochaya.HiddenStory
             // methods
 
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる（インライン化するとeaseごとに生成されるので）
-            internal Updater<S, C, M, T> CreateUpdater()
+            internal Updater<TS, C, M, T> CreateUpdater()
             {
                 // from 確定
                 var from = this.planArg.Carrier.Current;
@@ -994,23 +1004,21 @@ namespace Omochaya.HiddenStory
                 }
 
                 // 生成
-                var stepper = new S();
                 var start = this.start;
-                stepper.Setup(interval, ref start);
+                var stepper = new Story.Stepper<TS>(interval, ref start);
                 var prm = this.planArg.Mapper.GetParam(from, to, this.planArg.IsDelta);
                 return new(stepper, this.planArg, prm.Item1, prm.Item2);
             }
         }
 
-        struct Updater<S, C, M, T> : Story.IUpdater
+        struct Updater<TS, C, M, T> : Story.IUpdater
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
-            where S : struct, Story.IStepper
+            where TS : struct, Story.ITimeSource
         {
-
             // fields
 
-            S stepper;
+            Story.Stepper<TS> stepper;
             C carrier;
             readonly M mapper;
             readonly T to, diff;
@@ -1019,7 +1027,7 @@ namespace Omochaya.HiddenStory
             // constructors
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Updater(in S stepper, PlanArg<C, M, T> planArg, T to, T diff)
+            internal Updater(in Story.Stepper<TS> stepper, PlanArg<C, M, T> planArg, T to, T diff)
             {
                 this.stepper = stepper;
                 this.carrier = planArg.Carrier;

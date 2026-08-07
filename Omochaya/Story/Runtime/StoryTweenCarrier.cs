@@ -13,6 +13,7 @@ namespace Omochaya
     using UnityEngine.UI;
     using TMPro;
     using System.Runtime.CompilerServices;
+    using Omochaya.HiddenStory;
 
     // #if UNITY_EDITOR
     //     static class StorySample
@@ -41,252 +42,202 @@ namespace Omochaya
         // Carrier0:CanvasGroup.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier0 : ICarrier
+        public readonly struct Carrier0 : Mover.ICarrierProperty<CanvasGroup, float>
         {
-            readonly CanvasGroup self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier0(CanvasGroup self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.alpha = value;
+            public float Get(CanvasGroup self) => self.alpha;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(CanvasGroup self, float value) => self.alpha = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the CanvasGroup.alpha property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier0 TweenAlpha(this CanvasGroup self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<CanvasGroup, float, Carrier0> TweenAlpha(this CanvasGroup self, Component owner = null) => new(self, owner);
 
-        // Carrier1:CanvasGroup.alpha -------------------------------------------------
+        // Carrier1:TMP_Text.alpha -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier1 : ICarrier
+        public readonly struct Carrier1 : Mover.ICarrierProperty<TMP_Text, float>
         {
-            readonly TMP_Text self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier1(TMP_Text self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.alpha;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.alpha = value;
+            public float Get(TMP_Text self) => self.alpha;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(TMP_Text self, float value) => self.alpha = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the TMP_Text.alpha property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier1 TweenAlpha(this TMP_Text self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<TMP_Text, float, Carrier1> TweenAlpha(this TMP_Text self, Component owner = null) => new(self, owner);
 
         // Carrier2:TMP_Text.fontSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier2 : ICarrier
+        public readonly struct Carrier2 : Mover.ICarrierProperty<TMP_Text, float>
         {
-            readonly TMP_Text self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier2(TMP_Text self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.fontSize;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.fontSize = value;
+            public float Get(TMP_Text self) => self.fontSize;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(TMP_Text self, float value) => self.fontSize = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the TMP_Text.fontSize property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier2 TweenFontSize(this TMP_Text self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<TMP_Text, float, Carrier2> TweenFontSize(this TMP_Text self, Component owner = null) => new(self, owner);
 
         // Carrier3:TMP_Text.maxVisibleCharacters -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier3 : ICarrier
+        public readonly struct Carrier3 : Mover.ICarrierProperty<TMP_Text, float>
         {
-            readonly TMP_Text self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier3(TMP_Text self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.maxVisibleCharacters;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.maxVisibleCharacters = Mathf.CeilToInt(value);
+            public float Get(TMP_Text self) => self.maxVisibleCharacters;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(TMP_Text self, float value) => self.maxVisibleCharacters = Mathf.CeilToInt(value);
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the TMP_Text.maxVisibleCharacters property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier3 TweenMaxVisibleCharacters(this TMP_Text self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<TMP_Text, float, Carrier3> TweenMaxVisibleCharacters(this TMP_Text self, Component owner = null) => new(self, owner);
 
         // Carrier4:AudioSource.volume -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier4 : ICarrier
+        public readonly struct Carrier4 : Mover.ICarrierProperty<AudioSource, float>
         {
-            readonly AudioSource self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier4(AudioSource self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.volume;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.volume = value;
+            public float Get(AudioSource self) => self.volume;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(AudioSource self, float value) => self.volume = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the AudioSource.volume property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier4 TweenVolume(this AudioSource self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<AudioSource, float, Carrier4> TweenVolume(this AudioSource self, Component owner = null) => new(self, owner);
 
         // Carrier5:AudioSource.pitch -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier5 : ICarrier
+        public readonly struct Carrier5 : Mover.ICarrierProperty<AudioSource, float>
         {
-            readonly AudioSource self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier5(AudioSource self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.pitch;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.pitch = value;
+            public float Get(AudioSource self) => self.pitch;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(AudioSource self, float value) => self.pitch = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the AudioSource.pitch property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier5 TweenPitch(this AudioSource self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<AudioSource, float, Carrier5> TweenPitch(this AudioSource self, Component owner = null) => new(self, owner);
 
         // Carrier6:Camera.fieldOfView -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier6 : ICarrier
+        public readonly struct Carrier6 : Mover.ICarrierProperty<Camera, float>
         {
-            readonly Camera self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier6(Camera self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.fieldOfView;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
+            public float Get(Camera self) => self.fieldOfView;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Camera self, float value) => self.fieldOfView = Mathf.Clamp(value, 0.1f, 179.9f);
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Camera.fieldOfView property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier6 TweenFieldOfView(this Camera self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Camera, float, Carrier6> TweenFieldOfView(this Camera self, Component owner = null) => new(self, owner);
 
         // Carrier7:Camera.orthographicSize -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier7 : ICarrier
+        public readonly struct Carrier7 : Mover.ICarrierProperty<Camera, float>
         {
-            readonly Camera self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier7(Camera self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.orthographicSize;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.orthographicSize = value;
+            public float Get(Camera self) => self.orthographicSize;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Camera self, float value) => self.orthographicSize = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Camera.orthographicSize property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier7 TweenOrthographicSize(this Camera self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Camera, float, Carrier7> TweenOrthographicSize(this Camera self, Component owner = null) => new(self, owner);
 
         // Carrier8:Image.fillAmount -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier8 : ICarrier
+        public readonly struct Carrier8 : Mover.ICarrierProperty<Image, float>
         {
-            readonly Image self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier8(Image self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.fillAmount;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.fillAmount = value; 
+            public float Get(Image self) => self.fillAmount;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Image self, float value) => self.fillAmount = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Image.fillAmount property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier8 TweenFillAmount(this Image self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Image, float, Carrier8> TweenFillAmount(this Image self, Component owner = null) => new(self, owner);
 
         // Carrier9:Slider.value -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier9 : ICarrier
+        public readonly struct Carrier9 : Mover.ICarrierProperty<Slider, float>
         {
-            readonly Slider self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier9(Slider self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public float Current => this.self.value;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(float value) => this.self.value = value;
+            public float Get(Slider self) => self.value;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Slider self, float value) => self.value = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Slider.value property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier9 TweenValue(this Slider self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Slider, float, Carrier9> TweenValue(this Slider self, Component owner = null) => new(self, owner);
     }
 
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
@@ -294,77 +245,62 @@ namespace Omochaya
         // Carrier0:RectTransform.anchoredPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier0 : ICarrier
+        public readonly struct Carrier0 : Mover.ICarrierProperty<RectTransform, Vector2>
         {
-            readonly RectTransform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier0(RectTransform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector2 Current => this.self.anchoredPosition;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector2 value) => this.self.anchoredPosition = value;
+            public Vector2 Get(RectTransform self) => self.anchoredPosition;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(RectTransform self, Vector2 value) => self.anchoredPosition = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the RectTransform.anchoredPosition property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier0 TweenAnchoredPosition(this RectTransform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<RectTransform, Vector2, Carrier0> TweenAnchoredPosition(this RectTransform self, Component owner = null) => new(self, owner);
 
         // Carrier1:RectTransform.sizeDelta -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier1 : ICarrier
+        public readonly struct Carrier1 : Mover.ICarrierProperty<RectTransform, Vector2>
         {
-            readonly RectTransform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier1(RectTransform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector2 Current => this.self.sizeDelta;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector2 value) => this.self.sizeDelta = value;
+            public Vector2 Get(RectTransform self) => self.sizeDelta;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(RectTransform self, Vector2 value) => self.sizeDelta = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the RectTransform.sizeDelta property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier1 TweenSizeDelta(this RectTransform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<RectTransform, Vector2, Carrier1> TweenSizeDelta(this RectTransform self, Component owner = null) => new(self, owner);
 
         // Carrier2:RectTransform.pivot -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier2 : ICarrier
+        public readonly struct Carrier2 : Mover.ICarrierProperty<RectTransform, Vector2>
         {
-            readonly RectTransform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier2(RectTransform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector2 Current => this.self.pivot;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector2 value) => this.self.pivot = value;
+            public Vector2 Get(RectTransform self) => self.pivot;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(RectTransform self, Vector2 value) => self.pivot = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the RectTransform.pivot property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier2 TweenPivot(this RectTransform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<RectTransform, Vector2, Carrier2> TweenPivot(this RectTransform self, Component owner = null) => new(self, owner);
     }
 
     public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
@@ -372,127 +308,102 @@ namespace Omochaya
         // Carrier0:Transform.localPosition -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier0 : ICarrier
+        public readonly struct Carrier0 : Mover.ICarrierProperty<Transform, Vector3>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier0(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector3 Current => this.self.localPosition;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector3 value) => this.self.localPosition = value;
+            public Vector3 Get(Transform self) => self.localPosition;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Vector3 value) => self.localPosition = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.localPosition property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier0 TweenLocalPosition(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Vector3, Carrier0> TweenLocalPosition(this Transform self, Component owner = null) => new(self, owner);
 
         // Carrier1:Transform.localScale -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier1 : ICarrier
+        public readonly struct Carrier1 : Mover.ICarrierProperty<Transform, Vector3>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier1(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector3 Current => this.self.localScale;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector3 value) => this.self.localScale = value;
+            public Vector3 Get(Transform self) => self.localScale;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Vector3 value) => self.localScale = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.localScale property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier1 TweenLocalScale(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Vector3, Carrier1> TweenLocalScale(this Transform self, Component owner = null) => new(self, owner);
 
         // Carrier2:Transform.localEulerAngles -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier2 : ICarrier
+        public readonly struct Carrier2 : Mover.ICarrierProperty<Transform, Vector3>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier2(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector3 Current => this.self.localEulerAngles;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector3 value) => this.self.localEulerAngles = value;
+            public Vector3 Get(Transform self) => self.localEulerAngles;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Vector3 value) => self.localEulerAngles = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.localEulerAngles property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier2 TweenLocalEulerAngles(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Vector3, Carrier2> TweenLocalEulerAngles(this Transform self, Component owner = null) => new(self, owner);
 
         // Carrier3:Transform.position -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier3 : ICarrier
+        public readonly struct Carrier3 : Mover.ICarrierProperty<Transform, Vector3>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier3(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector3 Current => this.self.position;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector3 value) => this.self.position = value;
+            public Vector3 Get(Transform self) => self.position;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Vector3 value) => self.position = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.position property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier3 TweenPosition(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Vector3, Carrier3> TweenPosition(this Transform self, Component owner = null) => new(self, owner);
 
         // Carrier4:Transform.eulerAngles -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier4 : ICarrier
+        public readonly struct Carrier4 : Mover.ICarrierProperty<Transform, Vector3>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier4(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Vector3 Current => this.self.eulerAngles;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Vector3 value) => this.self.eulerAngles = value;
+            public Vector3 Get(Transform self) => self.eulerAngles;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Vector3 value) => self.eulerAngles = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.eulerAngles property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier4 TweenEulerAngles(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Vector3, Carrier4> TweenEulerAngles(this Transform self, Component owner = null) => new(self, owner);
     }
 
     public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
@@ -500,77 +411,62 @@ namespace Omochaya
         // Carrier0:Graphic.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier0 : ICarrier
+        public readonly struct Carrier0 : Mover.ICarrierProperty<Graphic, Color>
         {
-            readonly Graphic self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier0(Graphic self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Color Current => this.self.color;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Color value) => this.self.color = value;
+            public Color Get(Graphic self) => self.color;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Graphic self, Color value) => self.color = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Graphic.color property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier0 TweenColor(this Graphic self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Graphic, Color, Carrier0> TweenColor(this Graphic self, Component owner = null) => new(self, owner);
 
         // Carrier1:SpriteRenderer.color -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier1 : ICarrier
+        public readonly struct Carrier1 : Mover.ICarrierProperty<SpriteRenderer, Color>
         {
-            readonly SpriteRenderer self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier1(SpriteRenderer self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Color Current => this.self.color;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Color value) => this.self.color = value;
+            public Color Get(SpriteRenderer self) => self.color;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(SpriteRenderer self, Color value) => self.color = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the SpriteRenderer.color property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier1 TweenColor(this SpriteRenderer self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<SpriteRenderer, Color, Carrier1> TweenColor(this SpriteRenderer self, Component owner = null) => new(self, owner);
 
         // Carrier2:Camera.backgroundColor -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier2 : ICarrier
+        public readonly struct Carrier2 : Mover.ICarrierProperty<Camera, Color>
         {
-            readonly Camera self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier2(Camera self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Color Current => this.self.backgroundColor;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Color value) => this.self.backgroundColor = value;
+            public Color Get(Camera self) => self.backgroundColor;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Camera self, Color value) => self.backgroundColor = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Camera.backgroundColor property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier2 TweenBackgroundColor(this Camera self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Camera, Color, Carrier2> TweenBackgroundColor(this Camera self, Component owner = null) => new(self, owner);
     }
 
     public static partial class StoryQuaternion ///////////////////////////////////////////////////////////////////////////////////
@@ -578,51 +474,41 @@ namespace Omochaya
         // Carrier0:Transform.localRotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier0 : ICarrier
+        public readonly struct Carrier0 : Mover.ICarrierProperty<Transform, Quaternion>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier0(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Quaternion Current => this.self.localRotation;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Quaternion value) => this.self.localRotation = value;
+            public Quaternion Get(Transform self) => self.localRotation;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Quaternion value) => self.localRotation = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.localRotation property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier0 TweenLocalRotation(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Quaternion, Carrier0> TweenLocalRotation(this Transform self, Component owner = null) => new(self, owner);
 
         // Carrier1:Transform.rotation -------------------------------------------------
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Carrier1 : ICarrier
+        public readonly struct Carrier1 : Mover.ICarrierProperty<Transform, Quaternion>
         {
-            readonly Transform self;
-            readonly Component owner;
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Component Owner => this.owner;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Carrier1(Transform self, Component owner) { this.self = self; this.owner = Story.GetOwner(self, owner); }
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            public Quaternion Current => this.self.rotation;
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void SetCurrent(Quaternion value) => this.self.rotation = value;
+            public Quaternion Get(Transform self) => self.rotation;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Set(Transform self, Quaternion value) => self.rotation = value;
         }
 
         /// <summary>Creates a zero-allocation tween carrier for the Transform.rotation property.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Carrier1 TweenRotation(this Transform self, Component owner = null) => new(self, owner);
+        public static Mover.Carrier<Transform, Quaternion, Carrier1> TweenRotation(this Transform self, Component owner = null) => new(self, owner);
     }
 }

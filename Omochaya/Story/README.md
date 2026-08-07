@@ -76,11 +76,11 @@ Unity Package Manager (UPM) を使用してインストールします。
 3. 以下のURLを入力して `Add` をクリックします。
 
 ```text
-https://github.com/yananose/omochaya.git?path=/Omochaya/Story#story/1.2.0
+https://github.com/yananose/omochaya.git?path=/Omochaya/Story#story/1.3.0
 ```
 
 > **💡 バージョン指定について**
-> 上記のURLはバージョン `1.2.0` で固定されています。最新版や別のバージョンを利用したい場合は、URL末尾の `#story/1.2.0` の部分を任意のバージョンタグ（例: `#story/1.0.0`）に変更するか、`#` 以降を削除して `main` ブランチの最新を取得してください。
+> 上記のURLはバージョン `1.3.0` で固定されています。最新版や別のバージョンを利用したい場合は、URL末尾の `#story/1.3.0` の部分を任意のバージョンタグ（例: `#story/1.0.0`）に変更するか、`#` 以降を削除して `main` ブランチの最新を取得してください。
 
 > **💡 テストコードの導入**
 > インストール後、Package Managerの Story のページから `Samples` にある `Framework Validation & Allocation Tests` をプロジェクトにインポートできます。生きたリファレンスとしてご活用ください。
@@ -195,6 +195,107 @@ public class HeavyActor : Story.TaskBehaviour
 * `STORY_NO_TIME_CACHE` ： `Tween` で使用する `Time.deltaTime` 等のキャッシュを無効化します。キャッシュは `PlayerLoop` を利用し `EarlyUpdate` の最後で行っており、それが都合が悪い場合に使用してください。トレードオフで実行速度が低下します。
 * `STORY_EASE_COMPACT` ： `Tween` で使用する `Ease` を共通化しコンパイル時間とバイナリサイズを節約します。トレードオフで実行速度が低下します。
 * `STORY_MOVER_FAST` ： `Tween` で使用するタスクを細分化し実行速度を向上させます。トレードオフでコンパイル時間とバイナリサイズが増加します。
+
+---
+
+## Tween Animations
+
+Omochaya Storyは、タスクシステムに統合されたゼロアロケーションのTween（アニメーション）機能を提供しています。
+対象のコンポーネントに対する拡張メソッドとして実装されているため、直感的なメソッドチェーンで記述できます。
+
+### 基本的な使い方 (To / By, Interval / Speed)
+
+Tweenの目標値は `To()`（絶対値）または `By()`（相対値）で指定し、アニメーションの進行は `Interval()`（時間・秒）または `Speed()`（速度）でタスク化します。
+
+```csharp
+using UnityEngine;
+using Omochaya;
+
+public class TweenSample : MonoBehaviour
+{
+    [SerializeField] RectTransform rectTransform;
+    [SerializeField] CanvasGroup canvasGroup;
+    public float MyValue;
+
+    public async Story.Task PlayAnimations()
+    {
+        // 時間（秒）を指定して絶対座標へ移動
+        await this.rectTransform.TweenLocalPosition().To(x: 100f, y: 50f).Interval(1.0f);
+
+        // 速度を指定して現在の値から相対的に移動
+        await this.rectTransform.TweenAnchoredPosition().By(y: 50f).Speed(200f);
+
+        // アルファ値を1.0へ時間指定でフェード
+        await this.canvasGroup.TweenAlpha().To(1.0f).Interval(0.5f);
+
+        // 任意のパラメータを変化（MyValue を 0 から 100 へ 50/sec の速度で変化させる）
+        await Story.Tween(0f, 100f, 50f, this, static (self, value) => self.MyValue = value);
+    }
+}
+```
+
+### イージング (Easing) の適用
+
+アニメーションのカーブは `Story.EaseFast` などを引数に渡すことで簡単に適用できます。
+
+```csharp
+// 減速（Deceleration）しながら移動
+await this.rectTransform.TweenLocalScale()
+    .To(Vector3.one)
+    .Interval(1.0f, Story.Ease.QuadDec);
+
+// AnimationCurve を直接使用することも可能です
+[SerializeField] AnimationCurve myCurve;
+// ...
+await this.rectTransform.TweenLocalPosition()
+    .To(x: 0f)
+    .Interval(1.0f, Story.Ease.Curve(myCurve));
+```
+
+用意している主要なイージングは以下の通りです。
+
+* `SineAcc`,`QuadAcc`,`CubicAcc`,`QuartAcc`,`SqrtAcc`,`ExpoAcc`,`CircAcc`,`BackAcc`,`ElasticAcc`,`BounceAcc`
+* `SineDec`,`QuadDec`,`CubicDec`,`QuartDec`,`SqrtDec`,`ExpoDec`,`CircDec`,`BackDec`,`ElasticDec`,`BounceDec`
+* `None` (デフォルト。線形),`Reverse()`,`Pow(e)`,`Curve(curve)`,`FromTo(a,b)`
+* `ease.Stitch(ease)`: ２つのイージング組み合わせて InOut/OutIn を作成（逆方向は繋がらない）。
+
+### 複数Tweenのシームレスな連続再生
+
+`ref double start` を引数に渡すことで、複数のTweenを滑らかに連結（チェイン）して再生できます。
+Tweenタスクの生成時に所要時間が自動的に加算されるため、フレーム単位の実行遅延に影響されることなく、前のタスクの終了直後に次のタスクの開始時刻を正確に設定できます。
+
+```csharp
+async Story.Task PlaySequentialAnimations()
+{
+    this.rectTransform.localPosition = Vector3.zero;
+
+    // 現在の基準時間を取得
+    var start = Story.GetStart(); 
+
+    // 1つ目のアニメーション。生成時に所要時間が計算され start に加算されます
+    var task1 = this.rectTransform.TweenLocalPosition().To(x: 50f).Speed(100f, Story.Ease.SineAcc, ref start);
+    
+    // 2つ目のアニメーション。task1の終了時刻がtask2の開始時刻となるため、動きが切れ目無くつながります。
+    var task2 = this.rectTransform.TweenLocalPosition().By(x: 50f).Speed(100f, Story.Ease.SineDec, ref start);
+
+    // 全てのタスクの完了を待機
+    await task1.With(task2);
+}
+```
+
+### 主な対応コンポーネントとプロパティ
+
+主要なUnityコンポーネント向けに、以下の拡張メソッドが標準で用意されています。
+
+*   **Transform**: `TweenLocalPosition()`, `TweenPosition()`, `TweenLocalScale()`, `TweenLocalRotation()`, `TweenRotation()`, `TweenLocalEulerAngles()`, `TweenEulerAngles()`
+*   **RectTransform**: `TweenAnchoredPosition()`, `TweenSizeDelta()`, `TweenPivot()`
+*   **CanvasGroup / TMP_Text**: `TweenAlpha()`
+*   **TMP_Text**: `TweenFontSize()`, `TweenMaxVisibleCharacters()`
+*   **Image**: `TweenFillAmount()`
+*   **Graphic / SpriteRenderer**: `TweenColor()`
+*   **Slider**: `TweenValue()`
+*   **Camera**: `TweenFieldOfView()`, `TweenOrthographicSize()`, `TweenBackgroundColor()`
+*   **AudioSource**: `TweenVolume()`, `TweenPitch()`
 
 ---
 

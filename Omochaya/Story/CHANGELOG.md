@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-08
+
+### Added
+- **Tween機能:**
+  - 汎用的に利用できる `Story.Tween()` を追加（再生間隔、再生速度、イージング関数、開始・終了位置の指定等に対応）。
+  - イージング関数を指定する `Story.Ease` を追加（基本22種、引数付き4種、加工3+21種）。
+  - `Transform` や各種 Unity Component の主要プロパティを制御する `Tween` 拡張メソッドを追加。
+- **デバッグ機能の強化:**
+  - 例外へ変換される `RuntimeAssert` を追加。
+- **IDE表示の最適化:**
+  - 内部構造体やメソッドの入力候補非表示化のための `EditorBrowsableState.Never` 属性を追加。
+
+### Changed
+- **デバッグ処理の変更:**
+  - 非エディタ実行時、通常の `Assert` を例外に変換せず、コードから取り除かれるように変更（代わりに `RuntimeAssert` を使用）。
+- **Scripting Define Symbols の更新:**
+  - `FOR_DEBUG` を `STORY_DEBUG` に変更。
+  - `STORY_FAST` を `STORY_FULL_TUNE` に変更。
+- **ドキュメント・動作要件の更新:**
+  - README に Tween の解説を追加し、特徴・シンボル情報を更新。
+  - C# 言語バージョンの誤りを修正（C# 8.0 → C# 9.0）。
+  - サポート Unity バージョンを `2021.3` から `2022.3` に更新。
+
+### Fixed
+- 無効なタスクに対して `Keep()` や `At()` を呼び出した際、例外を投げずに無視するよう修正（Warmup 時を除きエラーログを出力）。
+
 ## [1.2.0] - 2026-07-26
 
 ### Added

@@ -37,22 +37,25 @@ RPGイベント / 会話システム / ターン制バトル / カットシー�
 
 ## ✨ 特徴 (Features)
 
-### 1. 究極のゼロアロケーション & 高速実行
-独自のステートマシンプールと世代管理付きIDにより、実行中のGCアロケートを排除（※キャンセル実行時とデバッグ時を除く）。Hot/Coolデータ分割によりCPUキャッシュヒット率を高め、高速な反復処理を実現しています。
+**「コルーチンにできることは全部できる。コルーチンにできないことも async だからできる」**
+Storyは単なる非同期ライブラリではなく、シーケンス制御におけるコルーチンの完全な上位互換を目指して設計されています。
 
-### 2. コルーチンの機能を超えてできること
-* **戻り値が受け取れる:** `async/await` ベースなので、サブタスクからの戻り値を自然に受け取れます。
-* **脱・トークンバケツリレー:** `CancellationToken` はあえて採用していません。`StopCoroutine` と同じメンタルモデルで、タスクハンドルや紐づけたオーナーの破棄によって直感的にキャンセルを制御します。
-* **安全な `finally` と キャンセルモード:** オブジェクト破棄時などによるキャンセルが発生しても、キャンセル例外により `finally` ブロックが確実に実行されるので安全に後始末が可能です。また **キャンセルモード** により `finally` ブロックのないタスクではキャンセル例外を発生させない `Drop` 、キャンセル例外の代わりに `return` で `finally` ブロックを処理する `DontThrow` などをタスク単位で制御することが可能です。後始末の不要なタスクが多い場合はデフォルト動作を `Drop` にし、必要なタスクのみキャンセル例外を使用する `Safe` にすることも可能です。
+### 1. 【Storyでも】コルーチンにできることは全部できる
+* **コルーチンと同じメンタルモデル:** サブタスクの待機、`foreach` や `MoveNext()` を用いた手動進行制御、タスクを変数に保持した任意タイミングでの起動・停止などが、**そのまま同じメンタルモデルで** `async/await` を使って記述できます。
+* **直感的なコンテキストスイッチ:** `await Story.YieldFixed` や `await Story.YieldLate` を呼ぶだけで、実行タイミング（Update層）を即座かつシームレスに移動できます。
+* **脱・トークンバケツリレー:** `CancellationToken` を引き回す必要はなく、紐づけたオーナーオブジェクトの破棄や `Stop()` メソッドで直感的にキャンセルを制御できます。
 
-### 3. 直感的なコンテキストスイッチ
-`await Story.YieldFixed` や `await Story.YieldLate` を呼ぶだけで、実行タイミング（Update層）をシームレスに移動可能。現在の実行タイミングを維持して待機する `Story.YieldSame` も搭載しています。
+### 2. 【Storyだから】コルーチンにできないこともできる
+* **究極のゼロアロケーション & 高速実行:** 独自のステートマシンプールと世代管理付きIDにより、実行中のGCアロケートを排除（※キャンセル例外時とデバッグ時を除く）。Hot/Coolデータ分割によりCPUキャッシュヒット率を高め、高速な反復処理を実現しています。
+* **戻り値が受け取れる:** `async/await` ベースのため、サブタスクからの戻り値を自然に受け取れます。
+* **コルーチンの弱点を克服した「安全な後始末」:**
+  標準のコルーチンはオブジェクト破棄時に `finally` が呼ばれず強制終了する弱点がありますが、Storyはキャンセル例外により安全な後始末を保証します。また**キャンセルモード**を設定することで、例外を発行しないコルーチン特有の軽さを取り戻すことも可能です。後始末の不要なタスクが多い場合はデフォルト動作を `Drop` にし、必要なタスクのみキャンセル例外を使用する `Safe` にすることも可能です。
 
-### 4. ゲーム特化のコンビネータ (`With` / `Until`)
-* **`With` (並行実行):** 実行中のいずれかのタスクがキャンセルされても、残りのタスクを道連れにしません。
-* **`Until` (競争実行):** いずれかのタスクが完了（勝負がついた）瞬間、敗者のタスクは自動的に安全なキャンセル処理へ移行します。
+### 3. ゲーム制作に便利な追加機能
+* **ゲーム特化コンビネータ:** 実行中の他のタスクがキャンセルされても道連れにしない `With` (並行実行) や、いずれかのタスクが完了した瞬間に敗者を自動的に安全なキャンセル処理へ移行する `Until` (競争実行) を搭載しています。
+* **Tween アニメーション:** タスクシステムに統合されたゼロアロケーションのアニメーション機能。TransformやUIコンポーネントの移動・フェードなどの変化を、目標値や時間を繋げるだけの直感的な記述で簡単に動かせます。
 
-### 5. デバッグツール標準搭載
+### 4. デバッグツール標準搭載
 リアルタイムにタスクの実行状態を可視化する「Task Monitor」、プールの使用状況・メモリを追跡する「Pool Monitor」の2つの専用EditorWindowを完備しています。Task Monitorではコールスタック表示、コードジャンプ機能などもサポートしており、スムーズなデバッグが可能です。
 
 ---
@@ -100,22 +103,28 @@ public class StoryManager : MonoBehaviour
 {
     void Awake() 
     {
-        // 【任意】キャンセルモードの指定
+        // 〜任意〜 キャンセルモードの指定
         Story.DefaultCancelMode = Story.CancelMode.Drop;
 
-        // 【任意】一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
-        Story.Warmup(32);
+        // 〜任意〜 一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
+        Story.Warmup(256);
 
-        // 【任意】各タスクのプールの事前確保
+        // 〜任意〜 各タスクのプールの事前確保
         using (Story.WarmupMode())
         {
             // 使用するタスクのプールを事前確保する
-            // ※Capacity属性が設定されていればそのサイズ、引数で上書きも可能
-            ActionSequence().Warmup(1024);
+            // ※引数を省略するとCapacity属性で指定したサイズ、なければデフォルトサイズで確保します
+            MyTask1().Warmup(16);
+            MyTask2().Warmup();
         }
     }
+ 
+    // 【必須】更新処理の呼び出し
     void Update() { Story.Update(); }
+ 
+    // 〜任意〜 LateUpdateでの更新処理の呼び出し
     void LateUpdate() { Story.LateUpdate(); }
+    // 〜任意〜 FixedUpdateでの更新処理の呼び出し
     void FixedUpdate() { Story.FixedUpdate(); }
 }
 ```
@@ -254,9 +263,9 @@ await this.rectTransform.TweenLocalPosition()
 
 用意している主要なイージングは以下の通りです。
 
-* `SineAcc`,`QuadAcc`,`CubicAcc`,`QuartAcc`,`SqrtAcc`,`ExpoAcc`,`CircAcc`,`BackAcc`,`ElasticAcc`,`BounceAcc`
-* `SineDec`,`QuadDec`,`CubicDec`,`QuartDec`,`SqrtDec`,`ExpoDec`,`CircDec`,`BackDec`,`ElasticDec`,`BounceDec`
-* `None` (デフォルト。線形),`Reverse()`,`Pow(e)`,`Curve(curve)`,`FromTo(a,b)`
+* `SineAcc`, `QuadAcc`, `CubicAcc`, `QuartAcc`, `SqrtAcc`, `ExpoAcc`, `CircAcc`, `BackAcc`, `ElasticAcc`, `BounceAcc`
+* `SineDec`, `QuadDec`, `CubicDec`, `QuartDec`, `SqrtDec`, `ExpoDec`, `CircDec`, `BackDec`, `ElasticDec`, `BounceDec`
+* `None` (デフォルト。線形補間), `Reverse()`, `PowAcc(pow)`, `PowDec(pow)`, `Curve(curve)`, `FromTo(a,b)`
 * `ease.Stitch(ease)`: ２つのイージング組み合わせて InOut/OutIn を作成（逆方向は繋がらない）。
 
 ### 操作対象の自由な指定
@@ -267,7 +276,7 @@ await this.rectTransform.TweenLocalPosition()
 async Story.Task PlaySpecificAnimations()
 {
     // x を加速移動させるアニメーション
-    var task1 = this.rectTransform.TweenLocalPosition().To(x: 100f).Interval(100f, Story.QuadAcc);
+    var task1 = this.rectTransform.TweenLocalPosition().To(x: 100f).Interval(100f, Story.Ease.QuadAcc);
     
     // y を減速移動させるアニメーション
     var task2 = this.rectTransform.TweenLocalPosition().To(y: 50f).Interval(100f, Story.Ease.QuadDec);

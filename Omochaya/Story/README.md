@@ -220,10 +220,10 @@ public class TweenSample : MonoBehaviour
     public async Story.Task PlayAnimations()
     {
         // 時間（秒）を指定して絶対座標へ移動
-        await this.rectTransform.TweenLocalPosition().To(x: 100f, y: 50f).Interval(1.0f);
+        await this.rectTransform.TweenLocalPosition().To(new Vector3(100f, 50f, 0f)).Interval(1.0f);
 
         // 速度を指定して現在の値から相対的に移動
-        await this.rectTransform.TweenAnchoredPosition().By(y: 50f).Speed(200f);
+        await this.rectTransform.TweenAnchoredPosition().By(new Vector3(0f, 50f, 0f)).Speed(200f);
 
         // アルファ値を1.0へ時間指定でフェード
         await this.canvasGroup.TweenAlpha().To(1.0f).Interval(0.5f);
@@ -248,7 +248,7 @@ await this.rectTransform.TweenLocalScale()
 [SerializeField] AnimationCurve myCurve;
 // ...
 await this.rectTransform.TweenLocalPosition()
-    .To(x: 0f)
+    .To(Vector3.one)
     .Interval(1.0f, Story.Ease.Curve(myCurve));
 ```
 
@@ -258,6 +258,24 @@ await this.rectTransform.TweenLocalPosition()
 * `SineDec`,`QuadDec`,`CubicDec`,`QuartDec`,`SqrtDec`,`ExpoDec`,`CircDec`,`BackDec`,`ElasticDec`,`BounceDec`
 * `None` (デフォルト。線形),`Reverse()`,`Pow(e)`,`Curve(curve)`,`FromTo(a,b)`
 * `ease.Stitch(ease)`: ２つのイージング組み合わせて InOut/OutIn を作成（逆方向は繋がらない）。
+
+### 操作対象の自由な指定
+
+`To()` `By()` に引数名を指定することで指定した要素だけを変化させることができます。
+
+```csharp
+async Story.Task PlaySpecificAnimations()
+{
+    // x を加速移動させるアニメーション
+    var task1 = this.rectTransform.TweenLocalPosition().To(x: 100f).Interval(100f, Story.QuadAcc);
+    
+    // y を減速移動させるアニメーション
+    var task2 = this.rectTransform.TweenLocalPosition().To(y: 50f).Interval(100f, Story.Ease.QuadDec);
+
+    // 全てのタスクの完了を待機（x は加速移動しつつ y は減速移動します。z は変化しないのでタスク外で操作可能です）
+    await task1.With(task2);
+}
+```
 
 ### 複数Tweenのシームレスな連続再生
 

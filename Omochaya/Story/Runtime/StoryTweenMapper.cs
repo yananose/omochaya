@@ -232,7 +232,15 @@ namespace Omochaya
             public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where TS : struct, Story.ITimeSource
                 where E : struct, Story.IEase
-                => Mover.Create<TS, C, Mapper, float, E>(this.planArg, timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, float, E>(this.planArg, timeArg, ease, ref start);
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+                => Mover.CreateDummy<TS, C, Mapper, float, E>(ease);
         }
 
         readonly struct Mapper : Mover.IMapper<float>
@@ -338,13 +346,31 @@ namespace Omochaya
 #if STORY_MOVER_FAST
                 => this.comb switch
                 {
-                    Comb.X_ => Mover.Create<TS, C, X_, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y => Mover.Create<TS, C, _Y, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY => Mover.Create<TS, C, XY, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X_ => Mover.CreateTask<TS, C, X_, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._Y => Mover.CreateTask<TS, C, _Y, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XY => Mover.CreateTask<TS, C, XY, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
                     _ => default
                 };
 #else
-                => Mover.Create<TS, C, Mapper, Vector2, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, Vector2, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+#endif
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+#if STORY_MOVER_FAST
+                => this.comb switch
+                {
+                    Comb.X_ => Mover.CreateDummy<TS, C, X_, Vector2, E>(ease),
+                    Comb._Y => Mover.CreateDummy<TS, C, _Y, Vector2, E>(ease),
+                    Comb.XY => Mover.CreateDummy<TS, C, XY, Vector2, E>(ease),
+                    _ => default
+                };
+#else
+                => Mover.CreateDummy<TS, C, Mapper, Vector2, E>(ease);
 #endif
         }
 
@@ -502,17 +528,39 @@ namespace Omochaya
 #if STORY_MOVER_FAST
                 => this.comb switch
                 {
-                    Comb.X__ => Mover.Create<TS, C, X__, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y_ => Mover.Create<TS, C, _Y_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__Z => Mover.Create<TS, C, __Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YZ => Mover.Create<TS, C, _YZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_Z => Mover.Create<TS, C, X_Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY_ => Mover.Create<TS, C, XY_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYZ => Mover.Create<TS, C, XYZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X__ => Mover.CreateTask<TS, C, X__, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._Y_ => Mover.CreateTask<TS, C, _Y_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.__Z => Mover.CreateTask<TS, C, __Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._YZ => Mover.CreateTask<TS, C, _YZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X_Z => Mover.CreateTask<TS, C, X_Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XY_ => Mover.CreateTask<TS, C, XY_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XYZ => Mover.CreateTask<TS, C, XYZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
                     _ => default
                 };
 #else
-                => Mover.Create<TS, C, Mapper, Vector3, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, Vector3, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+#endif
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+#if STORY_MOVER_FAST
+                => this.comb switch
+                {
+                    Comb.X__ => Mover.CreateDummy<TS, C, X__, Vector3, E>(ease),
+                    Comb._Y_ => Mover.CreateDummy<TS, C, _Y_, Vector3, E>(ease),
+                    Comb.__Z => Mover.CreateDummy<TS, C, __Z, Vector3, E>(ease),
+                    Comb._YZ => Mover.CreateDummy<TS, C, _YZ, Vector3, E>(ease),
+                    Comb.X_Z => Mover.CreateDummy<TS, C, X_Z, Vector3, E>(ease),
+                    Comb.XY_ => Mover.CreateDummy<TS, C, XY_, Vector3, E>(ease),
+                    Comb.XYZ => Mover.CreateDummy<TS, C, XYZ, Vector3, E>(ease),
+                    _ => default
+                };
+#else
+                => Mover.CreateDummy<TS, C, Mapper, Vector3, E>(ease);
 #endif
         }
 
@@ -693,25 +741,55 @@ namespace Omochaya
 #if STORY_MOVER_FAST
                 => this.comb switch
                 {
-                    Comb.R___ => Mover.Create<TS, C, R___, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._G__ => Mover.Create<TS, C, _G__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__B_ => Mover.Create<TS, C, __B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.___A => Mover.Create<TS, C, ___A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RG__ => Mover.Create<TS, C, RG__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__BA => Mover.Create<TS, C, __BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R_B_ => Mover.Create<TS, C, R_B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._G_A => Mover.Create<TS, C, _G_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R__A => Mover.Create<TS, C, R__A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._GB_ => Mover.Create<TS, C, _GB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._GBA => Mover.Create<TS, C, _GBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R_BA => Mover.Create<TS, C, R_BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RG_A => Mover.Create<TS, C, RG_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RGB_ => Mover.Create<TS, C, RGB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RGBA => Mover.Create<TS, C, RGBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.R___ => Mover.CreateTask<TS, C, R___, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._G__ => Mover.CreateTask<TS, C, _G__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.__B_ => Mover.CreateTask<TS, C, __B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.___A => Mover.CreateTask<TS, C, ___A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.RG__ => Mover.CreateTask<TS, C, RG__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.__BA => Mover.CreateTask<TS, C, __BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.R_B_ => Mover.CreateTask<TS, C, R_B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._G_A => Mover.CreateTask<TS, C, _G_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.R__A => Mover.CreateTask<TS, C, R__A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._GB_ => Mover.CreateTask<TS, C, _GB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._GBA => Mover.CreateTask<TS, C, _GBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.R_BA => Mover.CreateTask<TS, C, R_BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.RG_A => Mover.CreateTask<TS, C, RG_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.RGB_ => Mover.CreateTask<TS, C, RGB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.RGBA => Mover.CreateTask<TS, C, RGBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
                     _ => default
                 };
 #else
-                => Mover.Create<TS, C, Mapper, Color, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, Color, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+#endif
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+#if STORY_MOVER_FAST
+                => this.comb switch
+                {
+                    Comb.R___ => Mover.CreateDummy<TS, C, R___, Color, E>(ease),
+                    Comb._G__ => Mover.CreateDummy<TS, C, _G__, Color, E>(ease),
+                    Comb.__B_ => Mover.CreateDummy<TS, C, __B_, Color, E>(ease),
+                    Comb.___A => Mover.CreateDummy<TS, C, ___A, Color, E>(ease),
+                    Comb.RG__ => Mover.CreateDummy<TS, C, RG__, Color, E>(ease),
+                    Comb.__BA => Mover.CreateDummy<TS, C, __BA, Color, E>(ease),
+                    Comb.R_B_ => Mover.CreateDummy<TS, C, R_B_, Color, E>(ease),
+                    Comb._G_A => Mover.CreateDummy<TS, C, _G_A, Color, E>(ease),
+                    Comb.R__A => Mover.CreateDummy<TS, C, R__A, Color, E>(ease),
+                    Comb._GB_ => Mover.CreateDummy<TS, C, _GB_, Color, E>(ease),
+                    Comb._GBA => Mover.CreateDummy<TS, C, _GBA, Color, E>(ease),
+                    Comb.R_BA => Mover.CreateDummy<TS, C, R_BA, Color, E>(ease),
+                    Comb.RG_A => Mover.CreateDummy<TS, C, RG_A, Color, E>(ease),
+                    Comb.RGB_ => Mover.CreateDummy<TS, C, RGB_, Color, E>(ease),
+                    Comb.RGBA => Mover.CreateDummy<TS, C, RGBA, Color, E>(ease),
+                    _ => default
+                };
+#else
+                => Mover.CreateDummy<TS, C, Mapper, Color, E>(ease);
 #endif
         }
 
@@ -837,7 +915,15 @@ namespace Omochaya
             public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
                 where TS : struct, Story.ITimeSource
                 where E : struct, Story.IEase
-                => Mover.Create<TS, C, Mapper, Quaternion, E>(this.planArg, timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, Quaternion, E>(this.planArg, timeArg, ease, ref start);
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+                => Mover.CreateDummy<TS, C, Mapper, Quaternion, E>(ease);
         }
 
         readonly struct Mapper : Mover.IMapper<Quaternion>
@@ -967,25 +1053,55 @@ namespace Omochaya
 #if STORY_MOVER_FAST
                 => this.comb switch
                 {
-                    Comb.X___ => Mover.Create<TS, C, X___, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y__ => Mover.Create<TS, C, _Y__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__W_ => Mover.Create<TS, C, __W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.___H => Mover.Create<TS, C, ___H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY__ => Mover.Create<TS, C, XY__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__WH => Mover.Create<TS, C, __WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_W_ => Mover.Create<TS, C, X_W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y_H => Mover.Create<TS, C, _Y_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X__H => Mover.Create<TS, C, X__H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YW_ => Mover.Create<TS, C, _YW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YWH => Mover.Create<TS, C, _YWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_WH => Mover.Create<TS, C, X_WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY_H => Mover.Create<TS, C, XY_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYW_ => Mover.Create<TS, C, XYW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYWH => Mover.Create<TS, C, XYWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X___ => Mover.CreateTask<TS, C, X___, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._Y__ => Mover.CreateTask<TS, C, _Y__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.__W_ => Mover.CreateTask<TS, C, __W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.___H => Mover.CreateTask<TS, C, ___H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XY__ => Mover.CreateTask<TS, C, XY__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.__WH => Mover.CreateTask<TS, C, __WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X_W_ => Mover.CreateTask<TS, C, X_W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._Y_H => Mover.CreateTask<TS, C, _Y_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X__H => Mover.CreateTask<TS, C, X__H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._YW_ => Mover.CreateTask<TS, C, _YW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb._YWH => Mover.CreateTask<TS, C, _YWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.X_WH => Mover.CreateTask<TS, C, X_WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XY_H => Mover.CreateTask<TS, C, XY_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XYW_ => Mover.CreateTask<TS, C, XYW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
+                    Comb.XYWH => Mover.CreateTask<TS, C, XYWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
                     _ => default
                 };
 #else
-                => Mover.Create<TS, C, Mapper, Rect, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+                => Mover.CreateTask<TS, C, Mapper, Rect, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
+#endif
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
+            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase
+#if STORY_MOVER_FAST
+                => this.comb switch
+                {
+                    Comb.X___ => Mover.CreateDummy<TS, C, X___, Rect, E>(ease),
+                    Comb._Y__ => Mover.CreateDummy<TS, C, _Y__, Rect, E>(ease),
+                    Comb.__W_ => Mover.CreateDummy<TS, C, __W_, Rect, E>(ease),
+                    Comb.___H => Mover.CreateDummy<TS, C, ___H, Rect, E>(ease),
+                    Comb.XY__ => Mover.CreateDummy<TS, C, XY__, Rect, E>(ease),
+                    Comb.__WH => Mover.CreateDummy<TS, C, __WH, Rect, E>(ease),
+                    Comb.X_W_ => Mover.CreateDummy<TS, C, X_W_, Rect, E>(ease),
+                    Comb._Y_H => Mover.CreateDummy<TS, C, _Y_H, Rect, E>(ease),
+                    Comb.X__H => Mover.CreateDummy<TS, C, X__H, Rect, E>(ease),
+                    Comb._YW_ => Mover.CreateDummy<TS, C, _YW_, Rect, E>(ease),
+                    Comb._YWH => Mover.CreateDummy<TS, C, _YWH, Rect, E>(ease),
+                    Comb.X_WH => Mover.CreateDummy<TS, C, X_WH, Rect, E>(ease),
+                    Comb.XY_H => Mover.CreateDummy<TS, C, XY_H, Rect, E>(ease),
+                    Comb.XYW_ => Mover.CreateDummy<TS, C, XYW_, Rect, E>(ease),
+                    Comb.XYWH => Mover.CreateDummy<TS, C, XYWH, Rect, E>(ease),
+                    _ => default
+                };
+#else
+                => Mover.CreateDummy<TS, C, Mapper, Rect, E>(ease);
 #endif
         }
 

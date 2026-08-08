@@ -158,6 +158,28 @@ namespace OmochayaTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Task_オーナーを指定せずに開始できないこと()
+        {
+            var task = SimpleTask();
+
+            Utils.ExpectAssert(Messages.Exceptions.OwnerCannotBeNull);
+            task.Start();
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task SimpleTask()
+            {
+                await Story.Yield;
+            }
+        }
+
         // ------------------------------------------------------------------------
         // プールとID（世代管理）の整合性テスト
         // ------------------------------------------------------------------------
@@ -386,7 +408,8 @@ namespace OmochayaTests
             Assert.IsTrue(childFinally, "親がキャンセルされた際、実行中の子タスクにもキャンセルが伝播してfinallyが実行されるべき");
             Assert.IsTrue(parentFinally, "子タスクのキャンセル処理（finally）が終わった後、親タスクのfinallyも実行されるべき");
 
-            Utils.LogGCAlloc();
+            // STORY_NO_DEBUG 時に失敗することがある。キャンセル例外を投げるので。
+            // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
             yield return null;

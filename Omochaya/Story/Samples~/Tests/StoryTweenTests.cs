@@ -273,9 +273,9 @@ namespace OmochayaTests
 
             using (Story.WarmupMode())
             {
-                this.testTransform.TweenLocalPosition().To(Vector3.one).Interval(0.1f).Warmup();
+                this.testTransform.TweenLocalPosition().To(Vector3.one).Warmup();
             }
-            
+
             // ローカル関数としてテスト用タスクを定義
             [Story.Capacity(8)]
             async Story.Task AwaitTestTask()

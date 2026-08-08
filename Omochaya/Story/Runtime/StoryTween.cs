@@ -641,10 +641,47 @@ namespace Omochaya
             return plan.CreateTask(default(UnscaledTime), new(0f, speed, true), ease, ref start);
         }
 
+        /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this tween.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Warmup<P, E>(this P plan, E ease, int count = 0)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            plan.CreateDummy(default(ScaledTime), ease).Warmup(count);
+        }
+
+        /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this tween.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Warmup<P>(this P plan, int count = 0)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            plan.CreateDummy(default(ScaledTime), ease).Warmup(count);
+        }
+
+        /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this tween.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void UnscaledWarmup<P, E>(this P plan, E ease, int count = 0)
+            where P : struct, Mover.IPlan
+            where E : struct, IEase
+        {
+            plan.CreateDummy(default(UnscaledTime), ease).Warmup(count);
+        }
+
+        /// <summary>Warmups the global pool capacity for the underlying state machine type associated with this tween.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void UnscaledWarmup<P>(this P plan, int count = 0)
+            where P : struct, Mover.IPlan
+        {
+            var ease = Ease.None;
+            plan.CreateDummy(default(UnscaledTime), ease).Warmup(count);
+        }
+
         /// <summary>Don't touch! Only for system.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Component GetOwner(Component self, Component owner)
         {
+            if (self == null) { return null; }
             if (owner != null) { return owner; }
             if (self.TryGetComponent<ITaskOwner>(out var other)) { return (Component)other; }
             return self;
@@ -855,6 +892,12 @@ namespace Omochaya.HiddenStory
             Story.Task CreateTask<TS, E>(in TS spepper, in TimeArg arg, E ease, ref double start)
                 where TS : struct, Story.ITimeSource
                 where E : struct, Story.IEase;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            Story.Task CreateDummy<TS, E>(in TS spepper, E ease)
+                where TS : struct, Story.ITimeSource
+                where E : struct, Story.IEase;
         }
 
         internal readonly struct PlanArg<C, M, T>
@@ -920,12 +963,20 @@ namespace Omochaya.HiddenStory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Story.Task Create<TS, C, M, T, E>(in PlanArg<C, M, T> planArg, in TimeArg timeArg, E ease, ref double start)
+        internal static Story.Task CreateTask<TS, C, M, T, E>(in PlanArg<C, M, T> planArg, in TimeArg timeArg, E ease, ref double start)
             where TS : struct, Story.ITimeSource
             where C : struct, ICarrier<T>
             where M : struct, IMapper<T>
             where E : struct, Story.IEase
             => Task(new Creator<TS, C, M, T>(planArg, timeArg, ref start), ease).At(planArg.Carrier.Owner);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Story.Task CreateDummy<TS, C, M, T, E>(E ease)
+            where TS : struct, Story.ITimeSource
+            where C : struct, ICarrier<T>
+            where M : struct, IMapper<T>
+            where E : struct, Story.IEase
+            => Task(default(Creator<TS, C, M, T>), ease);
 
         // task
         static async Story.Task Task<TS, C, M, T, E>(Creator<TS, C, M, T> creator, E ease)
@@ -964,7 +1015,7 @@ namespace Omochaya.HiddenStory
                 }
                 else if (float.Epsilon < this.timeArg.Speed)
                 {
-                    var length = planArg.Mapper.GetLength(planArg.To , planArg.IsDelta ? planArg.Carrier.Current : default);
+                    var length = planArg.Mapper.GetLength(planArg.To , planArg.IsDelta ? default : planArg.Carrier.Current);
                     start += length / this.timeArg.Speed;
                 }
             }
@@ -982,7 +1033,7 @@ namespace Omochaya.HiddenStory
                 var interval = this.timeArg.Interval;
                 if (float.Epsilon < this.timeArg.Speed)
                 {
-                    var length = this.planArg.Mapper.GetLength(this.planArg.To , this.planArg.IsDelta ? this.planArg.Carrier.Current : default);
+                    var length = this.planArg.Mapper.GetLength(this.planArg.To , this.planArg.IsDelta ? default : this.planArg.Carrier.Current);
                     interval = length / this.timeArg.Speed;
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

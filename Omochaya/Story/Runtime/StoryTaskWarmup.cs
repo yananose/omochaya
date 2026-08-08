@@ -28,13 +28,13 @@ namespace Omochaya
         {
             if (TaskWarmup.IsValid)
             {
-                Dev.Assert(!self.IsValid, string.Format(Messages.Exceptions.CannotWarmupAllocatedPool, self));
+                Dev.RuntimeAssert(!self.IsValid, string.Format(Messages.Exceptions.CannotWarmupAllocatedPool, self));
                 TaskWarmup.Shared.Warmup(count);
             }
             else
             {
                 ref var info = ref self.Info();
-                Dev.Assert(info.IsValid, Messages.Exceptions.MustWarmupInBlock);
+                Dev.RuntimeAssert(info.IsValid, Messages.Exceptions.MustWarmupInBlock);
                 Dev.LogWarning(string.Format(Messages.Warnings.ResizingAllocatedPool, self));
                 info.Warmup(count);
             }
@@ -43,7 +43,7 @@ namespace Omochaya
         /// <summary>Configures the capacity limits for the state machine pool associated with this task during the warmup phase.</summary>
         public static void Custom(this Task self, int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE, int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE)
         {
-            Dev.Assert(TaskWarmup.IsValid);
+            Dev.RuntimeAssert(TaskWarmup.IsValid);
             TaskWarmup.Shared.Custom(createLimitSize, expandLimitSize);
         }
     }
@@ -58,7 +58,7 @@ namespace Omochaya.HiddenStory
     using System.Reflection;
     using System.Runtime.CompilerServices;
 
-    internal static class TaskWarmup
+    static class TaskWarmup
     {
         static TaskWarmupper shared;
 
@@ -83,7 +83,7 @@ namespace Omochaya.HiddenStory
         internal static int GetCapacity(Type stateMachineType)
         {
             var count = GetCapacityCore(stateMachineType);
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             if (count < 0) { Dev.LogWarning(string.Format(Messages.Warnings.PoolCapacityInitFailed, stateMachineType)); }
 #endif
             return count;
@@ -145,6 +145,7 @@ namespace Omochaya.HiddenStory
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public class TaskWarmupper : IDisposable
     {
 
@@ -157,6 +158,7 @@ namespace Omochaya.HiddenStory
         // methods
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public void Dispose() => this.Destroy();
 
         internal void Setup<S>() where S : struct, IAsyncStateMachine

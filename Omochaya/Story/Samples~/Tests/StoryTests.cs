@@ -10,55 +10,6 @@ namespace OmochayaTests
 
     public class StoryTests
     {
-        // static
-        static StoryTestRunner runner;
-
-        // inner classes
-        internal class StoryTestRunner : MonoBehaviour
-        {
-            // methods
-            void Awake()
-            {
-                // 【任意】キャンセルモードの指定
-                Story.DefaultCancelMode = Story.CancelMode.Safe;
-
-                // 【任意】一度に実行するおおよそのタスク数の指定（実際に使用するタスク数よりも多めに指定してください）
-                Story.Warmup(1024);
-
-                // 【任意】各タスクのプールの事前確保
-                using (Story.WarmupMode())
-                {
-                    // 使用するタスクのプールを事前確保する
-                    // ※Capacity属性が設定されていればそのサイズ、引数で上書きも可能
-                    Story.WaitTime(0f).Warmup();
-                }
-            }
-
-            void Update() 
-            { 
-                using (Utils.Check())
-                {
-                    Story.Update();
-                }
-            }
-
-            void LateUpdate()
-            {
-                using (Utils.Check())
-                {
-                    Story.LateUpdate();
-                }
-            }
-
-            void FixedUpdate()
-            {
-                using (Utils.Check())
-                {
-                    Story.FixedUpdate();
-                }
-            }
-        }
-
         // fields
 
         GameObject ownerObj;
@@ -69,10 +20,8 @@ namespace OmochayaTests
         [SetUp]
         public void Setup()
         {
-            if (runner == null)
-            {
-                StoryTests.runner = new GameObject("StoryTestRunner").AddComponent<StoryTestRunner>();
-            }
+            StoryTestRunner.Require();
+
             this.ownerObj = new GameObject("StoryTestOwner");
             this.owner = this.ownerObj.AddComponent<Story.TaskBehaviour>();
         }
@@ -100,7 +49,7 @@ namespace OmochayaTests
             using (Story.WarmupMode())
             {
                 StoryMain(null).Warmup();
-                StorySub(null).Warmup(8); // サイズを指定することもできます（拡張のみ可能）
+                StorySub(null).Warmup(8); // サイズを指定することもできます
             }
 
             // 記録帳
@@ -209,6 +158,28 @@ namespace OmochayaTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Task_オーナーを指定せずに開始できないこと()
+        {
+            var task = SimpleTask();
+
+            Utils.ExpectAssert(Messages.Exceptions.OwnerCannotBeNull);
+            task.Start();
+
+            Utils.LogGCAlloc();
+
+            // compaction を処理させて次のテストへ影響させない
+            yield return null;
+
+            // 〜〜 ここからタスク定義 〜〜
+
+            [Story.Capacity(8)]
+            async Story.Task SimpleTask()
+            {
+                await Story.Yield;
+            }
+        }
+
         // ------------------------------------------------------------------------
         // プールとID（世代管理）の整合性テスト
         // ------------------------------------------------------------------------
@@ -254,9 +225,11 @@ namespace OmochayaTests
             Assert.IsFalse(task.MoveNext(), "解放済みタスクのMoveNextは状態を進めずfalseを返すこと");
 
             // 終了後は禁止される操作（Use-After-Free防止のためのAssert）
-            // ※ StoryDebug.cs の仕様により、不正操作時は System.Exception がスローされる
-            Assert.Throws<System.Exception>(() => task.Start(this.owner), "解放済みタスクのStartは例外(Assert)を出して弾かれるべき");
-            Assert.Throws<System.Exception>(() => task.Keep(this.owner), "解放済みタスクのKeepは例外(Assert)を出して弾かれるべき");
+            Utils.ExpectError(Messages.Exceptions.CannotOperateInvalidTask);
+            Utils.ExpectException(Messages.Exceptions.CannotOperateInvalidTask);
+            Utils.ExpectError(Messages.Exceptions.CannotOperateInvalidTask);
+            task.Start(this.owner);
+            task.Keep(this.owner);
 
             Utils.LogGCAlloc();
 
@@ -388,7 +361,7 @@ namespace OmochayaTests
 
             Assert.IsTrue(hasReachedFinally, "オーナーが破棄された場合、システムはそれを検知してfinallyブロックを実行させるべき");
 
-            // SIMPLE_CHECK 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
+            // STORY_NO_DEBUG 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -435,7 +408,8 @@ namespace OmochayaTests
             Assert.IsTrue(childFinally, "親がキャンセルされた際、実行中の子タスクにもキャンセルが伝播してfinallyが実行されるべき");
             Assert.IsTrue(parentFinally, "子タスクのキャンセル処理（finally）が終わった後、親タスクのfinallyも実行されるべき");
 
-            Utils.LogGCAlloc();
+            // STORY_NO_DEBUG 時に失敗することがある。キャンセル例外を投げるので。
+            // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
             yield return null;
@@ -1037,7 +1011,7 @@ namespace OmochayaTests
 
             Assert.IsTrue(hasReachedFinally, "Timeoutによって元のタスクがキャンセルされ、finallyが呼ばれているべき");
 
-            // SIMPLE_CHECK 時に失敗することがある。Timeout で Stop -> throw が実行されるため。
+            // STORY_NO_DEBUG 時に失敗することがある。Timeout で Stop -> throw が実行されるため。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1143,7 +1117,7 @@ namespace OmochayaTests
 
             Assert.IsTrue(hasCaughtException, "子タスクでスローされた例外が、親タスクのcatchブロックで正しく捕捉されるべき");
 
-            // SIMPLE_CHECK 時に失敗することがある。キャッシュしてるとは言え例外を投げる以上仕方ない。あとAssert.AreEqual()も怪しい
+            // STORY_NO_DEBUG 時に失敗することがある。キャッシュしてるとは言え例外を投げる以上仕方ない。あとAssert.AreEqual()も怪しい
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1203,7 +1177,7 @@ namespace OmochayaTests
             Assert.IsTrue(hasCaughtException, "キャンセルすると例外が発生しているはず");
             Assert.IsTrue(hasReachedNextLine, "キャンセルを握り潰すと到達しているはず");
 
-            // SIMPLE_CHECK 時に失敗することがある。GoodCancelTask で例外を投げるので。
+            // STORY_NO_DEBUG 時に失敗することがある。GoodCancelTask で例外を投げるので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1255,7 +1229,7 @@ namespace OmochayaTests
         public IEnumerator Task_誰もawaitしていないタスクの例外が発生しても_マネージャーの更新ループがクラッシュしないこと()
         {
             // Unityコンソールに例外が出力されること自体は許容（期待）する
-            UnityEngine.TestTools.LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex(".*UnhandledException.*"));
+            Utils.ExpectException("UnhandledException");
 
             var isSurvivorExecuted = false;
             var unhandledException = new System.Exception("UnhandledException");
@@ -1277,7 +1251,7 @@ namespace OmochayaTests
 
             UnityEngine.Debug.Log("ここまできてますか？");
 
-            // SIMPLE_CHECK 時はここで必ず失敗する（LogException()が呼ばれるためアロケートする）
+            // STORY_NO_DEBUG 時はここで必ず失敗する（throwするため）
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1335,7 +1309,7 @@ namespace OmochayaTests
             Assert.IsTrue(finallyAwaitCompleted, "finally内のawaitが完了し、後続処理が実行されるべき");
             Assert.IsFalse(task.IsValid, "finallyの処理が全て終わるとタスクは完全に解放されるべき");
 
-            // SIMPLE_CHECK 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
+            // STORY_NO_DEBUG 時に失敗することがある。owner の削除を検知してキャンセルを発生させる時に throw するので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1389,7 +1363,7 @@ namespace OmochayaTests
             Assert.IsTrue(childFinallyCompleted, "子のfinally内のawaitが完了した");
             Assert.IsTrue(parentFinallyCompleted, "子が完了した後に、親のfinallyが実行されているべき");
 
-            // SIMPLE_CHECK 時に失敗することがある。子が終了した後に親の finally を処理する時に throw するので。
+            // STORY_NO_DEBUG 時に失敗することがある。子が終了した後に親の finally を処理する時に throw するので。
             // Utils.LogGCAlloc();
 
             // compaction を処理させて次のテストへ影響させない
@@ -1516,7 +1490,8 @@ namespace OmochayaTests
         // ------------------------------------------------------------------------
         // 解析・プロファイリング機能のテスト
         // ------------------------------------------------------------------------
-
+#if STORY_NO_PRE_CAPACITY
+#else
         [UnityTest]
         public IEnumerator Task_ジェネリックタスクのCapacity属性が正しく適用されること()
         {
@@ -1549,6 +1524,7 @@ namespace OmochayaTests
             [Story.Capacity(42)]
             async Story.Task GenericCapacityTask<T>() { await Story.Yield; }
         }
+#endif
 
         [UnityTest]
         public IEnumerator Task_WorstCountが1フレーム内の生成スパイクを正確に記録すること()
@@ -1637,10 +1613,7 @@ namespace OmochayaTests
         public IEnumerator Task_CancelMode_Drop_デフォルトがDropになっていること()
         {
             // Dropモードでテスト
-            if (Dev.IsEnableAssert)
-            {
-                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
-            }
+            Utils.ExpectAssert(Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
             Story.DefaultCancelMode = Story.CancelMode.Drop;
 
             var nextLineReached = false;
@@ -1661,10 +1634,7 @@ namespace OmochayaTests
             Assert.IsFalse(task.IsValid, "処理は消失するが、タスク自体は正しく解放(無効化)されているべき");
 
             // Safe モードでテスト
-            if (Dev.IsEnableAssert)
-            {
-                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
-            }
+            Utils.ExpectAssert(Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
             Story.DefaultCancelMode = Story.CancelMode.Safe;
 
             nextLineReached = false;
@@ -1836,22 +1806,16 @@ namespace OmochayaTests
         // [Test]
         public void Task_CancelMode_タスク外からのTaskCancelMode変更は弾かれること()
         {
-            if (Dev.IsEnableAssert)
-            {
-                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
-                Story.TaskCancelMode = Story.CancelMode.Safe;
-            }
+            Utils.ExpectAssert(Messages.Exceptions.CannotSetTaskCancelModeOutsideTask);
+            Story.TaskCancelMode = Story.CancelMode.Safe;
         }
 
         [Test]
         public void Task_CancelMode_DefaultCancelModeに対するDontThrowの設定または開始後の変更は弾かれること()
         {
-            if (Dev.IsEnableAssert)
-            {
-                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
-                UnityEngine.TestTools.LogAssert.Expect(LogType.Assert, Messages.Exceptions.CannotSetDontThrowAsDefault);
-                Story.DefaultCancelMode = Story.CancelMode.DontThrow;
-            }
+            Utils.ExpectAssert(Messages.Exceptions.CannotSetDefaultCancelModeAfterStart);
+            Utils.ExpectAssert(Messages.Exceptions.CannotSetDontThrowAsDefault);
+            Story.DefaultCancelMode = Story.CancelMode.DontThrow;
         }
 
         // ------------------------------------------------------------------------
@@ -1939,6 +1903,5 @@ namespace OmochayaTests
             // 初期確保の制限として 32 に切り捨てられること
             Assert.AreEqual(32, Story.Pool.GetNeedCountAtCreate(10, 1000));
         }
-
     }
 }

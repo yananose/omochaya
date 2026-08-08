@@ -21,7 +21,7 @@ namespace Omochaya
     {
         /// <summary>Replaces the current task with a new one, anchoring it to a owner component and starting it.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Start(ref this Task self, Component owner, Task task)
+        public static bool Start(this ref Task self, Component owner, Task task)
         {
             self.Stop();
             self = task;
@@ -32,7 +32,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void At(Component owner)
         {
-            Dev.Assert(TaskManager.Shared.IsRunningValid);
+            Dev.RuntimeAssert(TaskManager.Shared.IsRunningValid);
             if (TaskManager.Shared.IsRunningValid) { TaskManager.Shared.GetRunningInfo().Keep(owner); }
         }
 

@@ -227,7 +227,11 @@ namespace Omochaya
 
             /// <summary>Anchors the task to a specific owner component to govern its lifecycle.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Keep(Component owner) => this.Info().Keep(owner);
+            public void Keep(Component owner)
+            {
+                if (IsValid) { this.Info().Keep(owner); }
+                else if (!TaskWarmup.IsValid) { Dev.LogError(Messages.Exceptions.CannotOperateInvalidTask); }
+            }
 
             /// <summary>Anchors the task to the currently running task's owner component.</summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -264,25 +268,30 @@ namespace Omochaya
             // for awaiter（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Awaiter GetAwaiter() => new Awaiter(this);
 
             // for collection（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public bool Equals(Task other) => Matches(other);
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override bool Equals(object obj) => obj is Task other && Equals(other);
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override int GetHashCode() => HashCode.Combine(Id);
 
             // for foreach（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public TaskEnumerator GetEnumerator() => new TaskEnumerator(this);
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => Dev.ToString(this);
 #endif
@@ -380,25 +389,30 @@ namespace Omochaya
             // for awaiter（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public Awaiter<R> GetAwaiter() => new Awaiter<R>(this.rawTask);
 
             // for collection（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public bool Equals(Task<R> other) => Matches(other);
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override bool Equals(object obj) => obj is Task<R> other && Equals(other);
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public override int GetHashCode() => HashCode.Combine(rawTask);
 
             // for foreach（利用者による呼び出し禁止）
 
             /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public TaskEnumerator GetEnumerator() => this.rawTask.GetEnumerator();
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             /// <summary>Returns a string that represents the current task status and identification.</summary>
             public override string ToString() => this.rawTask.ToString();
 #endif
@@ -462,7 +476,7 @@ namespace Omochaya
         /// <summary>Gets a reference to the custom extra metadata structure bound to the currently executing task.</summary>
         public static ref E GetExtra<E>()
         {
-            Dev.Assert(TaskManager.Shared.IsRunningValid);
+            Dev.RuntimeAssert(TaskManager.Shared.IsRunningValid);
             return ref TaskManager.Shared.GetRunningInfo2().GetExtra<E>();
         }
 
@@ -470,7 +484,7 @@ namespace Omochaya
         public static ref E GetExtra<E>(this Story.Task self)
         {
             ref var info2 = ref self.Info2();
-            Dev.Assert(info2.IsValid, Messages.Exceptions.InvalidExtraOperation);
+            Dev.RuntimeAssert(info2.IsValid, Messages.Exceptions.InvalidExtraOperation);
             return ref info2.GetExtra<E>();
         }
 
@@ -497,6 +511,7 @@ namespace Omochaya.HiddenStory
     static partial class Extensions
     {
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref TaskInfo Info(this Story.Task self)
         {
@@ -505,6 +520,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref TaskInfo2 Info2(this Story.Task self)
         {
@@ -552,6 +568,7 @@ namespace Omochaya.HiddenStory
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -561,6 +578,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsStarted
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -578,6 +596,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsPinned
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -597,6 +616,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsRunning
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -606,6 +626,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool WillCancel
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -615,6 +636,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public Story.CancelMode TaskCancelMode
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -640,9 +662,11 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public Component Owner => this.owner;
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly bool IsTop
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -650,6 +674,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly bool ShouldCancel // 偽装nullチェック
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -663,6 +688,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public readonly bool IsPaused
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -676,6 +702,7 @@ namespace Omochaya.HiddenStory
         // methods
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Entry(in StateMachine stateMachine, int offset, Story.CancelMode taskCancelMode)
         {
@@ -686,10 +713,10 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Keep(Component owner)
         {
-            if (!IsValid) { throw new Exception(Messages.Exceptions.CannotOperateInvalidTask); }
             Dev.Assert(!(owner is null), Messages.Exceptions.OwnerCannotBeNull);
             this.owner = owner;
             IsFastOwner = owner is Story.ITaskOwner;
@@ -697,6 +724,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Free()
         {
@@ -705,6 +733,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Run()
         {
@@ -713,11 +742,13 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Warmup(int count) => this.stateMachine.Warmup(count);
 
         /// <summary>Don't touch! Only for system.</summary>
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         public StringBuilder GetMethodName(StringBuilder sb) => Dev.ToString(sb, this.stateMachine.pool);
         public string GetMethodName() => GetMethodName(new StringBuilder()).ToString();
 #else
@@ -726,11 +757,13 @@ namespace Omochaya.HiddenStory
     }
 
     /// <summary>Don't touch! Only for system.</summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     struct TaskInfo2
     {
         // static
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public static TaskInfo2 Invalid;
 
         static TaskInfo2()
@@ -751,16 +784,19 @@ namespace Omochaya.HiddenStory
         public int Next; // 親タスクの方向
         Flags flags;
 
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public long SortKeyForDebug;
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public string CreationTraceForDebug;
 #endif
 
         // properties
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -772,12 +808,13 @@ namespace Omochaya.HiddenStory
         // methods
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Entry(int index)
         {
             this.IsValid = true;
             this.Next = this.Prev = index;
-#if (FOR_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
+#if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             if (Omochaya.HiddenStory.Dev.EnableTaskTracking)
             {
                 var st = new System.Diagnostics.StackTrace(3, true);
@@ -828,6 +865,7 @@ namespace Omochaya.HiddenStory
         }
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Free()
         {
@@ -838,6 +876,7 @@ namespace Omochaya.HiddenStory
         // extra
 
         /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref E GetExtra<E>()
         {

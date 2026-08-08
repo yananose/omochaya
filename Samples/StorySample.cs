@@ -98,8 +98,8 @@ public class StorySample : MonoBehaviour
         await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed, Story.Ease.None).At(this);
         await this.white.TweenAnchoredPosition().To(to).Speed(Speed, Story.Ease.None).At(this);
         // ^^^^^
-        // Tween60Compact.apk   36347685
-        // Tween60Fast.apk      36362325
+        // Tween60Compact.apk   36350365
+        // Tween60Fast.apk      36373233
 
         // 1:BackAcc
         this.tmp.text = (++count).ToString();
@@ -203,8 +203,8 @@ public class StorySample : MonoBehaviour
         await this.white.TweenAnchoredPosition().By(y:-Range*0.5f).Speed(Speed, Story.Ease.SqrtDec).At(this);
         await this.white.TweenAnchoredPosition().To(to).Speed(Speed, Story.Ease.SqrtDec).At(this);
         // ^^^^^
-        // Tween60Compact.apk   36360781
-        // Tween60Fast.apk      36511821
+        // Tween60Compact.apk   36357489
+        // Tween60Fast.apk      36516269
 
         // タスク内でタスクを起動するときは、誰に所属するかは省略できます。
         // 省略した場合は起動したタスクと同じところに所属します。

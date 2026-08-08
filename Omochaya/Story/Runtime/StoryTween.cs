@@ -385,6 +385,7 @@ namespace Omochaya
             where U : struct, IUpdater
             where E : struct, IEase
         {
+            TaskCancelMode = CancelMode.Drop;
             while (stepper.Step(updater, ease)) { await Yield; }
         }
 
@@ -987,6 +988,7 @@ namespace Omochaya.HiddenStory
         {
             var updater = creator.CreateUpdater();
             if (!updater.IsValid) { return; }
+            Story.TaskCancelMode = Story.CancelMode.Drop;
             while (updater.Step(ease)) { await Story.Yield; }
         }
 

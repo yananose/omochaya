@@ -1035,7 +1035,7 @@ namespace Omochaya.HiddenStory
                 var interval = this.timeArg.Interval;
                 if (float.Epsilon < this.timeArg.Speed)
                 {
-                    var length = this.planArg.Mapper.GetLength(this.planArg.To , this.planArg.IsDelta ? default : this.planArg.Carrier.Current);
+                    var length = this.planArg.Mapper.GetLength(to , this.planArg.IsDelta ? default : from);
                     interval = length / this.timeArg.Speed;
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

@@ -673,6 +673,8 @@ namespace Omochaya
 
             // implementations
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public enum Type
             {
                 None,
@@ -698,11 +700,19 @@ namespace Omochaya
                 BounceAcc,
                 BounceDec,
             }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             public readonly struct Impl : IEase
             {
                 readonly Type type;
+
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public Impl(Type type) => this.type = type;
 
+                /// <summary>Don't touch! Only for system.</summary>
+                [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
                 public float Calc(float now)
                 {
                     switch (this.type)

@@ -141,6 +141,13 @@ namespace Omochaya
         /// <summary>A globally accessible token to await an immediate void or finished state.</summary>
         public static VoidCore Void => default;
 
+        /// <summary></summary>
+        public static Component RunningOwner
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => TaskManager.Shared.GetRunningInfo().Owner;
+        }
+
         /// <summary>Determines whether the last awaited task completed successfully and returned a valid result.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool HasValidResult() => TaskManager.Shared.HasValidResult;

@@ -395,18 +395,21 @@ namespace Omochaya
         {
             double TimeAsDouble { get; }
             double DeltaTime { get; }
+            bool IsSkip { get; }
         }
 
         internal readonly struct ScaledTime : ITimeSource
         {
             public double TimeAsDouble => Time.timeAsDouble;
             public double DeltaTime => Time.deltaTime;
+            public bool IsSkip => false;
         }
 
         internal readonly struct UnscaledTime : ITimeSource
         {
             public double TimeAsDouble => Time.unscaledTimeAsDouble;
             public double DeltaTime => Time.unscaledDeltaTime;
+            public bool IsSkip => false;
         }
 
         internal struct Stepper<TS>
@@ -443,6 +446,12 @@ namespace Omochaya
             [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
             internal void Proceed()
             {
+                if (default(TS).IsSkip)
+                {
+                    this.seek = 1f;
+                    return;
+                }
+
                 var timeAsDouble = default(TS).TimeAsDouble;
                 var diff = timeAsDouble - this.prev;
                 if (diff < 0)
@@ -691,16 +700,22 @@ namespace Omochaya
 #if STORY_NO_TIME_CACHE
 #else
 
-        static class Time
+        /// <summary></summary>
+        public static class Time
         {
 
             // static
 
-            internal static double timeAsDouble;
-            internal static double unscaledTimeAsDouble;
-            internal static float deltaTime;
-            internal static float unscaledDeltaTime;
-            internal static int frameCount;
+            /// <summary>The double precision time at the beginning of this frame. This is the time in seconds since the start of the game.</summary>
+            public static double timeAsDouble;
+            /// <summary>The double precision timeScale-independent time for this frame. This is the time in seconds since the start of the game.</summary>
+            public static double unscaledTimeAsDouble;
+            /// <summary>The interval in seconds from the last frame to the current one.</summary>
+            public static float deltaTime;
+            /// <summary>The timeScale-independent interval in seconds from the last frame to the current one.</summary>
+            public static float unscaledDeltaTime;
+            /// <summary>The total number of frames since the start of the game.</summary>
+            public static int frameCount;
 
             // methods
 

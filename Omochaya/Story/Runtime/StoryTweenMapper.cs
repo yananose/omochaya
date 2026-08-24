@@ -934,7 +934,7 @@ namespace Omochaya
 #endif
 
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
+        /// <summary></summary>
         public static void Set<C>(this C self, float x, X___ _ = default) where C : struct, IXYWH => To(self, x:x).SetEnd();
         public static void Set<C>(this C self, float y, _Y__ _ = default) where C : struct, IXYWH => To(self, y:y).SetEnd();
         public static void Set<C>(this C self, float w, __W_ _ = default) where C : struct, IXYWH => To(self, w:w).SetEnd();

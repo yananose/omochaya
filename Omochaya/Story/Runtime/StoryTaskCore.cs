@@ -182,6 +182,7 @@ namespace Omochaya.HiddenStory
             // fields
             S[] array;
             S origin;
+            int clearOrigin = -1;
 
             // methods
 
@@ -191,7 +192,7 @@ namespace Omochaya.HiddenStory
                 if (count <= 0) { count = GetNeedCount(base.ItemSize + Unsafe.SizeOf<S>()); }
                 var copy = this.array == null;
                 Story.Pool.Expand(ref this.array, count);
-                if (copy) { this.array[0] = this.origin; }
+                if (copy) { this.array[0] = this.origin; this.clearOrigin = 0; }
                 return count;
             }
 
@@ -218,7 +219,15 @@ namespace Omochaya.HiddenStory
             {
                 base.UnsafeFree(index);
                 if (this.array == null) { this.origin = default; }
-                else { this.array[index] = default; }
+                else
+                {
+                    this.array[index] = default;
+                    if (this.clearOrigin == index) // trueになることはほぼない
+                    {
+                        this.origin = default;
+                        this.clearOrigin = -1;
+                    }
+                }
             }
 
             // [MethodImpl(MethodImplOptions.AggressiveInlining)] // 仮想メソッド
@@ -227,7 +236,18 @@ namespace Omochaya.HiddenStory
                 var array = this.array;
                 if (array == null) { this.origin.MoveNext(); }
                 else { array[index].MoveNext(); }
-                if (this.array != array) { this.array[index] = array == null ? this.origin : array[index]; } // 配列拡張時に新しい配列へ情報を反映
+                if (this.array == array) { return; }
+                // 配列拡張時に新しい配列へ情報を反映
+
+                if (array == null)
+                {
+                    this.array[index] = this.origin;
+                    this.origin = default;
+                    this.clearOrigin = -1;
+                    return;
+                }
+
+                this.array[index] = array[index];
             }
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG

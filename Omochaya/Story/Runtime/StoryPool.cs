@@ -493,7 +493,7 @@ namespace Omochaya
             if (count <= 0) { count = GetNeedCount(ItemSize); }
             var copy = this.array == null;
             Story.Pool.Expand(ref this.array, count);
-            if (copy) { this.array[0] = this.origin; }
+            if (copy) { this.array[0] = this.origin; this.origin = default; }
             return count;
         }
 
@@ -635,7 +635,7 @@ namespace Omochaya
             count = base.ExpandArray(count);
             var copy = this.array == null;
             Story.Pool.Expand(ref this.array, count);
-            if (copy) { this.array[0] = this.origin; }
+            if (copy) { this.array[0] = this.origin; this.origin = default; }
             return count;
         }
 

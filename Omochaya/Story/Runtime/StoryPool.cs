@@ -270,7 +270,7 @@ namespace Omochaya
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref M UnsafeGetMeta<M, V>(this UnsafePoolBase<M, V> self, int index)
             where M : struct, IUnsafePoolMeta
-            => ref self.Array[index].Meta;
+            => ref self.UnsafeGetSlot(index).Meta;
 
         /// <summary>Gets a reference to the metadata associated with the specified valid identifier.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -343,8 +343,8 @@ namespace Omochaya
     {
         // fields
         int[] nextFree;
-        int count;
-        int freeHead = -1;
+        int count = 1;
+        int freeHead;
         int createLimitSize = Story.Pool.CREATE_LIMIT_SIZE;
         int expandLimitSize = Story.Pool.EXPAND_LIMIT_SIZE;
 
@@ -392,8 +392,6 @@ namespace Omochaya
         }
 
         // constructors
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected PoolCore() => Dev.PoolMonitorRegister(this);
 
         // methods
 
@@ -415,6 +413,7 @@ namespace Omochaya
                 Dev.LogWarning(string.Format(Messages.Warnings.ExpandOnly, oldCount, newCount));
                 return;
             }
+            if (this.nextFree == null) { this.freeHead = -1; Dev.PoolMonitorRegister(this); }
             newCount = ExpandArray(newCount);
             Story.Pool.Expand(ref this.nextFree, newCount);
             this.count = newCount;
@@ -429,7 +428,7 @@ namespace Omochaya
             if (this.freeHead == -1) { Expand(0); }
 
             var index = this.freeHead;
-            this.freeHead = this.nextFree[index];
+            this.freeHead = this.nextFree == null ? -1 : this.nextFree[index];
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
             this.useCount++;
@@ -443,7 +442,8 @@ namespace Omochaya
         // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
         public virtual void UnsafeFree(int index)
         {
-            this.nextFree[index] = this.freeHead;
+            if (this.nextFree == null) { Dev.Assert(index == 0); }
+            else { this.nextFree[index] = this.freeHead; }
             this.freeHead = index;
 
 #if (STORY_DEBUG || UNITY_EDITOR) && !STORY_NO_DEBUG
@@ -474,7 +474,8 @@ namespace Omochaya
         }
 
         // fields
-        internal PoolSlot[] Array; // private にしたい...
+        PoolSlot[] array;
+        PoolSlot origin;
 
         // properties
 
@@ -490,7 +491,9 @@ namespace Omochaya
         protected override int ExpandArray(int count)
         {
             if (count <= 0) { count = GetNeedCount(ItemSize); }
-            Story.Pool.Expand(ref this.Array, count);
+            var copy = this.array == null;
+            Story.Pool.Expand(ref this.array, count);
+            if (copy) { this.array[0] = this.origin; }
             return count;
         }
 
@@ -499,7 +502,8 @@ namespace Omochaya
         public override void UnsafeFree(int index)
         {
             base.UnsafeFree(index);
-            this.Array[index].Value = default;
+            if (this.array == null) { this.origin.Value = default; }
+            else { this.array[index].Value = default; }
         }
 
         /// <summary>Gets a direct reference to the element at the raw index without identifier validation.</summary>
@@ -524,7 +528,14 @@ namespace Omochaya
         /// </code>
         /// </example>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-        public ref V UnsafeGet(int index) => ref this.Array[index].Value;
+        public ref V UnsafeGet(int index) => ref UnsafeGetSlot(index).Value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
+        internal ref PoolSlot UnsafeGetSlot(int index)
+        {
+            if (this.array == null) { return ref this.origin; }
+            else { return ref this.array[index]; }
+        }
     }
 
     /// <summary>Don't touch! Only for system.（継承しないでください）</summary>
@@ -536,7 +547,7 @@ namespace Omochaya
         public new Story.Pool.Id Alloc()
         {
             var index = base.Alloc();
-            ref var meta = ref this.Array[index].Meta;
+            ref var meta = ref this.UnsafeGetSlot(index).Meta;
             if (meta.Age == 0) { meta.Age = 1; }
             return new Story.Pool.Id(index, meta.Age);
         }
@@ -553,7 +564,7 @@ namespace Omochaya
         public override void UnsafeFree(int index)
         {
             base.UnsafeFree(index);
-            ref var meta = ref this.Array[index].Meta;
+            ref var meta = ref this.UnsafeGetSlot(index).Meta;
             var age = meta.Age;
             if (++age == 0) { age = 1; }
             meta.Age = age;
@@ -562,7 +573,7 @@ namespace Omochaya
         /// <summary>Determines whether the specified identifier is valid within the underlying slot array.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
         public new bool IsValid(Story.Pool.Id id)
-            => this.Array != null && (uint)id.Index < this.Array.Length && this.Array[id.Index].Meta.Age == id.Age;
+            => (uint)id.Index < this.Length && this.UnsafeGetSlot(id.Index).Meta.Age == id.Age;
 
         /// <summary>Gets a reference to the element associated with the valid identifier.</summary>
         /// <remarks>
@@ -606,7 +617,8 @@ namespace Omochaya
         where M : struct, IPoolMeta
     {
         // fields
-        HOT[] hotArray;
+        HOT[] array;
+        HOT origin;
 
         // properties
         protected new int ItemSize
@@ -621,7 +633,9 @@ namespace Omochaya
         protected override int ExpandArray(int count)
         {
             count = base.ExpandArray(count);
-            Story.Pool.Expand(ref this.hotArray, count);
+            var copy = this.array == null;
+            Story.Pool.Expand(ref this.array, count);
+            if (copy) { this.array[0] = this.origin; }
             return count;
         }
 
@@ -630,7 +644,8 @@ namespace Omochaya
         public override void UnsafeFree(int index)
         {
             base.UnsafeFree(index);
-            this.hotArray[index] = default;
+            if (this.array == null) { this.origin = default; }
+            else { this.array[index] = default; }
         }
 
         /// <summary>Gets a reference to the hot data associated with the specified identifier.</summary>
@@ -658,7 +673,7 @@ namespace Omochaya
         public new ref HOT Get(Story.Pool.Id id)
         {
             Dev.RuntimeAssert(IsValid(id));
-            return ref this.hotArray[id.Index];
+            return ref UnsafeGet(id.Index);
         }
 
         /// <summary>Gets a direct reference to the hot data associated at the raw index without identifier validation.</summary>
@@ -683,7 +698,11 @@ namespace Omochaya
         /// </code>
         /// </example>
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // サイズが小さい
-        public new ref HOT UnsafeGet(int index) => ref this.hotArray[index];
+        public new ref HOT UnsafeGet(int index)
+        {
+            if (this.array == null) { return ref this.origin; }
+            else { return ref this.array[index]; }
+        }
 
         /// <summary>Gets a reference to the cool data associated with the specified identifier.</summary>
         /// <remarks>

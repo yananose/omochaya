@@ -33,14 +33,14 @@ public class StorySample : MonoBehaviour
         // タスク別に使用するプールサイズを事前確保します。
         // 事前確保した数を超えても動作しますが、プールがリサイズされてアロケートが発生します。
         // 気にしない場合は省略しても問題ありません。
-        using (Story.WarmupMode())
-        {
-            RootTask().Warmup();
-            SubTask(null).Warmup();
-            MoveTask(null, 0f).Warmup();
-            SubTaskLeft(null).Warmup();
-            BlueTask(null).Warmup();
-        }
+        // using (Story.WarmupMode())
+        // {
+        //     RootTask().Warmup();
+        //     SubTask(null).Warmup();
+        //     MoveTask(null, 0f).Warmup();
+        //     SubTaskLeft(null).Warmup();
+        //     BlueTask(null).Warmup();
+        // }
 
         // タスクを起動します。
         // ここではテスト用のルートタスクを起動しています。
@@ -83,7 +83,6 @@ public class StorySample : MonoBehaviour
         Story.FixedUpdate();
     }
 
-    [Story.Capacity(5)]
     async Story.Task RootTask()
     {
         // アプリ起動直後は安定しないのでちょっと待つ
@@ -294,7 +293,6 @@ Debug.Log(7);
     }
 
     // サブタスク：往復移動させる
-    [Story.Capacity(5)]
     async Story.Task<int> SubTask(RectTransform rt)
     {
         var position = rt.anchoredPosition;
@@ -316,7 +314,6 @@ Debug.Log(7);
     }
 
     // 指定した位置へ移動させる
-    [Story.Capacity(5)]
     async Story.Task MoveTask(RectTransform rt, float to)
     {
         var x = rt.anchoredPosition.x;
@@ -351,7 +348,6 @@ Debug.Log(7);
     }
 
     // 【孫タスクのテスト】左端まで移動させる
-    [Story.Capacity(5)]
     async Story.Task SubTaskLeft(RectTransform rt)
     {
         // 【孫タスクのテスト】手動実行で半分まで移動
@@ -362,7 +358,6 @@ Debug.Log(7);
     }
 
     // 【finally ブロックのテスト】キャンセルされても左端まで移動する
-    [Story.Capacity(5)]
     async Story.Task BlueTask(RectTransform rt)
     {
         try

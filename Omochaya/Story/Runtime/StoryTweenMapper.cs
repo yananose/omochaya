@@ -13,6 +13,7 @@ namespace Omochaya
     using Omochaya.HiddenStory;
     using System.Runtime.CompilerServices;
 
+    using IXY = HiddenStory.Mover.ICarrier<UnityEngine.Vector2>;
     using X_ = StoryVector2.GenericMapper<
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisIgnore>;
@@ -23,6 +24,7 @@ namespace Omochaya
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisUse>;
 
+    using IXYZ = HiddenStory.Mover.ICarrier<UnityEngine.Vector3>;
     using X__ = StoryVector3.GenericMapper<
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisIgnore,
@@ -52,6 +54,7 @@ namespace Omochaya
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisUse>;
 
+    using IRGBA = HiddenStory.Mover.ICarrier<UnityEngine.Color>;
     using R___ = StoryColor.GenericMapper<
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisIgnore,
@@ -128,6 +131,7 @@ namespace Omochaya
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisUse>;
 
+    using IXYWH = HiddenStory.Mover.ICarrier<UnityEngine.Rect>;
     using X___ = StoryRect.GenericMapper<
         HiddenStory.Mover.AxisUse,
         HiddenStory.Mover.AxisIgnore,
@@ -210,51 +214,39 @@ namespace Omochaya
     {
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, float p) where C : struct, Mover.ICarrier<float> => new(self, false, p);
+        public static Mover.Plan<C, Mapper, float> To<C>(this C self, float p) where C : struct, Mover.ICarrier<float> => new(self, false, default, p);
 
         /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, float p) where C : struct, Mover.ICarrier<float> => new(self, true, p);
+        public static Mover.Plan<C, Mapper, float> By<C>(this C self, float p) where C : struct, Mover.ICarrier<float> => new(self, true, default, p);
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<float>
+        public readonly struct Mapper : Mover.IMapper<float>
         {
-            readonly Mover.PlanArg<C, Mapper, float> planArg;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float p) => this.planArg = new(carrier, p, isDelta);
-
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-                => Mover.CreateTask<TS, C, Mapper, float, E>(this.planArg, timeArg, ease, ref start);
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-                => Mover.CreateDummy<TS, C, Mapper, float, E>(ease);
-        }
-
-        readonly struct Mapper : Mover.IMapper<float>
-        {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(float to, float from) => Mathf.Abs(to - from);
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public float Set(float current, float to) => to;
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (float, float) GetParam(float from, float to, bool isDelta)
             {
                 if (isDelta) { to += from; }
                 return (to, from - to);
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public float Lerp(float current, float to, float diff, float rt) => to + diff * rt;
         }
     }
 
@@ -262,125 +254,54 @@ namespace Omochaya
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryVector2 ///////////////////////////////////////////////////////////////////////////////////
     {
+#if STORY_MOVER_FAST
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, Vector2 p = default)
-            where C : struct, Mover.ICarrier<Vector2>
-            => new(self, false, p);
+        public static Mover.Plan<C, XY, Vector2> To<C>(this C self, Vector2 p = default, bool isDelta = false, XY _ = default) where C : struct, IXY => new(self, isDelta, _, p);
+        public static Mover.Plan<C, X_, Vector2> To<C>(this C self, float x, bool isDelta = false, X_ _ = default) where C : struct, IXY => new(self, isDelta, _, new(x, 0));
+        public static Mover.Plan<C, _Y, Vector2> To<C>(this C self, float y, bool isDelta = false, _Y _ = default) where C : struct, IXY => new(self, isDelta, _, new(0, y));
+        public static Mover.Plan<C, XY, Vector2> To<C>(this C self, float x, float y, bool isDelta = false, XY _ = default) where C : struct, IXY => new(self, isDelta, _, new(x, y));
 
         /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, Vector2 p = default)
-            where C : struct, Mover.ICarrier<Vector2>
-            => new(self, true, p);
+        public static Mover.Plan<C, XY, Vector2> By<C>(this C self, Vector2 p = default, XY _ = default) where C : struct, IXY => To(self, p, true);
+        public static Mover.Plan<C, X_, Vector2> By<C>(this C self, float x, X_ _ = default) where C : struct, IXY => To(self, x:x, true);
+        public static Mover.Plan<C, _Y, Vector2> By<C>(this C self, float y, _Y _ = default) where C : struct, IXY => To(self, y:y, true);
+        public static Mover.Plan<C, XY, Vector2> By<C>(this C self, float x, float y, XY _ = default) where C : struct, IXY => To(self, x, y, true);
+#else
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
+        public static Mover.Plan<C, Mapper, Vector2> To<C>(this C self, Vector2 p = default, bool isDelta = false, XY _ = default) where C : struct, IXY => new(self, isDelta, new(Comb.XY), p);
+        public static Mover.Plan<C, Mapper, Vector2> To<C>(this C self, float x, bool isDelta = false, X_ _ = default) where C : struct, IXY => new(self, isDelta, new(Comb.X_), new(x, 0));
+        public static Mover.Plan<C, Mapper, Vector2> To<C>(this C self, float y, bool isDelta = false, _Y _ = default) where C : struct, IXY => new(self, isDelta, new(Comb._Y), new(0, y));
+        public static Mover.Plan<C, Mapper, Vector2> To<C>(this C self, float x, float y, bool isDelta = false, XY _ = default) where C : struct, IXY => new(self, isDelta, new(Comb.XY), new(x, y));
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null)
-            where C : struct, Mover.ICarrier<Vector2>
-            => new(self, false, x, y);
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
+        public static Mover.Plan<C, Mapper, Vector2> By<C>(this C self, Vector2 p = default, XY _ = default) where C : struct, IXY => To(self, p, true);
+        public static Mover.Plan<C, Mapper, Vector2> By<C>(this C self, float x, X_ _ = default) where C : struct, IXY => To(self, x:x, true);
+        public static Mover.Plan<C, Mapper, Vector2> By<C>(this C self, float y, _Y _ = default) where C : struct, IXY => To(self, y:y, true);
+        public static Mover.Plan<C, Mapper, Vector2> By<C>(this C self, float x, float y, XY _ = default) where C : struct, IXY => To(self, x, y, true);
+#endif
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null)
-            where C : struct, Mover.ICarrier<Vector2>
-            => new(self, true, x, y);
+        /// <summary></summary>
+        public static void Set<C>(this C self, float x, X_ _ = default) where C : struct, IXY => To(self, x:x).SetEnd();
+        public static void Set<C>(this C self, float y, _Y _ = default) where C : struct, IXY => To(self, y:y).SetEnd();
 
-        enum Comb
+        internal enum Comb
         {
             None,
             X_, _Y,
             XY
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-        static Comb Analyze(float? x, float? y)
-        {
-            var bits = 0;
-            bits <<= 1; if (x != null) { bits |= 1; } 
-            bits <<= 1; if (y != null) { bits |= 1; } 
-            Dev.Assert(bits != 0, Messages.Exceptions.InvalidArguments);
-            return bits switch
-                {
-                    0b10 => Comb.X_,
-                    0b01 => Comb._Y,
-                    0b11 => Comb.XY,
-                    _ => default
-                };
-        }
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<Vector2>
-        {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly Comb comb;
-            readonly Vector2 to;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float? x, float? y)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Analyze(x, y);
-                this.to = new(x ?? default, y ?? default);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Vector2 p)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Comb.XY;
-                this.to = p;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X_ => Mover.CreateTask<TS, C, X_, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y => Mover.CreateTask<TS, C, _Y, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY => Mover.CreateTask<TS, C, XY, Vector2, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    _ => default
-                };
-#else
-                => Mover.CreateTask<TS, C, Mapper, Vector2, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
-#endif
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X_ => Mover.CreateDummy<TS, C, X_, Vector2, E>(ease),
-                    Comb._Y => Mover.CreateDummy<TS, C, _Y, Vector2, E>(ease),
-                    Comb.XY => Mover.CreateDummy<TS, C, XY, Vector2, E>(ease),
-                    _ => default
-                };
-#else
-                => Mover.CreateDummy<TS, C, Mapper, Vector2, E>(ease);
-#endif
-        }
-
-        readonly struct Mapper : Mover.IMapper<Vector2>
+        public readonly struct Mapper : Mover.IMapper<Vector2>
         {
             readonly Comb comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Vector2 to, Vector2 from)
                 => this.comb switch
@@ -391,6 +312,8 @@ namespace Omochaya
                     _ => default
                 };
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
                 => this.comb switch
@@ -401,14 +324,32 @@ namespace Omochaya
                     _ => current
                 };
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector2 Set(Vector2 current, Vector2 to)
+                => this.comb switch
+                {
+                    Comb.X_ => default(X_).Set(current, to),
+                    Comb._Y => default(_Y).Set(current, to),
+                    Comb.XY => default(XY).Set(current, to),
+                    _ => current
+                };
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta) => default(XY).GetParam(from, to, isDelta);
         }
 
-        internal readonly struct GenericMapper<X, Y> : Mover.IMapper<Vector2>
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct GenericMapper<X, Y> : Mover.IMapper<Vector2>
             where X : struct, Mover.IAxisFlag
             where Y : struct, Mover.IAxisFlag
         {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Vector2 to, Vector2 from)
             {
@@ -417,6 +358,8 @@ namespace Omochaya
                 return Mathf.Sqrt(xx + yy);
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vector2 Lerp(Vector2 current, Vector2 to, Vector2 diff, float rt)
             {
@@ -425,6 +368,18 @@ namespace Omochaya
                 return current;
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector2 Set(Vector2 current, Vector2 to)
+            {
+                current.x = default(X).Set(current.x, to.x);
+                current.y = default(Y).Set(current.y, to.y);
+                return current;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Vector2, Vector2) GetParam(Vector2 from, Vector2 to, bool isDelta)
             {
@@ -438,31 +393,57 @@ namespace Omochaya
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryVector3 ///////////////////////////////////////////////////////////////////////////////////
     {
+#if STORY_MOVER_FAST
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, in Vector3 p = default)
-            where C : struct, Mover.ICarrier<Vector3>
-            => new(self, false, p);
+        public static Mover.Plan<C, XYZ, Vector3> To<C>(this C self, Vector3 p = default, bool isDelta = false, XYZ _ = default) where C : struct, IXYZ => new(self, isDelta, _, p);
+        public static Mover.Plan<C, X__, Vector3> To<C>(this C self, float x, bool isDelta = false, X__ _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(x, 0, 0));
+        public static Mover.Plan<C, _Y_, Vector3> To<C>(this C self, float y, bool isDelta = false, _Y_ _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(0, y, 0));
+        public static Mover.Plan<C, __Z, Vector3> To<C>(this C self, float z, bool isDelta = false, __Z _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(0, 0, z));
+        public static Mover.Plan<C, XY_, Vector3> To<C>(this C self, float x, float y, bool isDelta = false, XY_ _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(x, y, 0));
+        public static Mover.Plan<C, _YZ, Vector3> To<C>(this C self, float y, float z, bool isDelta = false, _YZ _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(0, y, z));
+        public static Mover.Plan<C, X_Z, Vector3> To<C>(this C self, float x, float z, bool isDelta = false, X_Z _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(x, 0, z));
+        public static Mover.Plan<C, XYZ, Vector3> To<C>(this C self, float x, float y, float z, bool isDelta = false, XYZ _ = default) where C : struct, IXYZ => new(self, isDelta, _, new(x, y, z));
 
         /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, in Vector3 p = default)
-            where C : struct, Mover.ICarrier<Vector3>
-            => new(self, true, p);
+        public static Mover.Plan<C, XYZ, Vector3> By<C>(this C self, Vector3 p = default, XYZ _ = default) where C : struct, IXYZ => To(self, p, true);
+        public static Mover.Plan<C, X__, Vector3> By<C>(this C self, float x, X__ _ = default) where C : struct, IXYZ => To(self, x:x, true);
+        public static Mover.Plan<C, _Y_, Vector3> By<C>(this C self, float y, _Y_ _ = default) where C : struct, IXYZ => To(self, y:y, true);
+        public static Mover.Plan<C, __Z, Vector3> By<C>(this C self, float z, __Z _ = default) where C : struct, IXYZ => To(self, z:z, true);
+        public static Mover.Plan<C, XY_, Vector3> By<C>(this C self, float x, float y, XY_ _ = default) where C : struct, IXYZ => To(self, x:x, y:y, true);
+        public static Mover.Plan<C, _YZ, Vector3> By<C>(this C self, float y, float z, _YZ _ = default) where C : struct, IXYZ => To(self, y:y, z:z, true);
+        public static Mover.Plan<C, X_Z, Vector3> By<C>(this C self, float x, float z, X_Z _ = default) where C : struct, IXYZ => To(self, x:x, z:z, true);
+        public static Mover.Plan<C, XYZ, Vector3> By<C>(this C self, float x, float y, float z, XYZ _ = default) where C : struct, IXYZ => To(self, x, y, z, true);
+#else
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, Vector3 p = default, bool isDelta = false, XYZ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.XYZ), p);
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float x, bool isDelta = false, X__ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.X__), new(x, 0, 0));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float y, bool isDelta = false, _Y_ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb._Y_), new(0, y, 0));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float z, bool isDelta = false, __Z _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.__Z), new(0, 0, z));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float x, float y, bool isDelta = false, XY_ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.XY_), new(x, y, 0));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float y, float z, bool isDelta = false, _YZ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb._YZ), new(0, y, z));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float x, float z, bool isDelta = false, X_Z _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.X_Z), new(x, 0, z));
+        public static Mover.Plan<C, Mapper, Vector3> To<C>(this C self, float x, float y, float z, bool isDelta = false, XYZ _ = default) where C : struct, IXYZ => new(self, isDelta, new(Comb.XYZ), new(x, y, z));
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? z = null)
-            where C : struct, Mover.ICarrier<Vector3>
-            => new(self, false, x, y, z);
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, Vector3 p = default, XYZ _ = default) where C : struct, IXYZ => To(self, p, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float x, X__ _ = default) where C : struct, IXYZ => To(self, x:x, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float y, _Y_ _ = default) where C : struct, IXYZ => To(self, y:y, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float z, __Z _ = default) where C : struct, IXYZ => To(self, z:z, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float x, float y, XY_ _ = default) where C : struct, IXYZ => To(self, x:x, y:y, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float y, float z, _YZ _ = default) where C : struct, IXYZ => To(self, y:y, z:z, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float x, float z, X_Z _ = default) where C : struct, IXYZ => To(self, x:x, z:z, true);
+        public static Mover.Plan<C, Mapper, Vector3> By<C>(this C self, float x, float y, float z, XYZ _ = default) where C : struct, IXYZ => To(self, x, y, z, true);
+#endif
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? z = null)
-            where C : struct, Mover.ICarrier<Vector3>
-            => new(self, true, x, y, z);
+        /// <summary></summary>
+        public static void Set<C>(this C self, float x, X__ _ = default) where C : struct, IXYZ => To(self, x:x).SetEnd();
+        public static void Set<C>(this C self, float y, _Y_ _ = default) where C : struct, IXYZ => To(self, y:y).SetEnd();
+        public static void Set<C>(this C self, float z, __Z _ = default) where C : struct, IXYZ => To(self, z:z).SetEnd();
+        public static void Set<C>(this C self, float x, float y, XY_ _ = default) where C : struct, IXYZ => To(self, x:x, y:y).SetEnd();
+        public static void Set<C>(this C self, float y, float z, _YZ _ = default) where C : struct, IXYZ => To(self, y:y, z:z).SetEnd();
+        public static void Set<C>(this C self, float x, float z, X_Z _ = default) where C : struct, IXYZ => To(self, x:x, z:z).SetEnd();
 
-        enum Comb
+        internal enum Comb
         {
             None,
             X__, _Y_, __Z,
@@ -470,107 +451,17 @@ namespace Omochaya
             XYZ
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-        static Comb Analyze(float? x, float? y, float? z)
-        {
-            var bits = 0;
-            bits <<= 1; if (x != null) { bits |= 1; } 
-            bits <<= 1; if (y != null) { bits |= 1; } 
-            bits <<= 1; if (z != null) { bits |= 1; } 
-            Dev.Assert(bits != 0, Messages.Exceptions.InvalidArguments);
-            return bits switch
-                {
-                    0b100 => Comb.X__,
-                    0b010 => Comb._Y_,
-                    0b001 => Comb.__Z,
-                    0b011 => Comb._YZ,
-                    0b101 => Comb.X_Z,
-                    0b110 => Comb.XY_,
-                    0b111 => Comb.XYZ,
-                    _ => default
-                };
-        }
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<Vector3>
-        {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly Comb comb;
-            readonly Vector3 to;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float? x, float? y, float? z)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Analyze(x, y, z);
-                this.to = new(x ?? default, y ?? default, z ?? default);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Vector3 p)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Comb.XYZ;
-                this.to = p;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X__ => Mover.CreateTask<TS, C, X__, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y_ => Mover.CreateTask<TS, C, _Y_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__Z => Mover.CreateTask<TS, C, __Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YZ => Mover.CreateTask<TS, C, _YZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_Z => Mover.CreateTask<TS, C, X_Z, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY_ => Mover.CreateTask<TS, C, XY_, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYZ => Mover.CreateTask<TS, C, XYZ, Vector3, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    _ => default
-                };
-#else
-                => Mover.CreateTask<TS, C, Mapper, Vector3, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
-#endif
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X__ => Mover.CreateDummy<TS, C, X__, Vector3, E>(ease),
-                    Comb._Y_ => Mover.CreateDummy<TS, C, _Y_, Vector3, E>(ease),
-                    Comb.__Z => Mover.CreateDummy<TS, C, __Z, Vector3, E>(ease),
-                    Comb._YZ => Mover.CreateDummy<TS, C, _YZ, Vector3, E>(ease),
-                    Comb.X_Z => Mover.CreateDummy<TS, C, X_Z, Vector3, E>(ease),
-                    Comb.XY_ => Mover.CreateDummy<TS, C, XY_, Vector3, E>(ease),
-                    Comb.XYZ => Mover.CreateDummy<TS, C, XYZ, Vector3, E>(ease),
-                    _ => default
-                };
-#else
-                => Mover.CreateDummy<TS, C, Mapper, Vector3, E>(ease);
-#endif
-        }
-
-        readonly struct Mapper : Mover.IMapper<Vector3>
+        public readonly struct Mapper : Mover.IMapper<Vector3>
         {
             readonly Comb comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Vector3 to, Vector3 from)
                 => this.comb switch
@@ -585,6 +476,8 @@ namespace Omochaya
                     _ => default
                 };
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vector3 Lerp(Vector3 current, Vector3 to, Vector3 diff, float rt)
                 => this.comb switch
@@ -598,16 +491,38 @@ namespace Omochaya
                     Comb.XYZ => default(XYZ).Lerp(current, to, diff, rt),
                     _ => current
                 };
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector3 Set(Vector3 current, Vector3 to)
+                => this.comb switch
+                {
+                    Comb.X__ => default(X__).Set(current, to),
+                    Comb._Y_ => default(_Y_).Set(current, to),
+                    Comb.__Z => default(__Z).Set(current, to),
+                    Comb._YZ => default(_YZ).Set(current, to),
+                    Comb.X_Z => default(X_Z).Set(current, to),
+                    Comb.XY_ => default(XY_).Set(current, to),
+                    Comb.XYZ => default(XYZ).Set(current, to),
+                    _ => current
+                };
             
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Vector3, Vector3) GetParam(Vector3 from, Vector3 to, bool isDelta) => default(XYZ).GetParam(from, to, isDelta);
         }
 
-        internal readonly struct GenericMapper<X, Y, Z> : Mover.IMapper<Vector3>
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct GenericMapper<X, Y, Z> : Mover.IMapper<Vector3>
             where X : struct, Mover.IAxisFlag
             where Y : struct, Mover.IAxisFlag
             where Z : struct, Mover.IAxisFlag
         {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Vector3 to, Vector3 from)
             {
@@ -617,6 +532,8 @@ namespace Omochaya
                 return Mathf.Sqrt(xx + yy + zz);
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Vector3 Lerp(Vector3 current, Vector3 to, Vector3 diff, float rt)
             {
@@ -626,6 +543,19 @@ namespace Omochaya
                 return current;
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector3 Set(Vector3 current, Vector3 to)
+            {
+                current.x = default(X).Set(current.x, to.x);
+                current.y = default(Y).Set(current.y, to.y);
+                current.z = default(Z).Set(current.z, to.z);
+                return current;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Vector3, Vector3) GetParam(Vector3 from, Vector3 to, bool isDelta)
             {
@@ -639,31 +569,98 @@ namespace Omochaya
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryColor ///////////////////////////////////////////////////////////////////////////////////
     {
+#if STORY_MOVER_FAST
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, in Color p = default)
-            where C : struct, Mover.ICarrier<Color>
-            => new(self, false, p);
+        public static Mover.Plan<C, RGBA, Color> To<C>(this C self, Color p = default, bool isDelta = false, RGBA _ = default) where C : struct, IRGBA => new(self, isDelta, _, p);
+        public static Mover.Plan<C, R___, Color> To<C>(this C self, float r, bool isDelta = false, R___ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, 0, 0, 0));
+        public static Mover.Plan<C, _G__, Color> To<C>(this C self, float g, bool isDelta = false, _G__ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, g, 0, 0));
+        public static Mover.Plan<C, __B_, Color> To<C>(this C self, float b, bool isDelta = false, __B_ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, 0, b, 0));
+        public static Mover.Plan<C, ___A, Color> To<C>(this C self, float a, bool isDelta = false, ___A _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, 0, 0, a));
+        public static Mover.Plan<C, RG__, Color> To<C>(this C self, float r, float g, bool isDelta = false, RG__ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, g, 0, 0));
+        public static Mover.Plan<C, __BA, Color> To<C>(this C self, float b, float a, bool isDelta = false, __BA _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, 0, b, a));
+        public static Mover.Plan<C, R_B_, Color> To<C>(this C self, float r, float b, bool isDelta = false, R_B_ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, 0, b, 0));
+        public static Mover.Plan<C, _G_A, Color> To<C>(this C self, float g, float a, bool isDelta = false, _G_A _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, g, 0, a));
+        public static Mover.Plan<C, R__A, Color> To<C>(this C self, float r, float a, bool isDelta = false, R__A _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, 0, 0, a));
+        public static Mover.Plan<C, _GB_, Color> To<C>(this C self, float g, float b, bool isDelta = false, _GB_ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, g, b, 0));
+        public static Mover.Plan<C, _GBA, Color> To<C>(this C self, float g, float b, float a, bool isDelta = false, _GBA _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(0, g, b, a));
+        public static Mover.Plan<C, R_BA, Color> To<C>(this C self, float r, float b, float a, bool isDelta = false, R_BA _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, 0, b, a));
+        public static Mover.Plan<C, RG_A, Color> To<C>(this C self, float r, float g, float a, bool isDelta = false, RG_A _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, g, 0, a));
+        public static Mover.Plan<C, RGB_, Color> To<C>(this C self, float r, float g, float b, bool isDelta = false, RGB_ _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, g, b, 0));
+        public static Mover.Plan<C, RGBA, Color> To<C>(this C self, float r, float g, float b, float a, bool isDelta = false, RGBA _ = default) where C : struct, IRGBA => new(self, isDelta, _, new(r, g, b, a));
 
         /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, in Color p = default)
-            where C : struct, Mover.ICarrier<Color>
-            => new(self, true, p);
+        public static Mover.Plan<C, RGBA, Color> By<C>(this C self, Color p = default, RGBA _ = default) where C : struct, IRGBA => To(self, p, true);
+        public static Mover.Plan<C, R___, Color> By<C>(this C self, float r, R___ _ = default) where C : struct, IRGBA => To(self, r:r, true);
+        public static Mover.Plan<C, _G__, Color> By<C>(this C self, float g, _G__ _ = default) where C : struct, IRGBA => To(self, g:g, true);
+        public static Mover.Plan<C, __B_, Color> By<C>(this C self, float b, __B_ _ = default) where C : struct, IRGBA => To(self, b:b, true);
+        public static Mover.Plan<C, ___A, Color> By<C>(this C self, float a, ___A _ = default) where C : struct, IRGBA => To(self, a:a, true);
+        public static Mover.Plan<C, RG__, Color> By<C>(this C self, float r, float g, RG__ _ = default) where C : struct, IRGBA => To(self, r:r, g:g, true);
+        public static Mover.Plan<C, __BA, Color> By<C>(this C self, float b, float a, __BA _ = default) where C : struct, IRGBA => To(self, b:b, a:a, true);
+        public static Mover.Plan<C, R_B_, Color> By<C>(this C self, float r, float b, R_B_ _ = default) where C : struct, IRGBA => To(self, r:r, b:b, true);
+        public static Mover.Plan<C, _G_A, Color> By<C>(this C self, float g, float a, _G_A _ = default) where C : struct, IRGBA => To(self, g:g, a:a, true);
+        public static Mover.Plan<C, R__A, Color> By<C>(this C self, float r, float a, R__A _ = default) where C : struct, IRGBA => To(self, r:r, a:a, true);
+        public static Mover.Plan<C, _GB_, Color> By<C>(this C self, float g, float b, _GB_ _ = default) where C : struct, IRGBA => To(self, g:g, b:b, true);
+        public static Mover.Plan<C, _GBA, Color> By<C>(this C self, float g, float b, float a, _GBA _ = default) where C : struct, IRGBA => To(self, g:g, b:b, a:a, true);
+        public static Mover.Plan<C, R_BA, Color> By<C>(this C self, float r, float b, float a, R_BA _ = default) where C : struct, IRGBA => To(self, r:r, b:b, a:a, true);
+        public static Mover.Plan<C, RG_A, Color> By<C>(this C self, float r, float g, float a, RG_A _ = default) where C : struct, IRGBA => To(self, r:r, g:g, a:a, true);
+        public static Mover.Plan<C, RGB_, Color> By<C>(this C self, float r, float g, float b, RGB_ _ = default) where C : struct, IRGBA => To(self, r:r, g:g, b:b, true);
+        public static Mover.Plan<C, RGBA, Color> By<C>(this C self, float r, float g, float b, float a, RGBA _ = default) where C : struct, IRGBA => To(self, r, g, b, a, true);
+#else
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, Color p = default, bool isDelta = false, RGBA _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.RGBA), p);
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, bool isDelta = false, R___ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.R___), new(r, 0, 0, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float g, bool isDelta = false, _G__ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb._G__), new(0, g, 0, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float b, bool isDelta = false, __B_ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.__B_), new(0, 0, b, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float a, bool isDelta = false, ___A _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.___A), new(0, 0, 0, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float g, bool isDelta = false, RG__ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.RG__), new(r, g, 0, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float b, float a, bool isDelta = false, __BA _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.__BA), new(0, 0, b, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float b, bool isDelta = false, R_B_ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.R_B_), new(r, 0, b, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float g, float a, bool isDelta = false, _G_A _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb._G_A), new(0, g, 0, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float a, bool isDelta = false, R__A _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.R__A), new(r, 0, 0, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float g, float b, bool isDelta = false, _GB_ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb._GB_), new(0, g, b, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float g, float b, float a, bool isDelta = false, _GBA _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb._GBA), new(0, g, b, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float b, float a, bool isDelta = false, R_BA _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.R_BA), new(r, 0, b, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float g, float a, bool isDelta = false, RG_A _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.RG_A), new(r, g, 0, a));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float g, float b, bool isDelta = false, RGB_ _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.RGB_), new(r, g, b, 0));
+        public static Mover.Plan<C, Mapper, Color> To<C>(this C self, float r, float g, float b, float a, bool isDelta = false, RGBA _ = default) where C : struct, IRGBA => new(self, isDelta, new(Comb.RGBA), new(r, g, b, a));
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? r = null, float? g = null, float? b = null, float? a = null)
-            where C : struct, Mover.ICarrier<Color>
-            => new(self, false, r, g, b, a);
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, Color p = default, RGBA _ = default) where C : struct, IRGBA => To(self, p, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, R___ _ = default) where C : struct, IRGBA => To(self, r:r, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float g, _G__ _ = default) where C : struct, IRGBA => To(self, g:g, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float b, __B_ _ = default) where C : struct, IRGBA => To(self, b:b, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float a, ___A _ = default) where C : struct, IRGBA => To(self, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float g, RG__ _ = default) where C : struct, IRGBA => To(self, r:r, g:g, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float b, float a, __BA _ = default) where C : struct, IRGBA => To(self, b:b, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float b, R_B_ _ = default) where C : struct, IRGBA => To(self, r:r, b:b, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float g, float a, _G_A _ = default) where C : struct, IRGBA => To(self, g:g, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float a, R__A _ = default) where C : struct, IRGBA => To(self, r:r, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float g, float b, _GB_ _ = default) where C : struct, IRGBA => To(self, g:g, b:b, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float g, float b, float a, _GBA _ = default) where C : struct, IRGBA => To(self, g:g, b:b, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float b, float a, R_BA _ = default) where C : struct, IRGBA => To(self, r:r, b:b, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float g, float a, RG_A _ = default) where C : struct, IRGBA => To(self, r:r, g:g, a:a, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float g, float b, RGB_ _ = default) where C : struct, IRGBA => To(self, r:r, g:g, b:b, true);
+        public static Mover.Plan<C, Mapper, Color> By<C>(this C self, float r, float g, float b, float a, RGBA _ = default) where C : struct, IRGBA => To(self, r, g, b, a, true);
+#endif
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? r = null, float? g = null, float? b = null, float? a = null)
-            where C : struct, Mover.ICarrier<Color>
-            => new(self, true, r, g, b, a);
 
-        enum Comb
+        /// <summary></summary>
+        public static void Set<C>(this C self, float r, R___ _ = default) where C : struct, IRGBA => To(self, r:r).SetEnd();
+        public static void Set<C>(this C self, float g, _G__ _ = default) where C : struct, IRGBA => To(self, g:g).SetEnd();
+        public static void Set<C>(this C self, float b, __B_ _ = default) where C : struct, IRGBA => To(self, b:b).SetEnd();
+        public static void Set<C>(this C self, float a, ___A _ = default) where C : struct, IRGBA => To(self, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float g, RG__ _ = default) where C : struct, IRGBA => To(self, r:r, g:g).SetEnd();
+        public static void Set<C>(this C self, float b, float a, __BA _ = default) where C : struct, IRGBA => To(self, b:b, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float b, R_B_ _ = default) where C : struct, IRGBA => To(self, r:r, b:b).SetEnd();
+        public static void Set<C>(this C self, float g, float a, _G_A _ = default) where C : struct, IRGBA => To(self, g:g, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float a, R__A _ = default) where C : struct, IRGBA => To(self, r:r, a:a).SetEnd();
+        public static void Set<C>(this C self, float g, float b, _GB_ _ = default) where C : struct, IRGBA => To(self, g:g, b:b).SetEnd();
+        public static void Set<C>(this C self, float g, float b, float a, _GBA _ = default) where C : struct, IRGBA => To(self, g:g, b:b, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float b, float a, R_BA _ = default) where C : struct, IRGBA => To(self, r:r, b:b, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float g, float a, RG_A _ = default) where C : struct, IRGBA => To(self, r:r, g:g, a:a).SetEnd();
+        public static void Set<C>(this C self, float r, float g, float b, RGB_ _ = default) where C : struct, IRGBA => To(self, r:r, g:g, b:b).SetEnd();
+
+        internal enum Comb
         {
             None,
             R___, _G__, __B_, ___A,
@@ -674,132 +671,17 @@ namespace Omochaya
             RGBA
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-        static Comb Analyze(float? r, float? g, float? b, float? a)
-        {
-            var bits = 0;
-            bits <<= 1; if (r != null) { bits |= 1; } 
-            bits <<= 1; if (g != null) { bits |= 1; } 
-            bits <<= 1; if (b != null) { bits |= 1; } 
-            bits <<= 1; if (a != null) { bits |= 1; } 
-            Dev.Assert(bits != 0, Messages.Exceptions.InvalidArguments);
-            return bits switch
-                {
-                    0b1000 => Comb.R___,
-                    0b0100 => Comb._G__,
-                    0b0010 => Comb.__B_,
-                    0b0001 => Comb.___A,
-                    0b1100 => Comb.RG__,
-                    0b0011 => Comb.__BA,
-                    0b1010 => Comb.R_B_,
-                    0b0101 => Comb._G_A,
-                    0b1001 => Comb.R__A,
-                    0b0110 => Comb._GB_,
-                    0b0111 => Comb._GBA,
-                    0b1011 => Comb.R_BA,
-                    0b1101 => Comb.RG_A,
-                    0b1110 => Comb.RGB_,
-                    0b1111 => Comb.RGBA,
-                    _ => default
-                };
-        }
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<Color>
-        {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly Comb comb;
-            readonly Color to;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float? r, float? g, float? b, float? a)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Analyze(r, g, b, a);
-                this.to = new(r ?? default, g ?? default, b ?? default, a ?? default);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Color p)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Comb.RGBA;
-                this.to = p;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.R___ => Mover.CreateTask<TS, C, R___, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._G__ => Mover.CreateTask<TS, C, _G__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__B_ => Mover.CreateTask<TS, C, __B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.___A => Mover.CreateTask<TS, C, ___A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RG__ => Mover.CreateTask<TS, C, RG__, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__BA => Mover.CreateTask<TS, C, __BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R_B_ => Mover.CreateTask<TS, C, R_B_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._G_A => Mover.CreateTask<TS, C, _G_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R__A => Mover.CreateTask<TS, C, R__A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._GB_ => Mover.CreateTask<TS, C, _GB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._GBA => Mover.CreateTask<TS, C, _GBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.R_BA => Mover.CreateTask<TS, C, R_BA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RG_A => Mover.CreateTask<TS, C, RG_A, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RGB_ => Mover.CreateTask<TS, C, RGB_, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.RGBA => Mover.CreateTask<TS, C, RGBA, Color, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    _ => default
-                };
-#else
-                => Mover.CreateTask<TS, C, Mapper, Color, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
-#endif
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.R___ => Mover.CreateDummy<TS, C, R___, Color, E>(ease),
-                    Comb._G__ => Mover.CreateDummy<TS, C, _G__, Color, E>(ease),
-                    Comb.__B_ => Mover.CreateDummy<TS, C, __B_, Color, E>(ease),
-                    Comb.___A => Mover.CreateDummy<TS, C, ___A, Color, E>(ease),
-                    Comb.RG__ => Mover.CreateDummy<TS, C, RG__, Color, E>(ease),
-                    Comb.__BA => Mover.CreateDummy<TS, C, __BA, Color, E>(ease),
-                    Comb.R_B_ => Mover.CreateDummy<TS, C, R_B_, Color, E>(ease),
-                    Comb._G_A => Mover.CreateDummy<TS, C, _G_A, Color, E>(ease),
-                    Comb.R__A => Mover.CreateDummy<TS, C, R__A, Color, E>(ease),
-                    Comb._GB_ => Mover.CreateDummy<TS, C, _GB_, Color, E>(ease),
-                    Comb._GBA => Mover.CreateDummy<TS, C, _GBA, Color, E>(ease),
-                    Comb.R_BA => Mover.CreateDummy<TS, C, R_BA, Color, E>(ease),
-                    Comb.RG_A => Mover.CreateDummy<TS, C, RG_A, Color, E>(ease),
-                    Comb.RGB_ => Mover.CreateDummy<TS, C, RGB_, Color, E>(ease),
-                    Comb.RGBA => Mover.CreateDummy<TS, C, RGBA, Color, E>(ease),
-                    _ => default
-                };
-#else
-                => Mover.CreateDummy<TS, C, Mapper, Color, E>(ease);
-#endif
-        }
-
-        readonly struct Mapper : Mover.IMapper<Color>
+        public readonly struct Mapper : Mover.IMapper<Color>
         {
             readonly Comb comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Color to, Color from)
                 => this.comb switch
@@ -822,6 +704,8 @@ namespace Omochaya
                     _ => default
                 };
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Color Lerp(Color current, Color to, Color diff, float rt)
                 => this.comb switch
@@ -843,17 +727,47 @@ namespace Omochaya
                     Comb.RGBA => default(RGBA).Lerp(current, to, diff, rt),
                     _ => current
                 };
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Color Set(Color current, Color to)
+                => this.comb switch
+                {
+                    Comb.R___ => default(R___).Set(current, to),
+                    Comb._G__ => default(_G__).Set(current, to),
+                    Comb.__B_ => default(__B_).Set(current, to),
+                    Comb.___A => default(___A).Set(current, to),
+                    Comb.RG__ => default(RG__).Set(current, to),
+                    Comb.__BA => default(__BA).Set(current, to),
+                    Comb.R_B_ => default(R_B_).Set(current, to),
+                    Comb._G_A => default(_G_A).Set(current, to),
+                    Comb.R__A => default(R__A).Set(current, to),
+                    Comb._GB_ => default(_GB_).Set(current, to),
+                    Comb._GBA => default(_GBA).Set(current, to),
+                    Comb.R_BA => default(R_BA).Set(current, to),
+                    Comb.RG_A => default(RG_A).Set(current, to),
+                    Comb.RGB_ => default(RGB_).Set(current, to),
+                    Comb.RGBA => default(RGBA).Set(current, to),
+                    _ => current
+                };
             
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Color, Color) GetParam(Color from, Color to, bool isDelta) => default(RGBA).GetParam(from, to, isDelta);
         }
 
-        internal readonly struct GenericMapper<R, G, B, A> : Mover.IMapper<Color>
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct GenericMapper<R, G, B, A> : Mover.IMapper<Color>
             where R : struct, Mover.IAxisFlag
             where G : struct, Mover.IAxisFlag
             where B : struct, Mover.IAxisFlag
             where A : struct, Mover.IAxisFlag
         {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Color to, Color from)
             {
@@ -864,6 +778,8 @@ namespace Omochaya
                 return Mathf.Sqrt(rr + gg + bb + aa);
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Color Lerp(Color current, Color to, Color diff, float rt)
             {
@@ -874,6 +790,20 @@ namespace Omochaya
                 return current;
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Color Set(Color current, Color to)
+            {
+                current.r = default(R).Set(current.r, to.r);
+                current.g = default(G).Set(current.g, to.g);
+                current.b = default(B).Set(current.b, to.b);
+                current.a = default(A).Set(current.a, to.a);
+                return current;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Color, Color) GetParam(Color from, Color to, bool isDelta)
             {
@@ -889,53 +819,31 @@ namespace Omochaya
     {
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, in Quaternion p)
-            where C : struct, Mover.ICarrier<Quaternion>
-            => new(self, false, p);
+        public static Mover.Plan<C, Mapper, Quaternion> To<C>(this C self, Quaternion p) where C : struct, Mover.ICarrier<Quaternion> => new(self, false, default, p);
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, in Quaternion p)
-            where C : struct, Mover.ICarrier<Quaternion>
-            => new(self, true, p);
+        public static Mover.Plan<C, Mapper, Quaternion> By<C>(this C self, Quaternion p) where C : struct, Mover.ICarrier<Quaternion> => new(self, true, default, p);
 
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<Quaternion>
-        {
-            readonly Mover.PlanArg<C, Mapper, Quaternion> planArg;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Quaternion p) => this.planArg = new(carrier, p, isDelta);
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-                => Mover.CreateTask<TS, C, Mapper, Quaternion, E>(this.planArg, timeArg, ease, ref start);
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-                => Mover.CreateDummy<TS, C, Mapper, Quaternion, E>(ease);
-        }
-
-        readonly struct Mapper : Mover.IMapper<Quaternion>
+        public readonly struct Mapper : Mover.IMapper<Quaternion>
         {
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Quaternion to, Quaternion from) => Quaternion.Angle(from, to);
+
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Quaternion Lerp(Quaternion current, Quaternion to, Quaternion from, float rt) => Quaternion.SlerpUnclamped(to, from, rt);
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Quaternion Set(Quaternion current, Quaternion to) => to;
+
             /// <summary>Don't touch! Only for system.</summary>
             [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -951,31 +859,98 @@ namespace Omochaya
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class StoryRect ///////////////////////////////////////////////////////////////////////////////////
     {
+#if STORY_MOVER_FAST
         /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, in Rect p = default)
-            where C : struct, Mover.ICarrier<Rect>
-            => new(self, false, p);
+        public static Mover.Plan<C, XYWH, Rect> To<C>(this C self, Rect p = default, bool isDelta = false, XYWH _ = default) where C : struct, IXYWH => new(self, isDelta, _, p);
+        public static Mover.Plan<C, X___, Rect> To<C>(this C self, float x, bool isDelta = false, X___ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, 0, 0, 0));
+        public static Mover.Plan<C, _Y__, Rect> To<C>(this C self, float y, bool isDelta = false, _Y__ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, y, 0, 0));
+        public static Mover.Plan<C, __W_, Rect> To<C>(this C self, float w, bool isDelta = false, __W_ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, 0, w, 0));
+        public static Mover.Plan<C, ___H, Rect> To<C>(this C self, float h, bool isDelta = false, ___H _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, 0, 0, h));
+        public static Mover.Plan<C, XY__, Rect> To<C>(this C self, float x, float y, bool isDelta = false, XY__ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, y, 0, 0));
+        public static Mover.Plan<C, __WH, Rect> To<C>(this C self, float w, float h, bool isDelta = false, __WH _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, 0, w, h));
+        public static Mover.Plan<C, X_W_, Rect> To<C>(this C self, float x, float w, bool isDelta = false, X_W_ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, 0, w, 0));
+        public static Mover.Plan<C, _Y_H, Rect> To<C>(this C self, float y, float h, bool isDelta = false, _Y_H _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, y, 0, h));
+        public static Mover.Plan<C, X__H, Rect> To<C>(this C self, float x, float h, bool isDelta = false, X__H _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, 0, 0, h));
+        public static Mover.Plan<C, _YW_, Rect> To<C>(this C self, float y, float w, bool isDelta = false, _YW_ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, y, w, 0));
+        public static Mover.Plan<C, _YWH, Rect> To<C>(this C self, float y, float w, float h, bool isDelta = false, _YWH _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(0, y, w, h));
+        public static Mover.Plan<C, X_WH, Rect> To<C>(this C self, float x, float w, float h, bool isDelta = false, X_WH _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, 0, w, h));
+        public static Mover.Plan<C, XY_H, Rect> To<C>(this C self, float x, float y, float h, bool isDelta = false, XY_H _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, y, 0, h));
+        public static Mover.Plan<C, XYW_, Rect> To<C>(this C self, float x, float y, float w, bool isDelta = false, XYW_ _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, y, w, 0));
+        public static Mover.Plan<C, XYWH, Rect> To<C>(this C self, float x, float y, float w, float h, bool isDelta = false, XYWH _ = default) where C : struct, IXYWH => new(self, isDelta, _, new(x, y, w, h));
 
         /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, in Rect p = default)
-            where C : struct, Mover.ICarrier<Rect>
-            => new(self, true, p);
+        public static Mover.Plan<C, XYWH, Rect> By<C>(this C self, Rect p = default, XYWH _ = default) where C : struct, IXYWH => To(self, p, true);
+        public static Mover.Plan<C, X___, Rect> By<C>(this C self, float x, X___ _ = default) where C : struct, IXYWH => To(self, x:x, true);
+        public static Mover.Plan<C, _Y__, Rect> By<C>(this C self, float y, _Y__ _ = default) where C : struct, IXYWH => To(self, y:y, true);
+        public static Mover.Plan<C, __W_, Rect> By<C>(this C self, float w, __W_ _ = default) where C : struct, IXYWH => To(self, w:w, true);
+        public static Mover.Plan<C, ___H, Rect> By<C>(this C self, float h, ___H _ = default) where C : struct, IXYWH => To(self, h:h, true);
+        public static Mover.Plan<C, XY__, Rect> By<C>(this C self, float x, float y, XY__ _ = default) where C : struct, IXYWH => To(self, x:x, y:y, true);
+        public static Mover.Plan<C, __WH, Rect> By<C>(this C self, float w, float h, __WH _ = default) where C : struct, IXYWH => To(self, w:w, h:h, true);
+        public static Mover.Plan<C, X_W_, Rect> By<C>(this C self, float x, float w, X_W_ _ = default) where C : struct, IXYWH => To(self, x:x, w:w, true);
+        public static Mover.Plan<C, _Y_H, Rect> By<C>(this C self, float y, float h, _Y_H _ = default) where C : struct, IXYWH => To(self, y:y, h:h, true);
+        public static Mover.Plan<C, X__H, Rect> By<C>(this C self, float x, float h, X__H _ = default) where C : struct, IXYWH => To(self, x:x, h:h, true);
+        public static Mover.Plan<C, _YW_, Rect> By<C>(this C self, float y, float w, _YW_ _ = default) where C : struct, IXYWH => To(self, y:y, w:w, true);
+        public static Mover.Plan<C, _YWH, Rect> By<C>(this C self, float y, float w, float h, _YWH _ = default) where C : struct, IXYWH => To(self, y:y, w:w, h:h, true);
+        public static Mover.Plan<C, X_WH, Rect> By<C>(this C self, float x, float w, float h, X_WH _ = default) where C : struct, IXYWH => To(self, x:x, w:w, h:h, true);
+        public static Mover.Plan<C, XY_H, Rect> By<C>(this C self, float x, float y, float h, XY_H _ = default) where C : struct, IXYWH => To(self, x:x, y:y, h:h, true);
+        public static Mover.Plan<C, XYW_, Rect> By<C>(this C self, float x, float y, float w, XYW_ _ = default) where C : struct, IXYWH => To(self, x:x, y:y, w:w, true);
+        public static Mover.Plan<C, XYWH, Rect> By<C>(this C self, float x, float y, float w, float h, XYWH _ = default) where C : struct, IXYWH => To(self, x, y, w, h, true);
+#else
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value towards an absolute target.</summary>
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, Rect p = default, bool isDelta = false, XYWH _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.XYWH), p);
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, bool isDelta = false, X___ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.X___), new(x, 0, 0, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float y, bool isDelta = false, _Y__ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb._Y__), new(0, y, 0, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float w, bool isDelta = false, __W_ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.__W_), new(0, 0, w, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float h, bool isDelta = false, ___H _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.___H), new(0, 0, 0, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float y, bool isDelta = false, XY__ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.XY__), new(x, y, 0, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float w, float h, bool isDelta = false, __WH _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.__WH), new(0, 0, w, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float w, bool isDelta = false, X_W_ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.X_W_), new(x, 0, w, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float y, float h, bool isDelta = false, _Y_H _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb._Y_H), new(0, y, 0, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float h, bool isDelta = false, X__H _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.X__H), new(x, 0, 0, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float y, float w, bool isDelta = false, _YW_ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb._YW_), new(0, y, w, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float y, float w, float h, bool isDelta = false, _YWH _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb._YWH), new(0, y, w, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float w, float h, bool isDelta = false, X_WH _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.X_WH), new(x, 0, w, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float y, float h, bool isDelta = false, XY_H _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.XY_H), new(x, y, 0, h));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float y, float w, bool isDelta = false, XYW_ _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.XYW_), new(x, y, w, 0));
+        public static Mover.Plan<C, Mapper, Rect> To<C>(this C self, float x, float y, float w, float h, bool isDelta = false, XYWH _ = default) where C : struct, IXYWH => new(self, isDelta, new(Comb.XYWH), new(x, y, w, h));
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components towards an absolute target.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> To<C>(this C self, bool _ = false, float? x = null, float? y = null, float? width = null, float? height = null)
-            where C : struct, Mover.ICarrier<Rect>
-            => new(self, false, x, y, width, height);
+        /// <summary>Creates a zero-allocation tween plan to interpolate the value by a relative delta amount.</summary>
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, Rect p = default, XYWH _ = default) where C : struct, IXYWH => To(self, p, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, X___ _ = default) where C : struct, IXYWH => To(self, x:x, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float y, _Y__ _ = default) where C : struct, IXYWH => To(self, y:y, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float w, __W_ _ = default) where C : struct, IXYWH => To(self, w:w, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float h, ___H _ = default) where C : struct, IXYWH => To(self, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float y, XY__ _ = default) where C : struct, IXYWH => To(self, x:x, y:y, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float w, float h, __WH _ = default) where C : struct, IXYWH => To(self, w:w, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float w, X_W_ _ = default) where C : struct, IXYWH => To(self, x:x, w:w, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float y, float h, _Y_H _ = default) where C : struct, IXYWH => To(self, y:y, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float h, X__H _ = default) where C : struct, IXYWH => To(self, x:x, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float y, float w, _YW_ _ = default) where C : struct, IXYWH => To(self, y:y, w:w, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float y, float w, float h, _YWH _ = default) where C : struct, IXYWH => To(self, y:y, w:w, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float w, float h, X_WH _ = default) where C : struct, IXYWH => To(self, x:x, w:w, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float y, float h, XY_H _ = default) where C : struct, IXYWH => To(self, x:x, y:y, h:h, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float y, float w, XYW_ _ = default) where C : struct, IXYWH => To(self, x:x, y:y, w:w, true);
+        public static Mover.Plan<C, Mapper, Rect> By<C>(this C self, float x, float y, float w, float h, XYWH _ = default) where C : struct, IXYWH => To(self, x, y, w, h, true);
+#endif
 
-        /// <summary>Creates a zero-allocation tween plan to interpolate specific components by a relative delta amount.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Plan<C> By<C>(this C self, bool _ = true, float? x = null, float? y = null, float? width = null, float? height = null)
-            where C : struct, Mover.ICarrier<Rect>
-            => new(self, true, x, y, width, height);
 
-        enum Comb
+        /// <summary></summary>
+        public static void Set<C>(this C self, float x, X___ _ = default) where C : struct, IXYWH => To(self, x:x).SetEnd();
+        public static void Set<C>(this C self, float y, _Y__ _ = default) where C : struct, IXYWH => To(self, y:y).SetEnd();
+        public static void Set<C>(this C self, float w, __W_ _ = default) where C : struct, IXYWH => To(self, w:w).SetEnd();
+        public static void Set<C>(this C self, float h, ___H _ = default) where C : struct, IXYWH => To(self, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float y, XY__ _ = default) where C : struct, IXYWH => To(self, x:x, y:y).SetEnd();
+        public static void Set<C>(this C self, float w, float h, __WH _ = default) where C : struct, IXYWH => To(self, w:w, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float w, X_W_ _ = default) where C : struct, IXYWH => To(self, x:x, w:w).SetEnd();
+        public static void Set<C>(this C self, float y, float h, _Y_H _ = default) where C : struct, IXYWH => To(self, y:y, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float h, X__H _ = default) where C : struct, IXYWH => To(self, x:x, h:h).SetEnd();
+        public static void Set<C>(this C self, float y, float w, _YW_ _ = default) where C : struct, IXYWH => To(self, y:y, w:w).SetEnd();
+        public static void Set<C>(this C self, float y, float w, float h, _YWH _ = default) where C : struct, IXYWH => To(self, y:y, w:w, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float w, float h, X_WH _ = default) where C : struct, IXYWH => To(self, x:x, w:w, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float y, float h, XY_H _ = default) where C : struct, IXYWH => To(self, x:x, y:y, h:h).SetEnd();
+        public static void Set<C>(this C self, float x, float y, float w, XYW_ _ = default) where C : struct, IXYWH => To(self, x:x, y:y, w:w).SetEnd();
+
+        internal enum Comb
         {
             None,
             X___, _Y__, __W_, ___H,
@@ -986,134 +961,17 @@ namespace Omochaya
             XYWH
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)] // インライン化禁止
-        static Comb Analyze(float? x, float? y, float? width, float? height)
-        {
-            var bits = 0;
-            bits <<= 1; if (x != null) { bits |= 1; } 
-            bits <<= 1; if (y != null) { bits |= 1; } 
-            bits <<= 1; if (width != null) { bits |= 1; } 
-            bits <<= 1; if (height != null) { bits |= 1; } 
-            Dev.Assert(bits != 0, Messages.Exceptions.InvalidArguments);
-            return bits switch
-                {
-                    0b1000 => Comb.X___,
-                    0b0100 => Comb._Y__,
-                    0b0010 => Comb.__W_,
-                    0b0001 => Comb.___H,
-                    0b1100 => Comb.XY__,
-                    0b0011 => Comb.__WH,
-                    0b1010 => Comb.X_W_,
-                    0b0101 => Comb._Y_H,
-                    0b1001 => Comb.X__H,
-                    0b0110 => Comb._YW_,
-                    0b0111 => Comb._YWH,
-                    0b1011 => Comb.X_WH,
-                    0b1101 => Comb.XY_H,
-                    0b1110 => Comb.XYW_,
-                    0b1111 => Comb.XYWH,
-                    _ => default
-                };
-        }
-
         /// <summary>Don't touch! Only for system.</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public readonly struct Plan<C> : Mover.IPlan
-            where C : struct, Mover.ICarrier<Rect>
-        {
-            readonly C carrier;
-            readonly bool isDelta;
-            readonly Comb comb;
-            readonly Rect to;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, float? x, float? y, float? width, float? height)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Analyze(x, y, width, height);
-                this.to = new(x ?? default, y ?? default, width ?? default, height ?? default);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Plan(in C carrier, bool isDelta, Rect p)
-            {
-                this.carrier = carrier;
-                this.isDelta = isDelta;
-                this.comb = Comb.XYWH;
-                this.to = p;
-            }
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateTask<TS, E>(in TS _, in Mover.TimeArg timeArg, E ease, ref double start)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X___ => Mover.CreateTask<TS, C, X___, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y__ => Mover.CreateTask<TS, C, _Y__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__W_ => Mover.CreateTask<TS, C, __W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.___H => Mover.CreateTask<TS, C, ___H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY__ => Mover.CreateTask<TS, C, XY__, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.__WH => Mover.CreateTask<TS, C, __WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_W_ => Mover.CreateTask<TS, C, X_W_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._Y_H => Mover.CreateTask<TS, C, _Y_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X__H => Mover.CreateTask<TS, C, X__H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YW_ => Mover.CreateTask<TS, C, _YW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb._YWH => Mover.CreateTask<TS, C, _YWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.X_WH => Mover.CreateTask<TS, C, X_WH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XY_H => Mover.CreateTask<TS, C, XY_H, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYW_ => Mover.CreateTask<TS, C, XYW_, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    Comb.XYWH => Mover.CreateTask<TS, C, XYWH, Rect, E>(new(this.carrier, this.to, this.isDelta), timeArg, ease, ref start),
-                    _ => default
-                };
-#else
-                => Mover.CreateTask<TS, C, Mapper, Rect, E>(new(this.carrier, new(this.comb), this.to, this.isDelta), timeArg, ease, ref start);
-#endif
-
-            /// <summary>Don't touch! Only for system.</summary>
-            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-            // [MethodImpl(MethodImplOptions.AggressiveInlining)] // コンパイラに任せる
-            public Story.Task CreateDummy<TS, E>(in TS _, E ease)
-                where TS : struct, Story.ITimeSource
-                where E : struct, Story.IEase
-#if STORY_MOVER_FAST
-                => this.comb switch
-                {
-                    Comb.X___ => Mover.CreateDummy<TS, C, X___, Rect, E>(ease),
-                    Comb._Y__ => Mover.CreateDummy<TS, C, _Y__, Rect, E>(ease),
-                    Comb.__W_ => Mover.CreateDummy<TS, C, __W_, Rect, E>(ease),
-                    Comb.___H => Mover.CreateDummy<TS, C, ___H, Rect, E>(ease),
-                    Comb.XY__ => Mover.CreateDummy<TS, C, XY__, Rect, E>(ease),
-                    Comb.__WH => Mover.CreateDummy<TS, C, __WH, Rect, E>(ease),
-                    Comb.X_W_ => Mover.CreateDummy<TS, C, X_W_, Rect, E>(ease),
-                    Comb._Y_H => Mover.CreateDummy<TS, C, _Y_H, Rect, E>(ease),
-                    Comb.X__H => Mover.CreateDummy<TS, C, X__H, Rect, E>(ease),
-                    Comb._YW_ => Mover.CreateDummy<TS, C, _YW_, Rect, E>(ease),
-                    Comb._YWH => Mover.CreateDummy<TS, C, _YWH, Rect, E>(ease),
-                    Comb.X_WH => Mover.CreateDummy<TS, C, X_WH, Rect, E>(ease),
-                    Comb.XY_H => Mover.CreateDummy<TS, C, XY_H, Rect, E>(ease),
-                    Comb.XYW_ => Mover.CreateDummy<TS, C, XYW_, Rect, E>(ease),
-                    Comb.XYWH => Mover.CreateDummy<TS, C, XYWH, Rect, E>(ease),
-                    _ => default
-                };
-#else
-                => Mover.CreateDummy<TS, C, Mapper, Rect, E>(ease);
-#endif
-        }
-
-        /// <summary>Don't touch! Only for system.</summary>
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        readonly struct Mapper : Mover.IMapper<Rect>
+        public readonly struct Mapper : Mover.IMapper<Rect>
         {
             readonly Comb comb;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal Mapper(Comb comb) => this.comb = comb;
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Rect to, Rect from)
                 => this.comb switch
@@ -1136,6 +994,8 @@ namespace Omochaya
                     _ => default
                 };
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Rect Lerp(Rect current, Rect to, Rect diff, float rt)
                 => this.comb switch
@@ -1157,17 +1017,47 @@ namespace Omochaya
                     Comb.XYWH => default(XYWH).Lerp(current, to, diff, rt),
                     _ => current
                 };
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Rect Set(Rect current, Rect to)
+                => this.comb switch
+                {
+                    Comb.X___ => default(X___).Set(current, to),
+                    Comb._Y__ => default(_Y__).Set(current, to),
+                    Comb.__W_ => default(__W_).Set(current, to),
+                    Comb.___H => default(___H).Set(current, to),
+                    Comb.XY__ => default(XY__).Set(current, to),
+                    Comb.__WH => default(__WH).Set(current, to),
+                    Comb.X_W_ => default(X_W_).Set(current, to),
+                    Comb._Y_H => default(_Y_H).Set(current, to),
+                    Comb.X__H => default(X__H).Set(current, to),
+                    Comb._YW_ => default(_YW_).Set(current, to),
+                    Comb._YWH => default(_YWH).Set(current, to),
+                    Comb.X_WH => default(X_WH).Set(current, to),
+                    Comb.XY_H => default(XY_H).Set(current, to),
+                    Comb.XYW_ => default(XYW_).Set(current, to),
+                    Comb.XYWH => default(XYWH).Set(current, to),
+                    _ => current
+                };
             
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Rect, Rect) GetParam(Rect from, Rect to, bool isDelta) => default(XYWH).GetParam(from, to, isDelta);
         }
 
-        internal readonly struct GenericMapper<X, Y, W, H> : Mover.IMapper<Rect>
+        /// <summary>Don't touch! Only for system.</summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public readonly struct GenericMapper<X, Y, W, H> : Mover.IMapper<Rect>
             where X : struct, Mover.IAxisFlag
             where Y : struct, Mover.IAxisFlag
             where W : struct, Mover.IAxisFlag
             where H : struct, Mover.IAxisFlag
         {
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public float GetLength(Rect to, Rect from)
             {
@@ -1178,6 +1068,8 @@ namespace Omochaya
                 return Mathf.Sqrt(xx + yy + ww + hh);
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Rect Lerp(Rect current, Rect to, Rect diff, float rt)
             {
@@ -1188,6 +1080,20 @@ namespace Omochaya
                 return current;
             }
 
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Rect Set(Rect current, Rect to)
+            {
+                current.x = default(X).Set(current.x, to.x);
+                current.y = default(Y).Set(current.y, to.y);
+                current.width = default(W).Set(current.width, to.width);
+                current.height = default(H).Set(current.height, to.height);
+                return current;
+            }
+
+            /// <summary>Don't touch! Only for system.</summary>
+            [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public (Rect, Rect) GetParam(Rect from, Rect to, bool isDelta)
             {
